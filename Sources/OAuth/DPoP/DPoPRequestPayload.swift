@@ -8,8 +8,6 @@
 import Foundation
 import GermConvenience
 
-//periphery: ignore
-//codable properties
 struct DPoPRequestPayload: Codable, Hashable, Sendable {
 	let uniqueCode: String
 	let httpMethod: String

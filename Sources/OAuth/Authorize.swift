@@ -103,7 +103,6 @@ public struct AuthServerRequestOptions: Sendable {
 			let callbackURL = try await userAuthenticator(tokenURL, scheme)
 
 			return try await finishAuthorization(
-				authorizationUrl: tokenURL,
 				redirectURI: callbackURL,
 				authInputs: authorizeInputs,
 				authServerMetadata: authServerMetadata,
@@ -163,7 +162,6 @@ public struct AuthServerRequestOptions: Sendable {
 	}
 
 	func finishAuthorization(
-		authorizationUrl: URL,
 		redirectURI: URL,
 		authInputs: AuthorizeInputs,
 		authServerMetadata: AuthServerMetadata,

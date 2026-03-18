@@ -78,6 +78,8 @@ public class SessionState {
 		)
 	}
 
+	//periphery: ignore
+	//codable properties
 	public struct Mutable: Sendable, Codable {
 		let accessToken: Token
 		public let refreshToken: Token?

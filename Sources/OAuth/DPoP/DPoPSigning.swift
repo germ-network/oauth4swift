@@ -79,7 +79,7 @@ extension DPoPSigning {
 	) async throws -> HTTPDataResponse {
 		let proofRequest = try addProof(
 			request: request,
-			token: nil,
+			token: token,
 		)
 
 		let response = try await fetcher.data(for: proofRequest)
