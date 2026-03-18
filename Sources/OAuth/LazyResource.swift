@@ -25,6 +25,7 @@ public final class LazyResource<Resource: Sendable> {
 		self.fetchTaskGenerator = fetchTaskGenerator
 	}
 
+	//periphery:ignore:parameters isolation
 	public func lazyValue(
 		isolation: isolated (any Actor),
 	) async throws -> Resource {

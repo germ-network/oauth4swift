@@ -86,10 +86,7 @@ extension OAuthSessionCapabilities {
 		}
 
 		let newRefreshTask = Task {
-			try await refresh(
-				state: state,
-				appCredentials: appCredentials
-			)
+			try await refresh(state: state)
 		}
 
 		refreshTask = newRefreshTask
@@ -106,7 +103,6 @@ extension OAuthSessionCapabilities {
 	//and processRefreshTokenResponse in oauth4web
 	private func refresh(
 		state: SessionState,
-		appCredentials: AppCredentials,
 	) async throws -> SessionState.Mutable {
 		let authServerMetadata = try await authServerRequestOptions.authFetcher
 			.authServerDiscovery(issuer: try await retriableIssuer)
@@ -114,7 +110,7 @@ extension OAuthSessionCapabilities {
 			authServerMetadata: authServerMetadata,
 			refreshToken: state.mutable.refreshToken.tryUnwrap.value,
 		)
-		let response = try await OAuthComponents.processRefreshTokenResponse(
+		let response = try OAuthComponents.processRefreshTokenResponse(
 			response: httpResponse)
 
 		return try authServerRequestOptions.tokenValidator(

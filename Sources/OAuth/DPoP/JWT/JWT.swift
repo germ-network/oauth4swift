@@ -29,8 +29,6 @@ extension JWT {
 		.init(".")
 	}
 
-	//periphery: ignore
-	//ignore codable properties
 	struct JWK: Sendable, Codable {
 		let kty: String
 		let crv: String
@@ -59,8 +57,6 @@ extension JWT {
 		}
 	}
 
-	//periphery:ignore
-	//ignore codable properties
 	struct Header: Codable {
 		let typ: String
 		let alg: String

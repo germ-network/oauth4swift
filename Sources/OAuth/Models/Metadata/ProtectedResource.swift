@@ -8,10 +8,6 @@
 import Foundation
 import GermConvenience
 
-enum MetadataError: Error {
-	case urlInvalid
-}
-
 // See: https://www.rfc-editor.org/rfc/rfc9728.html
 public struct ProtectedResourceMetadata: Codable, Hashable, Sendable {
 	public let resource: String
