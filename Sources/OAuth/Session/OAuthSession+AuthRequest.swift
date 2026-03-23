@@ -69,13 +69,13 @@ extension OAuthSessionCapabilities {
 			return try await dpopSigner.authenticated(
 				request: request,
 				token: accessToken,
-				fetcher: resourceFetcher
+				fetcher: authFetcher
 			)
 		} else {
 			var request = request
 			request.setValue(
 				"Bearer \(accessToken)", forHTTPHeaderField: "authorization")
-			return try await resourceFetcher.data(for: request)
+			return try await authFetcher.data(for: request)
 		}
 	}
 
