@@ -17,7 +17,7 @@ extension OAuthSessionCapabilities {
 			isolation: self
 		)
 
-		let issuerOrigin = try URL(string: serverMetadata.issuer).tryUnwrap.origin
+		let _ = try URL(string: serverMetadata.issuer).tryUnwrap.origin
 
 		let result = try await retryNonceRequest(request: request)
 
@@ -32,7 +32,7 @@ extension OAuthSessionCapabilities {
 		}
 
 		//try to refresh the token
-		let refreshed = try await conservingRefresh(state: sessionState)
+		let _ = try await conservingRefresh(state: sessionState)
 
 		return try await retryNonceRequest(request: request)
 	}
