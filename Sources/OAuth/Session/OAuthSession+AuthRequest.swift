@@ -17,7 +17,7 @@ extension OAuthSessionCapabilities {
 			isolation: self
 		)
 
-		let issuerOrigin = try URL(string: serverMetadata.issuer).tryUnwrap.origin
+		let _ = try URL(string: serverMetadata.issuer).tryUnwrap.origin
 
 		let result = try await retryNonceRequest(request: request)
 
@@ -32,7 +32,7 @@ extension OAuthSessionCapabilities {
 		}
 
 		//try to refresh the token
-		let refreshed = try await conservingRefresh(state: sessionState)
+		let _ = try await conservingRefresh(state: sessionState)
 
 		return try await retryNonceRequest(request: request)
 	}
@@ -69,13 +69,13 @@ extension OAuthSessionCapabilities {
 			return try await dpopSigner.authenticated(
 				request: request,
 				token: accessToken,
-				fetcher: resourceFetcher
+				fetcher: authFetcher
 			)
 		} else {
 			var request = request
 			request.setValue(
 				"Bearer \(accessToken)", forHTTPHeaderField: "authorization")
-			return try await resourceFetcher.data(for: request)
+			return try await authFetcher.data(for: request)
 		}
 	}
 

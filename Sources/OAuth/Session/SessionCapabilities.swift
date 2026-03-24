@@ -18,8 +18,8 @@ public protocol OAuthSessionCapabilities: Actor {
 	func refreshed(sessionMutable: SessionState.Mutable) throws
 	var refreshTask: Task<SessionState.Mutable, Error>? { get set }
 
-	//should follow redirects
-	var resourceFetcher: HTTPFetcher { get }
+	//should not follow redirects
+	var authFetcher: HTTPFetcher { get }
 
 	//auth
 	var retriableIssuer: URL { get async throws }
