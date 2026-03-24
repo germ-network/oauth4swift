@@ -11,20 +11,20 @@ import Logging
 
 //for authorize
 public struct AuthorizeInputs {
-	let appCredentials: AppCredentials
+	let clientMetadata: ClientMetadata
 	let stateToken: String
 	let pkceVerifier: PKCEVerifier
 	let parConfig: PARConfiguration?
 	let issuer: URL
 
 	public init(
-		appCredentials: AppCredentials,
+		clientMetadata: ClientMetadata,
 		stateToken: String = UUID().uuidString,
 		pkceVerifier: PKCEVerifier = .init(),
 		parConfig: PARConfiguration?,
 		issuer: URL
 	) {
-		self.appCredentials = appCredentials
+		self.clientMetadata = clientMetadata
 		self.stateToken = stateToken
 		self.pkceVerifier = pkceVerifier
 		self.parConfig = parConfig
@@ -61,9 +61,9 @@ public struct AuthServerRequestOptions: Sendable {
 		authorizeInputs: AuthorizeInputs,
 		userAuthenticator: UserAuthenticator,
 	) async throws -> SessionState.Archive {
-		let clientId = authorizeInputs.appCredentials.clientId
+		let clientId = authorizeInputs.clientMetadata.clientId
 		let challenge = authorizeInputs.pkceVerifier.challenge
-		let scopes = authorizeInputs.appCredentials.requestedScopes.joined(separator: " ")
+		let scopes = authorizeInputs.clientMetadata.scopes.joined(separator: " ")
 
 		let authServerMetadata = try await authFetcher.authServerDiscovery(
 			issuer: authorizeInputs.issuer
@@ -75,7 +75,7 @@ public struct AuthServerRequestOptions: Sendable {
 				"state": authorizeInputs.stateToken,
 				"scope": scopes,
 				"response_type": "code",
-				"redirect_uri": authorizeInputs.appCredentials.callbackURL
+				"redirect_uri": authorizeInputs.clientMetadata.redirectURI
 					.absoluteString,
 				"code_challenge": challenge.value,
 				"code_challenge_method": challenge.method,
@@ -83,7 +83,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 			let parHTTPResponse = try await pushedAuthorizationRequest(
 				authServerMetadata: authServerMetadata,
-				appCredentials: authorizeInputs.appCredentials,
+				clientMetadata: authorizeInputs.clientMetadata,
 				params: parParams,
 				headers: [:],
 			)
@@ -98,12 +98,12 @@ public struct AuthServerRequestOptions: Sendable {
 				clientId: clientId
 			)
 
-			let scheme = try authorizeInputs.appCredentials.callbackURLScheme
+			let scheme = try authorizeInputs.clientMetadata.redirectURIScheme
 
-			let callbackURL = try await userAuthenticator(tokenURL, scheme)
+			let redirectURI = try await userAuthenticator(tokenURL, scheme)
 
 			return try await finishAuthorization(
-				redirectURI: callbackURL,
+				redirectURI: redirectURI,
 				authInputs: authorizeInputs,
 				authServerMetadata: authServerMetadata,
 			)
@@ -114,7 +114,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 	func pushedAuthorizationRequest(
 		authServerMetadata: AuthServerMetadata,
-		appCredentials: AppCredentials,
+		clientMetadata: ClientMetadata,
 		params: [String: String],
 		headers: [String: String],
 	) async throws -> HTTPDataResponse {
@@ -122,7 +122,7 @@ public struct AuthServerRequestOptions: Sendable {
 			endpoint: .par)
 
 		var bodyParams = params
-		bodyParams["client_id"] = appCredentials.clientId
+		bodyParams["client_id"] = clientMetadata.clientId
 
 		var headers = headers
 		headers["accept"] = "application/json"
@@ -168,13 +168,13 @@ public struct AuthServerRequestOptions: Sendable {
 	) async throws -> SessionState.Archive {
 		let parsedRedirect = try OAuthComponents.validateAuthResponse(
 			authServerMetadata: authServerMetadata,
-			redirectURL: redirectURI,
+			redirectURI: redirectURI,
 			expectedState: authInputs.stateToken
 		)
 
 		let httpResponse = try await authorizationCodeGrantRequest(
 			authServerMetadata: authServerMetadata,
-			redirectUrl: authInputs.appCredentials.callbackURL,
+			redirectURI: authInputs.clientMetadata.redirectURI,
 			parsedRedirect: parsedRedirect,
 			pkceVerifier: authInputs.pkceVerifier.verifier,
 			additionalParameters: additionalParameters,
@@ -194,13 +194,13 @@ public struct AuthServerRequestOptions: Sendable {
 
 	public func authorizationCodeGrantRequest(
 		authServerMetadata: AuthServerMetadata,
-		redirectUrl: URL,
+		redirectURI: URL,
 		parsedRedirect: OAuthComponents.ParsedRedirect,
 		pkceVerifier: String?,
 		additionalParameters: [String: String],
 	) async throws -> HTTPDataResponse {
 		var parameters = additionalParameters
-		parameters["redirect_uri"] = redirectUrl.absoluteString
+		parameters["redirect_uri"] = redirectURI.absoluteString
 
 		//Review: how does e.g., the atproto implementation signal that this is required?
 		if let code = parsedRedirect.authCode {

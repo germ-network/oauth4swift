@@ -35,12 +35,12 @@ public enum OAuthComponents {
 
 	static public func validateAuthResponse(
 		authServerMetadata: AuthServerMetadata,
-		redirectURL: URL,
+		redirectURI: URL,
 		expectedState: String
 	) throws -> ParsedRedirect {
-		// decode the params in the redirectURL
+		// decode the params in the redirectURI
 		let redirectComponents = try URLComponents(
-			url: redirectURL,
+			url: redirectURI,
 			resolvingAgainstBaseURL: false
 		).tryUnwrap
 
