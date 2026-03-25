@@ -13,9 +13,11 @@ enum OAuthError: Error {
 	case missingAuthCode
 	case invalidRequest
 	case invalidResponse
-	case redirectError(String)
+	case redirectError(String, String?)
 	case stateTokenMismatch(String, String)
 	case issuingServerMismatch(String, String)
+	case accessDenied
+	case invalidScope
 	case httpResponse(response: HTTPURLResponse)
 	case oauthError(OAuthErrorResponse, Int)
 	case notImplemented
@@ -40,7 +42,16 @@ extension OAuthError: LocalizedError {
 		): "State token did not match, expected \(expected), got \(got)"
 		case .issuingServerMismatch(let expected, let got):
 			"Issuing server did not match, expected \(expected), got \(got)"
-		case .redirectError(let errorString): "Redirect error: \(errorString)"
+		case .redirectError(let error, let errorDescription):
+			if let description = errorDescription {
+				"Redirect error: \(error) \(description)"
+			} else {
+				"Redirect error: \(error)"
+			}
+		case .accessDenied:
+			"The resource owner or authorization server denied the request."
+		case .invalidScope:
+			"The requested scope is invalid, unknown, or malformed."
 		case .httpResponse(let response):
 			"HTTP error with status code: \(response.statusCode), response: \(response)"
 		case .oauthError(let errorBody, let statusCode):

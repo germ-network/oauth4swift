@@ -100,10 +100,10 @@ public struct AuthServerRequestOptions: Sendable {
 
 			let scheme = try authorizeInputs.clientMetadata.redirectURIScheme
 
-			let redirectURI = try await userAuthenticator(tokenURL, scheme)
+			let callbackURL = try await userAuthenticator(tokenURL, scheme)
 
 			return try await finishAuthorization(
-				redirectURI: redirectURI,
+				callbackURL: callbackURL,
 				authInputs: authorizeInputs,
 				authServerMetadata: authServerMetadata,
 			)
@@ -162,20 +162,20 @@ public struct AuthServerRequestOptions: Sendable {
 	}
 
 	func finishAuthorization(
-		redirectURI: URL,
+		callbackURL: URL,
 		authInputs: AuthorizeInputs,
 		authServerMetadata: AuthServerMetadata,
 	) async throws -> SessionState.Archive {
-		let parsedRedirect = try OAuthComponents.validateAuthResponse(
+		let callbackParameters = try OAuthComponents.validateAuthResponse(
 			authServerMetadata: authServerMetadata,
-			redirectURI: redirectURI,
+			callbackURL: callbackURL,
 			expectedState: authInputs.stateToken
 		)
 
 		let httpResponse = try await authorizationCodeGrantRequest(
 			authServerMetadata: authServerMetadata,
 			redirectURI: authInputs.clientMetadata.redirectURI,
-			parsedRedirect: parsedRedirect,
+			callbackParameters: callbackParameters,
 			pkceVerifier: authInputs.pkceVerifier.verifier,
 			additionalParameters: additionalParameters,
 		)
@@ -195,17 +195,13 @@ public struct AuthServerRequestOptions: Sendable {
 	public func authorizationCodeGrantRequest(
 		authServerMetadata: AuthServerMetadata,
 		redirectURI: URL,
-		parsedRedirect: OAuthComponents.ParsedRedirect,
+		callbackParameters: OAuthComponents.AuthResponseParameters,
 		pkceVerifier: String?,
 		additionalParameters: [String: String],
 	) async throws -> HTTPDataResponse {
 		var parameters = additionalParameters
 		parameters["redirect_uri"] = redirectURI.absoluteString
-
-		//Review: how does e.g., the atproto implementation signal that this is required?
-		if let code = parsedRedirect.authCode {
-			parameters["code"] = code
-		}
+		parameters["code"] = callbackParameters.code
 
 		if let pkceVerifier {
 			parameters["code_verifier"] = pkceVerifier

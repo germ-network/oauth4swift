@@ -35,55 +35,41 @@ public enum OAuthComponents {
 
 	static public func validateAuthResponse(
 		authServerMetadata: AuthServerMetadata,
-		redirectURI: URL,
+		callbackURL: URL,
 		expectedState: String
-	) throws -> ParsedRedirect {
-		// decode the params in the redirectURI
-		let redirectComponents = try URLComponents(
-			url: redirectURI,
-			resolvingAgainstBaseURL: false
-		).tryUnwrap
+	) throws -> AuthResponseParameters {
+		// decode the params in the callbackURL
+		let callbackParameters =
+			try URLComponents(
+				url: callbackURL,
+				resolvingAgainstBaseURL: false
+			).tryUnwrap.queryItems ?? []
 
-		//first check for iss and state and bail if not present
+		return try validateAuthResponse(
+			authServerMetadata: authServerMetadata,
+			callbackParameters: callbackParameters,
+			expectedState: expectedState
+		)
+	}
+
+	static public func validateAuthResponse(
+		authServerMetadata: AuthServerMetadata,
+		callbackParameters: [URLQueryItem],
+		expectedState: String
+	) throws -> AuthResponseParameters {
+		//first check that both iss and state are present, and bail if not present
 		guard
-			let iss = redirectComponents.queryItems?.first(where: {
+			let iss = callbackParameters.first(where: {
 				$0.name == "iss"
 			})?.value,
-			let state = redirectComponents.queryItems?.first(where: {
+			let state = callbackParameters.first(where: {
 				$0.name == "state"
 			})?.value
 		else {
 			throw OAuthError.redirectMissingComponents
 		}
 
-		//check for error_description or error
-		if let errorItem = redirectComponents.queryItems?.first(where: {
-			$0.name == "error_description"
-		}) {
-			throw OAuthError.redirectError(errorItem.value ?? "")
-		}
-
-		if let errorItem = redirectComponents.queryItems?.first(where: {
-			$0.name == "error"
-		}) {
-			throw OAuthError.redirectError(errorItem.value ?? "")
-		}
-
-		//assert we do not support insecure flows
-		assert(
-			redirectComponents.queryItems?.first(where: {
-				$0.name == "id_token"
-			})?.value == nil)
-		assert(
-			redirectComponents.queryItems?.first(where: {
-				$0.name == "token"
-			})?.value == nil)
-
-		//finally can check for presence of code
-		let authCode = redirectComponents.queryItems?.first(where: {
-			$0.name == "code"
-		})?.value
-
+		//validate state and iss match our expected values:
 		guard state == expectedState else {
 			throw OAuthError.stateTokenMismatch(state, expectedState)
 		}
@@ -94,18 +80,67 @@ public enum OAuthComponents {
 				.issuingServerMismatch(iss, authServerMetadata.issuer)
 		}
 
+		//handle errors from the oauth authorization code flow:
+		let error = callbackParameters.first(where: {
+			$0.name == "error"
+		})?.value
+		let errorDescription = callbackParameters.first(where: {
+			$0.name == "error_description"
+		})?.value
+
+		if let error = error {
+			// For invalid_request and invalid_scope, we do actually have the error
+			// and errorDescription, so could provide these to the errors generated here:
+
+			// The error should always be lowercase, but just being defensive:
+			switch error.lowercased() {
+			case "access_denied":
+				throw OAuthError.accessDenied
+			case "invalid_request":
+				throw OAuthError.invalidRequest
+			case "invalid_scope":
+				throw OAuthError.invalidScope
+			default:
+				// We do actually have error and error_description parameters, so we
+				// return an error with those present.
+				throw OAuthError.redirectError(
+					error.lowercased(), errorDescription)
+			}
+		}
+
+		//assert we do not support insecure flows
+		assert(
+			callbackParameters.first(where: {
+				$0.name == "id_token"
+			})?.value == nil)
+		assert(
+			callbackParameters.first(where: {
+				$0.name == "token"
+			})?.value == nil)
+
+		//finally can check for presence of code
+		guard
+			let code = callbackParameters.first(where: {
+				$0.name == "code"
+			})?.value
+		else {
+			throw OAuthError.missingAuthCode
+		}
+
 		return .init(
-			authCode: authCode,
-			issuer: iss,
-			components: redirectComponents
+			code: code,
+			// We've asserted iss === authServerMetadata.issuer above:
+			issuer: authServerMetadata.issuer,
+			parameters: callbackParameters.filter {
+				$0.name != "code" && $0.name != "iss"
+			}
 		)
 	}
 
-	public struct ParsedRedirect {
-		public let authCode: String?
+	public struct AuthResponseParameters {
+		public let code: String
 		public let issuer: String
-
-		public let components: URLComponents
+		public let parameters: [URLQueryItem]
 	}
 
 	static func processRefreshTokenResponse(
