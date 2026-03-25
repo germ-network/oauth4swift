@@ -11,14 +11,14 @@ import Logging
 
 //for authorize
 public struct AuthorizeInputs {
-	let clientMetadata: ClientMetadata
+	let clientMetadata: OAuthClient
 	let stateToken: String
 	let pkceVerifier: PKCEVerifier
 	let parConfig: PARConfiguration?
 	let issuer: URL
 
 	public init(
-		clientMetadata: ClientMetadata,
+		clientMetadata: OAuthClient,
 		stateToken: String = UUID().uuidString,
 		pkceVerifier: PKCEVerifier = .init(),
 		parConfig: PARConfiguration?,
@@ -114,7 +114,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 	func pushedAuthorizationRequest(
 		authServerMetadata: AuthServerMetadata,
-		clientMetadata: ClientMetadata,
+		clientMetadata: OAuthClient,
 		params: [String: String],
 		headers: [String: String],
 	) async throws -> HTTPDataResponse {

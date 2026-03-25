@@ -1,5 +1,5 @@
 //
-//  ClientMetadata.swift
+//  OAuthClient.swift
 //  OAuth
 //
 //  Created by Mark @ Germ on 2/22/26 from OAuthenticator
@@ -7,11 +7,11 @@
 
 import Foundation
 
-// A subset of the Client Identifier Metadata Document contents:
-public struct ClientMetadata: Codable, Hashable, Sendable {
+// The OAuthClient is primarily the client_id
+public struct OAuthClient: Codable, Hashable, Sendable {
 	public let clientId: String
 
-	//should be a subset of the scopes in our client identifier metadata document:
+	//should be a subset of the scopes our client actually has:
 	public let scopes: [String]
 	public let redirectURI: URL
 

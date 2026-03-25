@@ -10,7 +10,7 @@ import Foundation
 import GermConvenience
 
 public protocol OAuthSessionCapabilities: Actor {
-	var clientMetadata: ClientMetadata { get }
+	var clientMetadata: OAuthClient { get }
 
 	var lazyServerMetadata: LazyResource<AuthServerMetadata> { get }
 
