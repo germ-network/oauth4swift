@@ -12,6 +12,7 @@ import Logging
 //for authorize
 public struct AuthorizeInputs {
 	let clientMetadata: OAuthClient
+	let requestedScopes: [String]
 	let stateToken: String
 	let pkceVerifier: PKCEVerifier
 	let parConfig: PARConfiguration?
@@ -19,6 +20,7 @@ public struct AuthorizeInputs {
 
 	public init(
 		clientMetadata: OAuthClient,
+		scopes: [String]?,
 		stateToken: String = UUID().uuidString,
 		pkceVerifier: PKCEVerifier = .init(),
 		parConfig: PARConfiguration?,
@@ -29,6 +31,12 @@ public struct AuthorizeInputs {
 		self.pkceVerifier = pkceVerifier
 		self.parConfig = parConfig
 		self.issuer = issuer
+
+		if let scopes {
+			self.requestedScopes = scopes
+		} else {
+			self.requestedScopes = clientMetadata.scopes
+		}
 	}
 }
 
@@ -63,7 +71,7 @@ public struct AuthServerRequestOptions: Sendable {
 	) async throws -> SessionState.Archive {
 		let clientId = authorizeInputs.clientMetadata.clientId
 		let challenge = authorizeInputs.pkceVerifier.challenge
-		let scopes = authorizeInputs.clientMetadata.scopes.joined(separator: " ")
+		let scopes = authorizeInputs.requestedScopes.joined(separator: " ")
 
 		let authServerMetadata = try await authFetcher.authServerDiscovery(
 			issuer: authorizeInputs.issuer
