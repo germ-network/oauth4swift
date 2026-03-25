@@ -199,9 +199,13 @@ public struct AuthServerRequestOptions: Sendable {
 		pkceVerifier: String?,
 		additionalParameters: [String: String],
 	) async throws -> HTTPDataResponse {
+		guard let code = callbackParameters["code"].first else {
+			throw OAuthError.missingAuthCode
+		}
+
 		var parameters = additionalParameters
 		parameters["redirect_uri"] = redirectURI.absoluteString
-		parameters["code"] = callbackParameters.code
+		parameters["code"] = code
 
 		if let pkceVerifier {
 			parameters["code_verifier"] = pkceVerifier

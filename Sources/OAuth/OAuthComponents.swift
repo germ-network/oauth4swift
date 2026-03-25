@@ -113,34 +113,31 @@ public enum OAuthComponents {
 			callbackParameters.first(where: {
 				$0.name == "id_token"
 			})?.value == nil)
+
 		assert(
 			callbackParameters.first(where: {
 				$0.name == "token"
 			})?.value == nil)
 
-		//finally can check for presence of code
-		guard
-			let code = callbackParameters.first(where: {
-				$0.name == "code"
-			})?.value
-		else {
-			throw OAuthError.missingAuthCode
-		}
-
-		return .init(
-			code: code,
-			// We've asserted iss === authServerMetadata.issuer above:
-			issuer: authServerMetadata.issuer,
-			parameters: callbackParameters.filter {
-				$0.name != "code" && $0.name != "iss"
-			}
-		)
+		// Return branded parameters
+		return .init(callbackParameters)
 	}
 
 	public struct AuthResponseParameters {
-		public let code: String
-		public let issuer: String
 		public let parameters: [URLQueryItem]
+
+		public init(_ parameters: [URLQueryItem]) {
+			self.parameters = parameters
+		}
+
+		subscript(name: String) -> [String] {
+			return parameters.compactMap {
+				if $0.name == name && $0.value != nil {
+					return $0.value
+				}
+				return nil
+			}
+		}
 	}
 
 	static func processRefreshTokenResponse(
