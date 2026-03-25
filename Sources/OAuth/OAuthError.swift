@@ -7,6 +7,7 @@ enum OAuthError: Error {
 	case missingHTTPMethod
 	case missingUrl
 	case missingDPoPKey
+	case missingIssuer
 	case insecureScheme
 	case unrecognizedTokenType
 	case redirectMissingComponents
@@ -30,6 +31,8 @@ extension OAuthError: LocalizedError {
 		case .missingHTTPMethod: "Missing HTTP method"
 		case .missingUrl: "Missing URL"
 		case .missingDPoPKey: "Missing dPoP key"
+		case .missingIssuer:
+			"Missing iss parameter when authorization server supports issuer identification"
 		case .insecureScheme: "Insecure scheme"
 		case .unrecognizedTokenType: "Unrecognized Token Type"
 		case .redirectMissingComponents: "Redirect missing components"

@@ -36,7 +36,7 @@ public enum OAuthComponents {
 	static public func validateAuthResponse(
 		authServerMetadata: AuthServerMetadata,
 		callbackURL: URL,
-		expectedState: String
+		expectedState: String?
 	) throws -> AuthResponseParameters {
 		// decode the params in the callbackURL
 		let callbackParameters =
@@ -55,29 +55,38 @@ public enum OAuthComponents {
 	static public func validateAuthResponse(
 		authServerMetadata: AuthServerMetadata,
 		callbackParameters: [URLQueryItem],
-		expectedState: String
+		expectedState: String?
 	) throws -> AuthResponseParameters {
-		//first check that both iss and state are present, and bail if not present
-		guard
-			let iss = callbackParameters.first(where: {
-				$0.name == "iss"
-			})?.value,
-			let state = callbackParameters.first(where: {
-				$0.name == "state"
-			})?.value
-		else {
-			throw OAuthError.redirectMissingComponents
+		let iss = callbackParameters.first(where: {
+			$0.name == "iss"
+		})?.value
+
+		let state = callbackParameters.first(where: {
+			$0.name == "state"
+		})?.value
+
+		//validate state if we have an expected state:
+		if let expectedState {
+			guard state == expectedState else {
+				throw OAuthError.stateTokenMismatch(state ?? "[nil]", expectedState)
+			}
 		}
 
-		//validate state and iss match our expected values:
-		guard state == expectedState else {
-			throw OAuthError.stateTokenMismatch(state, expectedState)
+		// Validate iss if the authorization server requires issuer identification
+		// and check that it matches the authorization server issuer if provided
+		if iss == nil
+			&& authServerMetadata.authorizationResponseIssParameterSupported == true
+		{
+			throw OAuthError.missingIssuer
 		}
 
-		guard iss == authServerMetadata.issuer else {
-			throw
-				OAuthError
-				.issuingServerMismatch(iss, authServerMetadata.issuer)
+		if let iss {
+			guard iss == authServerMetadata.issuer else {
+				throw OAuthError.issuingServerMismatch(
+					iss,
+					authServerMetadata.issuer
+				)
+			}
 		}
 
 		//handle errors from the oauth authorization code flow:
