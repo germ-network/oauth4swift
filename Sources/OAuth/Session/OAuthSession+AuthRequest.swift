@@ -66,6 +66,9 @@ extension OAuthSessionCapabilities {
 		accessToken: String,
 	) async throws -> HTTPDataResponse {
 		if let dpopSigner = self as? DPoPSigning {
+			var request = request
+			request.setValue(
+				"DPoP \(accessToken)", forHTTPHeaderField: "authorization")
 			return try await dpopSigner.authenticated(
 				request: request,
 				token: accessToken,
