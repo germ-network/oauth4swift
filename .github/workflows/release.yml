@@ -42,7 +42,7 @@ jobs:
         with:
           title: Prepare next release
           createGithubReleases: true
-          publish: changeset publish
-          version: changeset version
+          publish: pnpm release
+          version: pnpm version-package
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

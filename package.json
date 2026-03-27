@@ -11,6 +11,8 @@
 		"@changesets/cli": "^2.30.0"
 	},
 	"scripts": {
-		"changeset": "changeset"
+		"changeset": "changeset",
+		"release": "changeset publish",
+		"version-package": "changeset version"
 	}
 }
