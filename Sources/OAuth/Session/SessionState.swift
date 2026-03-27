@@ -48,34 +48,25 @@ public struct Token: Codable, Hashable, Sendable {
 
 //best way to express fixed key and variable accessToken is as a reference type
 public class SessionState {
+	public let client: OAuthClient
+
+	//stores the additional parameters from the TokenResponse
+	public let additionalParams: [String: String]?
 	//not mandatory in OAuth 2.1
 	public let dPopKey: DPoPKey?
-
-	public let additionalParams: [String: String]?
 
 	var mutable: Mutable
 
 	public init(
+		client: OAuthClient,
 		dPopKey: DPoPKey?,
 		additionalParams: [String: String]? = nil,
 		mutable: Mutable
 	) {
+		self.client = client
 		self.dPopKey = dPopKey
 		self.additionalParams = additionalParams
 		self.mutable = mutable
-	}
-
-	public convenience init(
-		accessToken: String,
-		validUntilDate: Date? = nil,
-		dPopKey: DPoPKey?
-	) {
-		self.init(
-			dPopKey: dPopKey,
-			mutable: .init(
-				accessToken: .init(value: accessToken, expiry: validUntilDate)
-			)
-		)
 	}
 
 	public struct Mutable: Sendable, Codable {
@@ -106,6 +97,7 @@ public class SessionState {
 
 extension SessionState {
 	public struct Archive: Sendable, Codable {
+		let client: OAuthClient
 		let dPopKey: DPoPKey?
 
 		public let additionalParams: [String: String]?
@@ -113,10 +105,12 @@ extension SessionState {
 		public let mutable: SessionState.Mutable
 
 		public init(
+			client: OAuthClient,
 			dPopKey: DPoPKey?,
 			additionalParams: [String: String]?,
 			mutable: SessionState.Mutable
 		) {
+			self.client = client
 			self.dPopKey = dPopKey
 			self.additionalParams = additionalParams
 			self.mutable = mutable
@@ -124,6 +118,7 @@ extension SessionState {
 
 		public func merge(update: SessionState.Mutable) -> Self {
 			.init(
+				client: client,
 				dPopKey: dPopKey,
 				additionalParams: additionalParams,
 				mutable: update
@@ -133,6 +128,7 @@ extension SessionState {
 
 	public convenience init(archive: Archive) {
 		self.init(
+			client: archive.client,
 			dPopKey: archive.dPopKey,
 			additionalParams: archive.additionalParams,
 			mutable: archive.mutable
@@ -141,6 +137,7 @@ extension SessionState {
 
 	public var archive: Archive {
 		.init(
+			client: client,
 			dPopKey: dPopKey,
 			additionalParams: additionalParams,
 			mutable: mutable

@@ -194,6 +194,7 @@ public struct AuthServerRequestOptions: Sendable {
 		)
 
 		return .init(
+			client: authInputs.clientMetadata,
 			dPopKey: try await dpopSigner?.dpopKey,
 			additionalParams: additionalParams,
 			mutable: tokenResponse
