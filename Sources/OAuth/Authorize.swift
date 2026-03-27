@@ -43,23 +43,22 @@ public struct AuthorizeInputs {
 ///Client defined paramenters for requests to the Auth server, for refresh and user auth requests.
 ///does not include the issuer so that it can be lazily fetched
 public struct AuthServerRequestOptions: Sendable {
+	public typealias TokenValidator =
+		@Sendable (
+			AuthServerMetadata,
+			TokenEndpointResponse,
+			ImmutableSessionState?
+		) async throws -> Bool
+
 	let additionalParameters: [String: String]
 	let authFetcher: HTTPFetcher
-	let tokenValidator:
-		@Sendable (AuthServerMetadata, TokenEndpointResponse, ImmutableSessionState?)
-			async throws ->
-			Bool
+	let tokenValidator: TokenValidator
 	let dpopSigner: DPoPSigning?
 
 	public init(
 		additionalParameters: [String: String],
 		authFetcher: HTTPFetcher,
-		tokenValidator:
-			@escaping @Sendable (
-				AuthServerMetadata,
-				TokenEndpointResponse,
-				ImmutableSessionState?
-			) async throws -> Bool,
+		tokenValidator: @escaping TokenValidator,
 		dpopSigner: DPoPSigning?
 	) {
 		self.additionalParameters = additionalParameters
