@@ -46,7 +46,9 @@ public struct AuthServerRequestOptions: Sendable {
 	let additionalParameters: [String: String]
 	let authFetcher: HTTPFetcher
 	let tokenValidator:
-		@Sendable (AuthServerMetadata, TokenEndpointResponse) throws -> SessionState.Mutable
+		@Sendable (AuthServerMetadata, TokenEndpointResponse, SessionState?)
+			async throws ->
+			Bool
 	let dpopSigner: DPoPSigning?
 
 	public init(
@@ -55,8 +57,9 @@ public struct AuthServerRequestOptions: Sendable {
 		tokenValidator:
 			@escaping @Sendable (
 				AuthServerMetadata,
-				TokenEndpointResponse
-			) throws -> SessionState.Mutable,
+				TokenEndpointResponse,
+				SessionState?
+			) async throws -> Bool,
 		dpopSigner: DPoPSigning?
 	) {
 		self.additionalParameters = additionalParameters
@@ -188,15 +191,21 @@ public struct AuthServerRequestOptions: Sendable {
 			additionalParameters: additionalParameters,
 		)
 
-		let (tokenResponse, additionalParams) = try processAuthorizationCodeOAuth2Response(
-			authServerMetadata: authServerMetadata,
-			response: httpResponse
-		)
+		let (tokenResponse, additionalParams) =
+			try await processAuthorizationCodeOAuth2Response(
+				authServerMetadata: authServerMetadata,
+				response: httpResponse
+			)
 
 		return .init(
 			client: authInputs.clientMetadata,
 			dPopKey: try await dpopSigner?.dpopKey,
+			issuingServer: authServerMetadata.issuer,
 			additionalParams: additionalParams,
+			// We save the first authorization response's scopes as the Authorization
+			// Grant's scopes, in future token refresh calls, we can change scopes up
+			// and down within the bounds of grantScopes.
+			grantScopes: tokenResponse.scopes,
 			mutable: tokenResponse
 		)
 	}
@@ -231,12 +240,16 @@ public struct AuthServerRequestOptions: Sendable {
 	func processAuthorizationCodeOAuth2Response(
 		authServerMetadata: AuthServerMetadata,
 		response: HTTPDataResponse
-	) throws -> (SessionState.Mutable, [String: String]?) {
+	) async throws -> (SessionState.Mutable, [String: String]?) {
 		let tokenResponse = try OAuthComponents.processGenericAccessToken(
 			response: response)
 
-		//check the claims
-		let sessionState = try tokenValidator(authServerMetadata, tokenResponse)
+		//check the token response is valid, e.g., asserting the authorization
+		//server can really issue the token for that `sub` parameter in the
+		//tokenResponse
+		if try await tokenValidator(authServerMetadata, tokenResponse, nil) == false {
+			throw OAuthError.tokenInvalid
+		}
 
 		let additionalParams = tokenResponse.additionalFields?
 			.compactMapValues {
@@ -248,6 +261,17 @@ public struct AuthServerRequestOptions: Sendable {
 					return nil
 				}
 			}
+
+		let sessionState = SessionState.Mutable(
+			accessToken: .init(
+				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
+			),
+			refreshToken: .init(
+				refreshToken: tokenResponse.refreshToken,
+				timeout: tokenResponse.refreshTokenTimeout),
+			scopes: OAuthComponents.parseTokenScope(tokenResponse.scope),
+			grantExpiresIn: tokenResponse.authorizationExpiresIn
+		)
 
 		return (sessionState, additionalParams)
 	}

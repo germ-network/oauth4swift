@@ -109,16 +109,37 @@ extension OAuthSessionCapabilities {
 	) async throws -> SessionState.Mutable {
 		let authServerMetadata = try await authServerRequestOptions.authFetcher
 			.authServerDiscovery(issuer: try await retriableIssuer)
+
 		let httpResponse = try await authServerRequestOptions.refreshTokenGrantRequest(
 			authServerMetadata: authServerMetadata,
 			refreshToken: state.mutable.refreshToken.tryUnwrap.value,
 		)
-		let response = try OAuthComponents.processRefreshTokenResponse(
+		let tokenResponse = try OAuthComponents.processRefreshTokenResponse(
 			response: httpResponse)
 
-		return try authServerRequestOptions.tokenValidator(
-			authServerMetadata, response
+		//check the token response is valid, e.g., asserting the authorization
+		//server can really issue the token for that `sub` parameter in the
+		//tokenResponse; also passes the current session state to allow verifying
+		//that the token sub hasn't changed during refresh:
+		let previousState = state
+		if try await authServerRequestOptions.tokenValidator(
+			authServerMetadata, tokenResponse, previousState) == false
+		{
+			throw OAuthError.tokenInvalid
+		}
+
+		let newSessionState = SessionState.Mutable(
+			accessToken: .init(
+				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
+			),
+			refreshToken: .init(
+				refreshToken: tokenResponse.refreshToken,
+				timeout: tokenResponse.refreshTokenTimeout),
+			scopes: OAuthComponents.parseTokenScope(tokenResponse.scope),
+			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
+
+		return newSessionState
 	}
 }
 

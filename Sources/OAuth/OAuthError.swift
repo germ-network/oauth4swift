@@ -12,6 +12,7 @@ enum OAuthError: Error {
 	case unrecognizedTokenType
 	case redirectMissingComponents
 	case missingAuthCode
+	case tokenInvalid
 	case invalidRequest
 	case invalidResponse
 	case redirectError(String, String?)
@@ -37,6 +38,7 @@ extension OAuthError: LocalizedError {
 		case .unrecognizedTokenType: "Unrecognized Token Type"
 		case .redirectMissingComponents: "Redirect missing components"
 		case .missingAuthCode: "Missing authorization code"
+		case .tokenInvalid: "Token response failed to validate with tokenValidator"
 		case .invalidRequest: "Invalid request"
 		case .invalidResponse: "Invalid response"
 		case .stateTokenMismatch(
