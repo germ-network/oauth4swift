@@ -190,7 +190,7 @@ public struct AuthServerRequestOptions: Sendable {
 			additionalParameters: additionalParameters,
 		)
 
-		let (tokenResponse, additionalParams) =
+		let (mutableSessionState, additionalParams) =
 			try await processAuthorizationCodeOAuth2Response(
 				authServerMetadata: authServerMetadata,
 				client: authInputs.clientMetadata,
@@ -205,8 +205,8 @@ public struct AuthServerRequestOptions: Sendable {
 			// We save the first authorization response's scopes as the Authorization
 			// Grant's scopes, in future token refresh calls, we can change scopes up
 			// and down within the bounds of grantScopes.
-			grantScopes: tokenResponse.scopes,
-			mutable: tokenResponse
+			grantScopes: mutableSessionState.scopes,
+			mutable: mutableSessionState
 		)
 	}
 
