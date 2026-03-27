@@ -121,7 +121,7 @@ extension OAuthSessionCapabilities {
 		//server can really issue the token for that `sub` parameter in the
 		//tokenResponse; also passes the current session state to allow verifying
 		//that the token sub hasn't changed during refresh:
-		let previousState = state
+		let previousState = ImmutableSessionState.fromSessionState(state)
 		if try await authServerRequestOptions.tokenValidator(
 			authServerMetadata, tokenResponse, previousState) == false
 		{

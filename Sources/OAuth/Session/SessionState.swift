@@ -195,3 +195,33 @@ extension SessionState {
 		)
 	}
 }
+
+public class ImmutableSessionState {
+	public let client: OAuthClient
+	public let issuingServer: String?
+	//stores the additional parameters from the TokenResponse
+	public let additionalParams: [String: String]?
+	//stores the authorization grant scope:
+	public let grantScopes: [String]?
+
+	public init(
+		client: OAuthClient,
+		issuingServer: String? = nil,
+		additionalParams: [String: String]? = nil,
+		grantScopes: [String]?
+	) {
+		self.client = client
+		self.issuingServer = issuingServer
+		self.additionalParams = additionalParams
+		self.grantScopes = grantScopes
+	}
+
+	static func fromSessionState(_ state: SessionState) -> ImmutableSessionState {
+		.init(
+			client: state.client,
+			issuingServer: state.issuingServer,
+			additionalParams: state.additionalParams,
+			grantScopes: state.grantScopes
+		)
+	}
+}

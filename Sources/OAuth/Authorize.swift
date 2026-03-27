@@ -46,7 +46,7 @@ public struct AuthServerRequestOptions: Sendable {
 	let additionalParameters: [String: String]
 	let authFetcher: HTTPFetcher
 	let tokenValidator:
-		@Sendable (AuthServerMetadata, TokenEndpointResponse, SessionState?)
+		@Sendable (AuthServerMetadata, TokenEndpointResponse, ImmutableSessionState?)
 			async throws ->
 			Bool
 	let dpopSigner: DPoPSigning?
@@ -58,7 +58,7 @@ public struct AuthServerRequestOptions: Sendable {
 			@escaping @Sendable (
 				AuthServerMetadata,
 				TokenEndpointResponse,
-				SessionState?
+				ImmutableSessionState?
 			) async throws -> Bool,
 		dpopSigner: DPoPSigning?
 	) {
