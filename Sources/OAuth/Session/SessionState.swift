@@ -7,7 +7,19 @@
 
 import Foundation
 
-public struct AccessToken: Codable, Hashable, Sendable {
+public protocol OAuthToken: Codable, Hashable, Sendable {
+	var expiry: Date? { get }
+}
+
+extension OAuthToken {
+	public var valid: Bool {
+		guard let date = expiry else { return true }
+
+		return date.timeIntervalSinceNow > 0
+	}
+}
+
+public struct AccessToken: OAuthToken {
 	public let value: String
 	public let expiry: Date?
 
@@ -19,19 +31,10 @@ public struct AccessToken: Codable, Hashable, Sendable {
 			self.expiry = nil
 		}
 	}
-
-	/// Determines if the token object is valid.
-	///
-	/// A token without an expiry is unconditionally valid.
-	public var valid: Bool {
-		guard let date = expiry else { return true }
-
-		return date.timeIntervalSinceNow > 0
-	}
 }
 
 /// Holds a refresh token value and optionally it's expiry
-public struct RefreshToken: Codable, Hashable, Sendable {
+public struct RefreshToken: OAuthToken {
 	public let value: String
 	public let expiry: Date?
 
@@ -46,15 +49,6 @@ public struct RefreshToken: Codable, Hashable, Sendable {
 		} else {
 			self.expiry = nil
 		}
-	}
-
-	/// Determines if the token object is valid.
-	///
-	/// A token without an expiry is unconditionally valid.
-	public var valid: Bool {
-		guard let date = expiry else { return true }
-
-		return date.timeIntervalSinceNow > 0
 	}
 }
 
