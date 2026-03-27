@@ -129,7 +129,7 @@ extension OAuthSessionCapabilities {
 		)
 
 		if try await authServerRequestOptions.tokenValidator(
-			authServerMetadata, tokenResponse, previousState) == false
+			tokenResponse, authServerMetadata, previousState) == false
 		{
 			throw OAuthError.tokenInvalid
 		}

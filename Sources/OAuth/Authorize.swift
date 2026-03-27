@@ -45,8 +45,8 @@ public struct AuthorizeInputs {
 public struct AuthServerRequestOptions: Sendable {
 	public typealias TokenValidator =
 		@Sendable (
-			AuthServerMetadata,
 			TokenEndpointResponse,
+			AuthServerMetadata,
 			ImmutableSessionState?
 		) async throws -> Bool
 
@@ -246,7 +246,7 @@ public struct AuthServerRequestOptions: Sendable {
 		//check the token response is valid, e.g., asserting the authorization
 		//server can really issue the token for that `sub` parameter in the
 		//tokenResponse
-		if try await tokenValidator(authServerMetadata, tokenResponse, nil) == false {
+		if try await tokenValidator(tokenResponse, authServerMetadata, nil) == false {
 			throw OAuthError.tokenInvalid
 		}
 
