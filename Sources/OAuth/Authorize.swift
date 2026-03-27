@@ -193,6 +193,7 @@ public struct AuthServerRequestOptions: Sendable {
 		let (tokenResponse, additionalParams) =
 			try await processAuthorizationCodeOAuth2Response(
 				authServerMetadata: authServerMetadata,
+				client: authInputs.clientMetadata,
 				response: httpResponse
 			)
 
@@ -238,6 +239,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 	func processAuthorizationCodeOAuth2Response(
 		authServerMetadata: AuthServerMetadata,
+		client: OAuthClient,
 		response: HTTPDataResponse
 	) async throws -> (SessionState.Mutable, [String: String]?) {
 		let tokenResponse = try OAuthComponents.processGenericAccessToken(
@@ -268,7 +270,8 @@ public struct AuthServerRequestOptions: Sendable {
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
 				timeout: tokenResponse.refreshTokenTimeout),
-			scopes: OAuthComponents.parseTokenScope(tokenResponse.scope),
+			scopes: OAuthComponents.parseTokenScope(
+				tokenResponse.scope, parent: client.scopes),
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
 

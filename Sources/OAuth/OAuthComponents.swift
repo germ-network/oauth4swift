@@ -180,17 +180,22 @@ public enum OAuthComponents {
 		}
 	}
 
-	static func parseTokenScope(_ scope: String?) -> [String] {
+	static func parseTokenScope(_ scope: String?, parent: [String]?) -> [String] {
 		var scopes: [String] = []
-		if let scope {
-			// If the scope string is empty, then .components() would return [""] instead of []
-			if !scope.isEmpty {
-				// Filter to remove any empty scope values:
-				scopes = scope.components(separatedBy: " ").filter {
-					$0 != ""
-				}
-			}
+		guard let scope else {
+			return parent ?? []
 		}
+
+		// If the scope string is empty, then .components() would return [""] instead of []
+		guard !scope.isEmpty else {
+			return scopes
+		}
+
+		// Filter to remove any empty scope values:
+		scopes = scope.components(separatedBy: " ").filter {
+			$0 != ""
+		}
+
 		return scopes
 	}
 }

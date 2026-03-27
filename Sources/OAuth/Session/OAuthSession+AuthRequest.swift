@@ -141,7 +141,8 @@ extension OAuthSessionCapabilities {
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
 				timeout: tokenResponse.refreshTokenTimeout),
-			scopes: OAuthComponents.parseTokenScope(tokenResponse.scope),
+			scopes: OAuthComponents.parseTokenScope(
+				tokenResponse.scope, parent: previousState.grantScopes),
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
 
