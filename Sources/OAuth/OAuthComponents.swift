@@ -35,77 +35,118 @@ public enum OAuthComponents {
 
 	static public func validateAuthResponse(
 		authServerMetadata: AuthServerMetadata,
-		redirectURL: URL,
-		expectedState: String
-	) throws -> ParsedRedirect {
-		// decode the params in the redirectURL
-		let redirectComponents = try URLComponents(
-			url: redirectURL,
-			resolvingAgainstBaseURL: false
-		).tryUnwrap
+		callbackURL: URL,
+		expectedState: String?
+	) throws -> AuthResponseParameters {
+		// decode the params in the callbackURL
+		let callbackParameters =
+			try URLComponents(
+				url: callbackURL,
+				resolvingAgainstBaseURL: false
+			).tryUnwrap.queryItems ?? []
 
-		//first check for iss and state and bail if not present
-		guard
-			let iss = redirectComponents.queryItems?.first(where: {
-				$0.name == "iss"
-			})?.value,
-			let state = redirectComponents.queryItems?.first(where: {
-				$0.name == "state"
-			})?.value
-		else {
-			throw OAuthError.redirectMissingComponents
+		return try validateAuthResponse(
+			authServerMetadata: authServerMetadata,
+			callbackParameters: callbackParameters,
+			expectedState: expectedState
+		)
+	}
+
+	static public func validateAuthResponse(
+		authServerMetadata: AuthServerMetadata,
+		callbackParameters: [URLQueryItem],
+		expectedState: String?
+	) throws -> AuthResponseParameters {
+		let iss = callbackParameters.first(where: {
+			$0.name == "iss"
+		})?.value
+
+		let state = callbackParameters.first(where: {
+			$0.name == "state"
+		})?.value
+
+		//validate state if we have an expected state:
+		if let expectedState {
+			guard state == expectedState else {
+				throw OAuthError.stateTokenMismatch(state ?? "[nil]", expectedState)
+			}
 		}
 
-		//check for error_description or error
-		if let errorItem = redirectComponents.queryItems?.first(where: {
-			$0.name == "error_description"
-		}) {
-			throw OAuthError.redirectError(errorItem.value ?? "")
+		// Validate iss if the authorization server requires issuer identification
+		// and check that it matches the authorization server issuer if provided
+		if iss == nil
+			&& authServerMetadata.authorizationResponseIssParameterSupported == true
+		{
+			throw OAuthError.missingIssuer
 		}
 
-		if let errorItem = redirectComponents.queryItems?.first(where: {
+		if let iss {
+			guard iss == authServerMetadata.issuer else {
+				throw OAuthError.issuingServerMismatch(
+					iss,
+					authServerMetadata.issuer
+				)
+			}
+		}
+
+		//handle errors from the oauth authorization code flow:
+		let error = callbackParameters.first(where: {
 			$0.name == "error"
-		}) {
-			throw OAuthError.redirectError(errorItem.value ?? "")
+		})?.value
+		let errorDescription = callbackParameters.first(where: {
+			$0.name == "error_description"
+		})?.value
+
+		if let error = error {
+			// For invalid_request and invalid_scope, we do actually have the error
+			// and errorDescription, so could provide these to the errors generated here:
+
+			// The error should always be lowercase, but just being defensive:
+			switch error.lowercased() {
+			case "access_denied":
+				throw OAuthError.accessDenied
+			case "invalid_request":
+				throw OAuthError.invalidRequest
+			case "invalid_scope":
+				throw OAuthError.invalidScope
+			default:
+				// We do actually have error and error_description parameters, so we
+				// return an error with those present.
+				throw OAuthError.redirectError(
+					error.lowercased(), errorDescription)
+			}
 		}
 
 		//assert we do not support insecure flows
 		assert(
-			redirectComponents.queryItems?.first(where: {
+			callbackParameters.first(where: {
 				$0.name == "id_token"
 			})?.value == nil)
+
 		assert(
-			redirectComponents.queryItems?.first(where: {
+			callbackParameters.first(where: {
 				$0.name == "token"
 			})?.value == nil)
 
-		//finally can check for presence of code
-		let authCode = redirectComponents.queryItems?.first(where: {
-			$0.name == "code"
-		})?.value
-
-		guard state == expectedState else {
-			throw OAuthError.stateTokenMismatch(state, expectedState)
-		}
-
-		guard iss == authServerMetadata.issuer else {
-			throw
-				OAuthError
-				.issuingServerMismatch(iss, authServerMetadata.issuer)
-		}
-
-		return .init(
-			authCode: authCode,
-			issuer: iss,
-			components: redirectComponents
-		)
+		// Return branded parameters
+		return .init(callbackParameters)
 	}
 
-	public struct ParsedRedirect {
-		public let authCode: String?
-		public let issuer: String
+	public struct AuthResponseParameters {
+		public let parameters: [URLQueryItem]
 
-		public let components: URLComponents
+		public init(_ parameters: [URLQueryItem]) {
+			self.parameters = parameters
+		}
+
+		subscript(name: String) -> [String] {
+			return parameters.compactMap {
+				if $0.name == name && $0.value != nil {
+					return $0.value
+				}
+				return nil
+			}
+		}
 	}
 
 	static func processRefreshTokenResponse(
