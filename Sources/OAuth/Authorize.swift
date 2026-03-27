@@ -20,7 +20,7 @@ public struct AuthorizeInputs {
 
 	public init(
 		clientMetadata: OAuthClient,
-		scopes: [String]?,
+		scopes: [String]? = nil,
 		stateToken: String = UUID().uuidString,
 		pkceVerifier: PKCEVerifier = .init(),
 		parConfig: PARConfiguration?,
