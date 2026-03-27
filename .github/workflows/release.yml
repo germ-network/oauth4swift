@@ -42,5 +42,6 @@ jobs:
         with:
           title: Prepare next release
           createGithubReleases: true
+          publish: /usr/bin/true # swift doesn't have a "publish" step besides creating the release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
