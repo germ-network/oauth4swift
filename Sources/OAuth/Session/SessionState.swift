@@ -196,7 +196,7 @@ extension SessionState {
 	}
 }
 
-public class ImmutableSessionState {
+public struct ImmutableSessionState: Sendable {
 	public let client: OAuthClient
 	public let issuingServer: String?
 	//stores the additional parameters from the TokenResponse
