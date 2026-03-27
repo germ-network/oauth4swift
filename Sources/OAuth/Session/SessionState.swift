@@ -7,25 +7,21 @@
 
 import Foundation
 
-/// Holds an access token value and its expiry.
-public struct Token: Codable, Hashable, Sendable {
-	/// The access token.
+public protocol OAuthToken: Codable, Hashable, Sendable {
+	var expiry: Date? { get }
+}
+
+extension OAuthToken {
+	public var valid: Bool {
+		guard let date = expiry else { return true }
+
+		return date.timeIntervalSinceNow > 0
+	}
+}
+
+public struct AccessToken: OAuthToken {
 	public let value: String
-
-	/// An optional expiry.
 	public let expiry: Date?
-
-	public init?(refreshToken: String?) {
-		guard let refreshToken else {
-			return nil
-		}
-		self.value = refreshToken
-		self.expiry = nil
-	}
-	public init(value: String, expiry: Date? = nil) {
-		self.value = value
-		self.expiry = expiry
-	}
 
 	public init(value: String, expiresIn seconds: Int?) {
 		self.value = value
@@ -35,67 +31,90 @@ public struct Token: Codable, Hashable, Sendable {
 			self.expiry = nil
 		}
 	}
+}
 
-	/// Determines if the token object is valid.
-	///
-	/// A token without an expiry is unconditionally valid.
-	public var valid: Bool {
-		guard let date = expiry else { return true }
+/// Holds a refresh token value and optionally it's expiry
+public struct RefreshToken: OAuthToken {
+	public let value: String
+	public let expiry: Date?
 
-		return date.timeIntervalSinceNow > 0
+	public init?(value: String?, timeout seconds: Int?) {
+		guard let value else {
+			return nil
+		}
+
+		self.value = value
+		if let seconds {
+			self.expiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
+		} else {
+			self.expiry = nil
+		}
 	}
 }
 
 //best way to express fixed key and variable accessToken is as a reference type
 public class SessionState {
+	public let client: OAuthClient
+	public let issuingServer: String?
+	//stores the additional parameters from the TokenResponse
+	public let additionalParams: [String: String]?
 	//not mandatory in OAuth 2.1
 	public let dPopKey: DPoPKey?
-
-	public let additionalParams: [String: String]?
+	//stores the authorization grant scope:
+	public let grantScopes: [String]?
 
 	var mutable: Mutable
 
 	public init(
+		client: OAuthClient,
 		dPopKey: DPoPKey?,
+		issuingServer: String? = nil,
 		additionalParams: [String: String]? = nil,
+		grantScopes: [String]?,
 		mutable: Mutable
 	) {
+		self.client = client
 		self.dPopKey = dPopKey
+		self.issuingServer = issuingServer
 		self.additionalParams = additionalParams
+		self.grantScopes = grantScopes
 		self.mutable = mutable
 	}
 
-	public convenience init(
-		accessToken: String,
-		validUntilDate: Date? = nil,
-		dPopKey: DPoPKey?
-	) {
-		self.init(
-			dPopKey: dPopKey,
-			mutable: .init(
-				accessToken: .init(value: accessToken, expiry: validUntilDate)
-			)
-		)
-	}
-
 	public struct Mutable: Sendable, Codable {
-		let accessToken: Token
-		public let refreshToken: Token?
+		let grantExpiry: Date?
+		let accessToken: AccessToken
+		let refreshToken: RefreshToken?
 
 		// User authorized scopes
 		let scopes: [String]
-		let issuingServer: String?
 
 		public init(
-			accessToken: Token,
-			refreshToken: Token? = nil,
+			accessToken: AccessToken,
+			refreshToken: RefreshToken? = nil,
 			scopes: [String] = [],
-			issuingServer: String? = nil
+			grantExpiresIn seconds: Int? = nil
 		) {
 			self.accessToken = accessToken
 			self.refreshToken = refreshToken
 			self.scopes = scopes
-			self.issuingServer = issuingServer
+
+			// Support for Authorization Grants with expiry:
+			// https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html
+			if let seconds {
+				self.grantExpiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
+			} else {
+				self.grantExpiry = nil
+			}
+		}
+
+		/// Determines if the token object is valid.
+		///
+		/// A token without an expiry is unconditionally valid.
+		public var valid: Bool {
+			guard let date = grantExpiry else { return true }
+
+			return date.timeIntervalSinceNow > 0
 		}
 	}
 
@@ -106,26 +125,38 @@ public class SessionState {
 
 extension SessionState {
 	public struct Archive: Sendable, Codable {
+		let client: OAuthClient
 		let dPopKey: DPoPKey?
+		let issuingServer: String?
 
 		public let additionalParams: [String: String]?
-
+		//stores the authorization grant scope:
+		public let grantScopes: [String]?
 		public let mutable: SessionState.Mutable
 
 		public init(
+			client: OAuthClient,
 			dPopKey: DPoPKey?,
+			issuingServer: String?,
 			additionalParams: [String: String]?,
+			grantScopes: [String]?,
 			mutable: SessionState.Mutable
 		) {
+			self.client = client
 			self.dPopKey = dPopKey
+			self.issuingServer = issuingServer
 			self.additionalParams = additionalParams
+			self.grantScopes = grantScopes
 			self.mutable = mutable
 		}
 
 		public func merge(update: SessionState.Mutable) -> Self {
 			.init(
+				client: client,
 				dPopKey: dPopKey,
+				issuingServer: issuingServer,
 				additionalParams: additionalParams,
+				grantScopes: grantScopes,
 				mutable: update
 			)
 		}
@@ -133,17 +164,44 @@ extension SessionState {
 
 	public convenience init(archive: Archive) {
 		self.init(
+			client: archive.client,
 			dPopKey: archive.dPopKey,
+			issuingServer: archive.issuingServer,
 			additionalParams: archive.additionalParams,
+			grantScopes: archive.grantScopes,
 			mutable: archive.mutable
 		)
 	}
 
 	public var archive: Archive {
 		.init(
+			client: client,
 			dPopKey: dPopKey,
+			issuingServer: issuingServer,
 			additionalParams: additionalParams,
+			grantScopes: grantScopes,
 			mutable: mutable
 		)
+	}
+}
+
+public struct ImmutableSessionState: Sendable {
+	public let client: OAuthClient
+	public let issuingServer: String?
+	//stores the additional parameters from the TokenResponse
+	public let additionalParams: [String: String]?
+	//stores the authorization grant scope:
+	public let grantScopes: [String]?
+
+	public init(
+		client: OAuthClient,
+		issuingServer: String? = nil,
+		additionalParams: [String: String]? = nil,
+		grantScopes: [String]?
+	) {
+		self.client = client
+		self.issuingServer = issuingServer
+		self.additionalParams = additionalParams
+		self.grantScopes = grantScopes
 	}
 }

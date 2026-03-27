@@ -8,13 +8,16 @@
 import Foundation
 
 public struct TokenEndpointResponse {
+	public let tokenType: TokenType
+
 	public let accessToken: String
 	public let expiresIn: Int?
-	//	let idToken: String?
 	public let refreshToken: String?
 	public let scope: String?
-	//	let authorizationDetails:
-	public let tokenType: TokenType
+
+	// https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html
+	public let refreshTokenTimeout: Int?
+	public let authorizationExpiresIn: Int?
 
 	//capture additional fields
 	public let additionalFields: [String: Any]?
@@ -46,18 +49,29 @@ extension TokenEndpointResponse: Decodable {
 		case refreshToken = "refresh_token"
 		case scope
 		case tokenType = "token_type"
+		case refreshTokenTimeout = "refresh_token_timeout"
+		case authorizationExpiresIn = "authorization_expires_in"
 	}
 
 	public init(from decoder: Decoder) throws {
 		// 1. Decode standard keys
 		let container = try decoder.container(keyedBy: CodingKeys.self)
-		accessToken = try container.decode(String.self, forKey: .accessToken)
-		expiresIn = try container.decodeIfPresent(Int.self, forKey: .expiresIn)
-		//		idToken = try container.decodeIfPresent(String.self, forKey: .idToken)
-		refreshToken = try container.decodeIfPresent(String.self, forKey: .refreshToken)
-		scope = try container.decodeIfPresent(String.self, forKey: .scope)
+
 		let tokenString = try container.decode(String.self, forKey: .tokenType)
 		tokenType = try .init(string: tokenString)
+
+		accessToken = try container.decode(String.self, forKey: .accessToken)
+		refreshToken = try container.decodeIfPresent(String.self, forKey: .refreshToken)
+		//		idToken = try container.decodeIfPresent(String.self, forKey: .idToken)
+		scope = try container.decodeIfPresent(String.self, forKey: .scope)
+
+		// AccessToken Expiry:
+		expiresIn = try container.decodeIfPresent(Int.self, forKey: .expiresIn)
+		// https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html
+		refreshTokenTimeout = try container.decodeIfPresent(
+			Int.self, forKey: .refreshTokenTimeout)
+		authorizationExpiresIn = try container.decodeIfPresent(
+			Int.self, forKey: .authorizationExpiresIn)
 
 		// 2. Capture everything else
 		let extraContainer = try decoder.container(keyedBy: DynamicCodingKeys.self)
