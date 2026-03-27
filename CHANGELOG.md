@@ -38,3 +38,7 @@
   We don't currently support `error_uri`, only `error` and `error_description`.
 
 - [#11](https://github.com/germ-network/oauth4swift/pull/11) [`0de45c7`](https://github.com/germ-network/oauth4swift/commit/0de45c752a7a043ac1589831f56b88625fe28b86) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Fix missing Authorization header for DPoP Requests
+
+## Earlier than 0.1.0
+
+We had two earlier tags for `0.0.1` and `0.0.2` prior to having release tooling in place.
