@@ -40,12 +40,12 @@ public struct RefreshToken: Codable, Hashable, Sendable {
 	public let value: String
 	public let expiry: Date?
 
-	public init?(refreshToken: String?, timeout seconds: Int?) {
-		guard let refreshToken else {
+	public init?(value: String?, timeout seconds: Int?) {
+		guard let value else {
 			return nil
 		}
 
-		self.value = refreshToken
+		self.value = value
 		if let seconds {
 			self.expiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
 		} else {

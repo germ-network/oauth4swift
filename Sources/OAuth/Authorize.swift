@@ -267,7 +267,7 @@ public struct AuthServerRequestOptions: Sendable {
 				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
 			),
 			refreshToken: .init(
-				refreshToken: tokenResponse.refreshToken,
+				value: tokenResponse.refreshToken,
 				timeout: tokenResponse.refreshTokenTimeout),
 			scopes: OAuthComponents.parseTokenScope(tokenResponse.scope),
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
