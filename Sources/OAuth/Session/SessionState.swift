@@ -215,13 +215,4 @@ public class ImmutableSessionState {
 		self.additionalParams = additionalParams
 		self.grantScopes = grantScopes
 	}
-
-	static func fromSessionState(_ state: SessionState) -> ImmutableSessionState {
-		.init(
-			client: state.client,
-			issuingServer: state.issuingServer,
-			additionalParams: state.additionalParams,
-			grantScopes: state.grantScopes
-		)
-	}
 }
