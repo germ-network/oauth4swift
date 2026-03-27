@@ -11,11 +11,6 @@ public struct AccessToken: Codable, Hashable, Sendable {
 	public let value: String
 	public let expiry: Date?
 
-	public init(value: String, expiry: Date? = nil) {
-		self.value = value
-		self.expiry = expiry
-	}
-
 	public init(value: String, expiresIn seconds: Int?) {
 		self.value = value
 		if let seconds {
