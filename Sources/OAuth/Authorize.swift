@@ -135,17 +135,21 @@ public struct AuthServerRequestOptions: Sendable {
 
 		var modifiedParams = params
 		modifiedParams["client_id"] = clientMetadata.clientId
+		
+		var headers = HTTPFields(headers)
+		headers[.accept] = "application/json"
+		headers[.contentType] = "application/x-www-form-urlencoded;charset=UTF-8"
 
-		let request = HTTPRequestBody(
-			url: parEndpoint,
-			method: .post,
-			httpBody: modifiedParams.urlEncodedHTTPBody,
-			customHeaders: headers,
-			//default accept is "application/json"
-			contentType: "application/x-www-form-urlencoded;charset=UTF-8",
-
+		
+		let request = try BundledHTTPRequest(
+			request: .init(
+				method: .post,
+				url: parEndpoint,
+				headerFields: headers
+			),
+			body: modifiedParams.urlEncodedHTTPBody
 		)
-
+		
 		if let dpopSigner {
 			return try await dpopSigner.nonceRetryAuthenticated(
 				request: request,
@@ -298,13 +302,19 @@ public struct AuthServerRequestOptions: Sendable {
 
 		var modifiedParams = parameters
 		modifiedParams["grant_type"] = grantType.rawValue
+		
+		let headers = HTTPFields(
+			dictionaryLiteral: (.accept, "application/json" ),
+			(.contentType, "application/x-www-form-urlencoded;charset=UTF-8" ),
+		)
 
-		let request = HTTPRequestBody(
-			url: url,
-			method: .post,
-			httpBody: modifiedParams.urlEncodedHTTPBody,
-			//default accept is "application/json"
-			contentType: "application/x-www-form-urlencoded;charset=UTF-8",
+		let request = try BundledHTTPRequest(
+			request: .init(
+				method: .post,
+				url: url,
+				headerFields: headers
+			),
+			body: modifiedParams.urlEncodedHTTPBody
 		)
 
 		if let dpopSigner {

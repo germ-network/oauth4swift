@@ -10,7 +10,7 @@ import GermConvenience
 
 extension OAuthSessionCapabilities {
 	public func authResponse(
-		for request: HTTPRequestBody,
+		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
 		let sessionState = try session
 		let serverMetadata = try await lazyServerMetadata.lazyValue(
@@ -37,7 +37,7 @@ extension OAuthSessionCapabilities {
 	}
 
 	func retryNonceRequest(
-		request: HTTPRequestBody,
+		request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
 		let response = try await protectedResource(for: request)
 		//retry if nonceError
@@ -50,7 +50,7 @@ extension OAuthSessionCapabilities {
 	//needs to have optional access to a dpopSigner, so it is a method
 	//on a OAutSessionCapabilities and not a static method
 	func protectedResource(
-		for request: HTTPRequestBody,
+		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
 		let session = try session
 
@@ -61,7 +61,7 @@ extension OAuthSessionCapabilities {
 	}
 
 	func resource(
-		for request: HTTPRequestBody,
+		for request: BundledHTTPRequest,
 		accessToken: String,
 	) async throws -> HTTPDataResponse {
 		if let dpopSigner = self as? DPoPSigning {

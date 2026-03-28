@@ -19,9 +19,9 @@ public protocol DPoPSigning: Actor {
 
 extension DPoPSigning {
 	func addProof(
-		request: HTTPRequestBody,
+		request: BundledHTTPRequest,
 		token: String?
-	) throws -> HTTPRequestBody {
+	) throws -> BundledHTTPRequest {
 		let requestOrigin = try (request.request.url?.origin)
 			.tryUnwrap(DPoPError.requestInvalid(request.request))
 
@@ -49,7 +49,7 @@ extension DPoPSigning {
 	}
 
 	func nonceRetryAuthenticated(
-		request: HTTPRequestBody,
+		request: BundledHTTPRequest,
 		token: String?,
 		authFetcher: HTTPFetcher
 	) async throws -> HTTPDataResponse {
@@ -73,7 +73,7 @@ extension DPoPSigning {
 
 	//tries just once
 	func authenticated(
-		request: HTTPRequestBody,
+		request: BundledHTTPRequest,
 		token: String?,
 		fetcher: HTTPFetcher
 	) async throws -> HTTPDataResponse {
