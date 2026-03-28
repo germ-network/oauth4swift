@@ -205,11 +205,9 @@ extension HTTPFetcher {
 			path: "/.well-known/oauth-protected-resource"
 		)
 
-		var request = URLRequest(url: url)
-		request.httpMethod = HTTPMethod.get.rawValue
-		request.setValue("application/json", forHTTPHeaderField: "accept")
+		let requestBody = HTTPRequestBody(url: url, method: .get)
 
-		return try await performDiscovery(request: request)
+		return try await performDiscovery(requestBody: requestBody)
 			.expectSuccess()
 			.decode()
 
@@ -220,21 +218,19 @@ extension HTTPFetcher {
 			path: "/.well-known/oauth-authorization-server"
 		)
 
-		var request = URLRequest(url: url)
-		request.httpMethod = HTTPMethod.get.rawValue
-		request.setValue("application/json", forHTTPHeaderField: "accept")
+		let requestBody = HTTPRequestBody(url: url, method: .get)
 
-		return try await performDiscovery(request: request)
-			.expect(successCode: 200)
+		return try await performDiscovery(requestBody: requestBody)
+			.expectSuccess()
 			.decode()
 	}
 
 	func performDiscovery(
-		request: URLRequest
+		requestBody: HTTPRequestBody
 	) async throws -> HTTPDataResponse {
-		guard request.url?.scheme == "https" else {
+		guard requestBody.request.scheme == "https" else {
 			throw OAuthError.insecureScheme
 		}
-		return try await data(for: request)
+		return try await data(for: requestBody)
 	}
 }

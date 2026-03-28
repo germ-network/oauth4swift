@@ -8,6 +8,7 @@
 import Crypto
 import Foundation
 import GermConvenience
+import HTTPTypes
 
 public protocol DPoPSigning: Actor {
 	var dpopKey: DPoPKey { get throws }
@@ -18,11 +19,11 @@ public protocol DPoPSigning: Actor {
 
 extension DPoPSigning {
 	func addProof(
-		request: URLRequest,
+		requestBody: HTTPRequestBody,
 		token: String?
-	) throws -> URLRequest {
-		let requestOrigin = try (request.url?.origin)
-			.tryUnwrap(DPoPError.requestInvalid(request))
+	) throws -> HTTPRequestBody {
+		let requestOrigin = try (requestBody.request.url?.origin)
+			.tryUnwrap(DPoPError.requestInvalid(requestBody))
 
 		let nonce = getNonce(origin: requestOrigin)
 
@@ -34,27 +35,26 @@ extension DPoPSigning {
 		}
 		let jwt = try dpopKey.sign(
 			payload: .init(
-				endpointUrl: (request.url?.targetURI).tryUnwrap,
-				httpMethod: request.httpMethod.tryUnwrap(
-					OAuthError.missingHTTPMethod),
+				endpointUrl: (requestBody.request.url?.targetURI).tryUnwrap,
+				httpMethod: requestBody.request.method.rawValue,
 				nonce: nonce?.nonce,
 				accessTokenHash: tokenHash
 			)
 		)
 
-		var output = request
-		output.setValue(jwt.string, forHTTPHeaderField: "DPoP")
+		var output = requestBody
+		output.request.headerFields[try .dpop.tryUnwrap] = jwt.string
 
 		return output
 	}
 
 	func nonceRetryAuthenticated(
-		request: URLRequest,
+		requestBody: HTTPRequestBody,
 		token: String?,
 		authFetcher: HTTPFetcher
 	) async throws -> HTTPDataResponse {
 		let firstResponse = try await authenticated(
-			request: request,
+			requestBody: requestBody,
 			token: token,
 			fetcher: authFetcher
 		)
@@ -62,7 +62,7 @@ extension DPoPSigning {
 		//retry if nonceError
 		if firstResponse.isDPoPNonceError {
 			return try await authenticated(
-				request: request,
+				requestBody: requestBody,
 				token: token,
 				fetcher: authFetcher
 			)
@@ -73,12 +73,12 @@ extension DPoPSigning {
 
 	//tries just once
 	func authenticated(
-		request: URLRequest,
+		requestBody: HTTPRequestBody,
 		token: String?,
 		fetcher: HTTPFetcher
 	) async throws -> HTTPDataResponse {
 		let proofRequest = try addProof(
-			request: request,
+			requestBody: requestBody,
 			token: token,
 		)
 
@@ -86,7 +86,7 @@ extension DPoPSigning {
 
 		try cacheNonce(
 			response: response,
-			requestUrl: proofRequest.url.tryUnwrap
+			requestUrl: proofRequest.request.url.tryUnwrap
 		)
 
 		return response

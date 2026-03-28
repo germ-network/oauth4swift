@@ -16,12 +16,11 @@ public final class IndexedNonce {
 	public let nonce: String
 
 	public convenience init(
-		responseUrl: URL?,
 		requestUrl: URL,
 		nonce: String
 	) throws {
 		self.init(
-			origin: try (responseUrl ?? requestUrl).origin,
+			origin: try requestUrl.origin,
 			nonce: nonce
 		)
 	}

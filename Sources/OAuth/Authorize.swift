@@ -7,6 +7,7 @@
 
 import Foundation
 import GermConvenience
+import HTTPTypes
 import Logging
 
 //for authorize
@@ -95,7 +96,8 @@ public struct AuthServerRequestOptions: Sendable {
 				authServerMetadata: authServerMetadata,
 				clientMetadata: authorizeInputs.clientMetadata,
 				params: parParams,
-				headers: [:],
+				//TODO: get these from a config
+				customHeaders: [],
 			)
 
 			let parResponse = try OAuthComponents.processPushedAuthorizationResponse(
@@ -126,33 +128,32 @@ public struct AuthServerRequestOptions: Sendable {
 		authServerMetadata: AuthServerMetadata,
 		clientMetadata: OAuthClient,
 		params: [String: String],
-		headers: [String: String],
+		customHeaders: [HTTPField],
 	) async throws -> HTTPDataResponse {
 		let parEndpoint = try authServerMetadata.resolve(
 			endpoint: .par)
 
-		var bodyParams = params
-		bodyParams["client_id"] = clientMetadata.clientId
+		var modifiedParams = params
+		modifiedParams["client_id"] = clientMetadata.clientId
 
-		var headers = headers
-		headers["accept"] = "application/json"
-		headers["content-type"] = "application/x-www-form-urlencoded;charset=UTF-8"
+		let requestBody = HTTPRequestBody(
+			url: parEndpoint,
+			method: .post,
+			httpBody: modifiedParams.urlEncodedHTTPBody,
+			customHeaders: customHeaders,
+			//default accept is "application/json"
+			contentType: "application/x-www-form-urlencoded;charset=UTF-8",
 
-		var request = URLRequest(url: parEndpoint)
-		for (key, value) in headers {
-			request.setValue(value, forHTTPHeaderField: key)
-		}
-		request.httpMethod = HTTPMethod.post.rawValue
-		request.httpBody = bodyParams.urlEncodedHTTPBody
+		)
 
 		if let dpopSigner {
 			return try await dpopSigner.nonceRetryAuthenticated(
-				request: request,
+				requestBody: requestBody,
 				token: nil,
 				authFetcher: authFetcher
 			)
 		} else {
-			return try await authFetcher.data(for: request)
+			return try await authFetcher.data(for: requestBody)
 		}
 	}
 
@@ -232,7 +233,8 @@ public struct AuthServerRequestOptions: Sendable {
 			authServerMetadata: authServerMetadata,
 			grantType: .authorizationCode,
 			parameters: parameters,
-			headers: [:],
+			//TODO: get these from a config
+			customHeaders: [],
 		)
 	}
 
@@ -286,7 +288,8 @@ public struct AuthServerRequestOptions: Sendable {
 			authServerMetadata: authServerMetadata,
 			grantType: .refreshToken,
 			parameters: parameters,
-			headers: [:],
+			//TODO: get these from a config
+			customHeaders: [],
 		)
 	}
 
@@ -294,33 +297,30 @@ public struct AuthServerRequestOptions: Sendable {
 		authServerMetadata: AuthServerMetadata,
 		grantType: GrantType,
 		parameters: [String: String],
-		headers: [String: String],
+		customHeaders: [HTTPField]
 	) async throws -> HTTPDataResponse {
 		let url = try authServerMetadata.resolve(endpoint: .token)
 
 		var modifiedParams = parameters
 		modifiedParams["grant_type"] = grantType.rawValue
 
-		var headers = headers
-		headers["accept"] = "application/json"
-		headers["content-type"] = "application/x-www-form-urlencoded;charset=UTF-8"
-
-		var request = URLRequest(url: url)
-		for (key, value) in headers {
-			request.setValue(value, forHTTPHeaderField: key)
-		}
-
-		request.httpMethod = HTTPMethod.post.rawValue
-		request.httpBody = modifiedParams.urlEncodedHTTPBody
+		let requestBody = HTTPRequestBody(
+			url: url,
+			method: .post,
+			httpBody: modifiedParams.urlEncodedHTTPBody,
+			customHeaders: customHeaders,
+			//default accept is "application/json"
+			contentType: "application/x-www-form-urlencoded;charset=UTF-8",
+		)
 
 		if let dpopSigner {
 			return try await dpopSigner.authenticated(
-				request: request,
+				requestBody: requestBody,
 				token: nil,
 				fetcher: authFetcher
 			)
 		} else {
-			return try await authFetcher.data(for: request)
+			return try await authFetcher.data(for: requestBody)
 		}
 	}
 }

@@ -16,8 +16,10 @@ let package = Package(
 	dependencies: [
 		.package(
 			url: "https://github.com/germ-network/GermConvenience.git",
-			from: "0.0.2"
+			//			from: "0.0.2"
+			branch: "mark/http-types"
 		),
+		.package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),
 		.package(
 			url: "https://github.com/apple/swift-crypto.git",
 			.upToNextMajor(from: "4.2.0")),
@@ -31,6 +33,8 @@ let package = Package(
 			dependencies: [
 				"GermConvenience",
 				.product(name: "Crypto", package: "swift-crypto"),
+				.product(name: "HTTPTypes", package: "swift-http-types"),
+				//				.product(name: "HTTPTypesFoundation", package: "swift-http-types"),
 				.product(name: "Logging", package: "swift-log"),
 			]
 		),

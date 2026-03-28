@@ -7,6 +7,7 @@
 
 import Foundation
 import GermConvenience
+import HTTPTypes
 
 struct DPoPRequestPayload: Codable, Hashable, Sendable {
 	let uniqueCode: String
@@ -46,5 +47,5 @@ struct DPoPRequestPayload: Codable, Hashable, Sendable {
 }
 
 enum DPoPError: Error {
-	case requestInvalid(URLRequest)
+	case requestInvalid(HTTPRequestBody)
 }
