@@ -97,7 +97,7 @@ public struct AuthServerRequestOptions: Sendable {
 				clientMetadata: authorizeInputs.clientMetadata,
 				params: parParams,
 				//TODO: get these from a config
-				customHeaders: [],
+				headers: [],
 			)
 
 			let parResponse = try OAuthComponents.processPushedAuthorizationResponse(
@@ -128,7 +128,7 @@ public struct AuthServerRequestOptions: Sendable {
 		authServerMetadata: AuthServerMetadata,
 		clientMetadata: OAuthClient,
 		params: [String: String],
-		customHeaders: [HTTPField],
+		headers: [HTTPField],
 	) async throws -> HTTPDataResponse {
 		let parEndpoint = try authServerMetadata.resolve(
 			endpoint: .par)
@@ -140,7 +140,7 @@ public struct AuthServerRequestOptions: Sendable {
 			url: parEndpoint,
 			method: .post,
 			httpBody: modifiedParams.urlEncodedHTTPBody,
-			customHeaders: customHeaders,
+			customHeaders: headers,
 			//default accept is "application/json"
 			contentType: "application/x-www-form-urlencoded;charset=UTF-8",
 
