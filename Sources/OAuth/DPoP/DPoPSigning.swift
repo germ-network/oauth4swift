@@ -19,11 +19,11 @@ public protocol DPoPSigning: Actor {
 
 extension DPoPSigning {
 	func addProof(
-		requestBody: HTTPRequestBody,
+		request: HTTPRequestBody,
 		token: String?
 	) throws -> HTTPRequestBody {
-		let requestOrigin = try (requestBody.request.url?.origin)
-			.tryUnwrap(DPoPError.requestInvalid(requestBody))
+		let requestOrigin = try (request.request.url?.origin)
+			.tryUnwrap(DPoPError.requestInvalid(request))
 
 		let nonce = getNonce(origin: requestOrigin)
 
@@ -35,26 +35,26 @@ extension DPoPSigning {
 		}
 		let jwt = try dpopKey.sign(
 			payload: .init(
-				endpointUrl: (requestBody.request.url?.targetURI).tryUnwrap,
-				httpMethod: requestBody.request.method.rawValue,
+				endpointUrl: (request.request.url?.targetURI).tryUnwrap,
+				httpMethod: request.request.method.rawValue,
 				nonce: nonce?.nonce,
 				accessTokenHash: tokenHash
 			)
 		)
 
-		var output = requestBody
+		var output = request
 		output.request.headerFields[try .dpop.tryUnwrap] = jwt.string
 
 		return output
 	}
 
 	func nonceRetryAuthenticated(
-		requestBody: HTTPRequestBody,
+		request: HTTPRequestBody,
 		token: String?,
 		authFetcher: HTTPFetcher
 	) async throws -> HTTPDataResponse {
 		let firstResponse = try await authenticated(
-			requestBody: requestBody,
+			request: request,
 			token: token,
 			fetcher: authFetcher
 		)
@@ -62,7 +62,7 @@ extension DPoPSigning {
 		//retry if nonceError
 		if firstResponse.isDPoPNonceError {
 			return try await authenticated(
-				requestBody: requestBody,
+				request: request,
 				token: token,
 				fetcher: authFetcher
 			)
@@ -73,12 +73,12 @@ extension DPoPSigning {
 
 	//tries just once
 	func authenticated(
-		requestBody: HTTPRequestBody,
+		request: HTTPRequestBody,
 		token: String?,
 		fetcher: HTTPFetcher
 	) async throws -> HTTPDataResponse {
 		let proofRequest = try addProof(
-			requestBody: requestBody,
+			request: request,
 			token: token,
 		)
 

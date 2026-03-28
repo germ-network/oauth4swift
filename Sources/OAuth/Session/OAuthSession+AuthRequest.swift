@@ -61,23 +61,23 @@ extension OAuthSessionCapabilities {
 	}
 
 	func resource(
-		for requestBody: HTTPRequestBody,
+		for request: HTTPRequestBody,
 		accessToken: String,
 	) async throws -> HTTPDataResponse {
 		if let dpopSigner = self as? DPoPSigning {
-			var requestBody = requestBody
-			requestBody.request.headerFields[.authorization] = "DPoP \(accessToken)"
+			var request = request
+			request.request.headerFields[.authorization] = "DPoP \(accessToken)"
 
 			return try await dpopSigner.authenticated(
-				requestBody: requestBody,
+				request: request,
 				token: accessToken,
 				fetcher: authFetcher
 			)
 		} else {
-			var requestBody = requestBody
-			requestBody.request.headerFields[.authorization] = "Bearer \(accessToken)"
+			var request = request
+			request.request.headerFields[.authorization] = "Bearer \(accessToken)"
 
-			return try await authFetcher.data(for: requestBody)
+			return try await authFetcher.data(for: request)
 		}
 	}
 

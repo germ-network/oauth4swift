@@ -136,7 +136,7 @@ public struct AuthServerRequestOptions: Sendable {
 		var modifiedParams = params
 		modifiedParams["client_id"] = clientMetadata.clientId
 
-		let requestBody = HTTPRequestBody(
+		let request = HTTPRequestBody(
 			url: parEndpoint,
 			method: .post,
 			httpBody: modifiedParams.urlEncodedHTTPBody,
@@ -148,12 +148,12 @@ public struct AuthServerRequestOptions: Sendable {
 
 		if let dpopSigner {
 			return try await dpopSigner.nonceRetryAuthenticated(
-				requestBody: requestBody,
+				request: request,
 				token: nil,
 				authFetcher: authFetcher
 			)
 		} else {
-			return try await authFetcher.data(for: requestBody)
+			return try await authFetcher.data(for: request)
 		}
 	}
 
@@ -304,7 +304,7 @@ public struct AuthServerRequestOptions: Sendable {
 		var modifiedParams = parameters
 		modifiedParams["grant_type"] = grantType.rawValue
 
-		let requestBody = HTTPRequestBody(
+		let request = HTTPRequestBody(
 			url: url,
 			method: .post,
 			httpBody: modifiedParams.urlEncodedHTTPBody,
@@ -315,12 +315,12 @@ public struct AuthServerRequestOptions: Sendable {
 
 		if let dpopSigner {
 			return try await dpopSigner.authenticated(
-				requestBody: requestBody,
+				request: request,
 				token: nil,
 				fetcher: authFetcher
 			)
 		} else {
-			return try await authFetcher.data(for: requestBody)
+			return try await authFetcher.data(for: request)
 		}
 	}
 }
