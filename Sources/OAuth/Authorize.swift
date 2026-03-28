@@ -135,12 +135,11 @@ public struct AuthServerRequestOptions: Sendable {
 
 		var modifiedParams = params
 		modifiedParams["client_id"] = clientMetadata.clientId
-		
-		var headers = HTTPFields(headers)
-		headers[.accept] = "application/json"
-		headers[.contentType] = "application/x-www-form-urlencoded;charset=UTF-8"
 
-		
+		var headers = HTTPFields(headers)
+		headers[.accept] = HTTPContentType.json.rawValue
+		headers[.contentType] = HTTPContentType.formData.rawValue
+
 		let request = try BundledHTTPRequest(
 			request: .init(
 				method: .post,
@@ -149,7 +148,7 @@ public struct AuthServerRequestOptions: Sendable {
 			),
 			body: modifiedParams.urlEncodedHTTPBody
 		)
-		
+
 		if let dpopSigner {
 			return try await dpopSigner.nonceRetryAuthenticated(
 				request: request,
@@ -302,10 +301,10 @@ public struct AuthServerRequestOptions: Sendable {
 
 		var modifiedParams = parameters
 		modifiedParams["grant_type"] = grantType.rawValue
-		
+
 		let headers = HTTPFields(
-			dictionaryLiteral: (.accept, "application/json" ),
-			(.contentType, "application/x-www-form-urlencoded;charset=UTF-8" ),
+			dictionaryLiteral: (.accept, HTTPContentType.json.rawValue),
+			(.contentType, HTTPContentType.formData.rawValue),
 		)
 
 		let request = try BundledHTTPRequest(
