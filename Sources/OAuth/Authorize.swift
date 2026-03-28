@@ -190,9 +190,10 @@ public struct AuthServerRequestOptions: Sendable {
 			additionalParameters: additionalParameters,
 		)
 
-		let (tokenResponse, additionalParams) =
+		let (mutableSessionState, additionalParams) =
 			try await processAuthorizationCodeOAuth2Response(
 				authServerMetadata: authServerMetadata,
+				client: authInputs.clientMetadata,
 				response: httpResponse
 			)
 
@@ -204,8 +205,8 @@ public struct AuthServerRequestOptions: Sendable {
 			// We save the first authorization response's scopes as the Authorization
 			// Grant's scopes, in future token refresh calls, we can change scopes up
 			// and down within the bounds of grantScopes.
-			grantScopes: tokenResponse.scopes,
-			mutable: tokenResponse
+			grantScopes: mutableSessionState.scopes,
+			mutable: mutableSessionState
 		)
 	}
 
@@ -238,6 +239,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 	func processAuthorizationCodeOAuth2Response(
 		authServerMetadata: AuthServerMetadata,
+		client: OAuthClient,
 		response: HTTPDataResponse
 	) async throws -> (SessionState.Mutable, [String: String]?) {
 		let tokenResponse = try OAuthComponents.processGenericAccessToken(
@@ -268,7 +270,8 @@ public struct AuthServerRequestOptions: Sendable {
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
 				timeout: tokenResponse.refreshTokenTimeout),
-			scopes: OAuthComponents.parseTokenScope(tokenResponse.scope),
+			scopes: OAuthComponents.parseTokenScope(
+				tokenResponse.scope, parent: client.scopes),
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
 
