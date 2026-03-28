@@ -47,5 +47,5 @@ struct DPoPRequestPayload: Codable, Hashable, Sendable {
 }
 
 enum DPoPError: Error {
-	case requestInvalid(HTTPRequestBody)
+	case requestInvalid(HTTPRequest)
 }

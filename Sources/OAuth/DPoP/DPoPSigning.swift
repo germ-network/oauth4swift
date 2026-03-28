@@ -23,7 +23,7 @@ extension DPoPSigning {
 		token: String?
 	) throws -> HTTPRequestBody {
 		let requestOrigin = try (request.request.url?.origin)
-			.tryUnwrap(DPoPError.requestInvalid(request))
+			.tryUnwrap(DPoPError.requestInvalid(request.request))
 
 		let nonce = getNonce(origin: requestOrigin)
 
