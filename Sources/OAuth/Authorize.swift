@@ -233,8 +233,6 @@ public struct AuthServerRequestOptions: Sendable {
 			authServerMetadata: authServerMetadata,
 			grantType: .authorizationCode,
 			parameters: parameters,
-			//TODO: get these from a config
-			customHeaders: [],
 		)
 	}
 
@@ -288,8 +286,6 @@ public struct AuthServerRequestOptions: Sendable {
 			authServerMetadata: authServerMetadata,
 			grantType: .refreshToken,
 			parameters: parameters,
-			//TODO: get these from a config
-			customHeaders: [],
 		)
 	}
 
@@ -297,7 +293,6 @@ public struct AuthServerRequestOptions: Sendable {
 		authServerMetadata: AuthServerMetadata,
 		grantType: GrantType,
 		parameters: [String: String],
-		customHeaders: [HTTPField]
 	) async throws -> HTTPDataResponse {
 		let url = try authServerMetadata.resolve(endpoint: .token)
 
@@ -308,7 +303,6 @@ public struct AuthServerRequestOptions: Sendable {
 			url: url,
 			method: .post,
 			httpBody: modifiedParams.urlEncodedHTTPBody,
-			customHeaders: customHeaders,
 			//default accept is "application/json"
 			contentType: "application/x-www-form-urlencoded;charset=UTF-8",
 		)
