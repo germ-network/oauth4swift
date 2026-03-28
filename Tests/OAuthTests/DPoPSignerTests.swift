@@ -17,7 +17,7 @@ struct Test {
 		dpopKey: .generateP256(),
 		decoder: { (dataResponse, requestUrl) in
 			let nonce = dataResponse.response
-				.headerFields[try .dpop.tryUnwrap]
+				.headerFields[try .dpopNonce.tryUnwrap]
 			guard let nonce else {
 				return nil
 			}
