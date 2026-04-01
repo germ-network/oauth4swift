@@ -8,6 +8,7 @@
 import Crypto
 import Foundation
 import GermConvenience
+import HTTPTypes
 
 public protocol DPoPSigning: Actor {
 	var dpopKey: DPoPKey { get throws }
@@ -18,11 +19,11 @@ public protocol DPoPSigning: Actor {
 
 extension DPoPSigning {
 	func addProof(
-		request: URLRequest,
+		request: BundledHTTPRequest,
 		token: String?
-	) throws -> URLRequest {
-		let requestOrigin = try (request.url?.origin)
-			.tryUnwrap(DPoPError.requestInvalid(request))
+	) throws -> BundledHTTPRequest {
+		let requestOrigin = try (request.request.url?.origin)
+			.tryUnwrap(DPoPError.requestInvalid(request.request))
 
 		let nonce = getNonce(origin: requestOrigin)
 
@@ -34,22 +35,21 @@ extension DPoPSigning {
 		}
 		let jwt = try dpopKey.sign(
 			payload: .init(
-				endpointUrl: (request.url?.targetURI).tryUnwrap,
-				httpMethod: request.httpMethod.tryUnwrap(
-					OAuthError.missingHTTPMethod),
+				endpointUrl: (request.request.url?.targetURI).tryUnwrap,
+				httpMethod: request.request.method.rawValue,
 				nonce: nonce?.nonce,
 				accessTokenHash: tokenHash
 			)
 		)
 
 		var output = request
-		output.setValue(jwt.string, forHTTPHeaderField: "DPoP")
+		output.request.headerFields[try .dpop.tryUnwrap] = jwt.string
 
 		return output
 	}
 
 	func nonceRetryAuthenticated(
-		request: URLRequest,
+		request: BundledHTTPRequest,
 		token: String?,
 		authFetcher: HTTPFetcher
 	) async throws -> HTTPDataResponse {
@@ -73,7 +73,7 @@ extension DPoPSigning {
 
 	//tries just once
 	func authenticated(
-		request: URLRequest,
+		request: BundledHTTPRequest,
 		token: String?,
 		fetcher: HTTPFetcher
 	) async throws -> HTTPDataResponse {
@@ -86,7 +86,7 @@ extension DPoPSigning {
 
 		try cacheNonce(
 			response: response,
-			requestUrl: proofRequest.url.tryUnwrap
+			requestUrl: proofRequest.request.url.tryUnwrap
 		)
 
 		return response

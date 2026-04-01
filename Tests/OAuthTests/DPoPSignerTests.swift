@@ -16,16 +16,14 @@ struct Test {
 	let dpopSigner = AuthDPopState(
 		dpopKey: .generateP256(),
 		decoder: { (dataResponse, requestUrl) in
-			guard
-				let nonce = dataResponse.response.value(
-					forHTTPHeaderField: "DPoP-Nonce")
-			else {
+			let nonce = dataResponse.response
+				.headerFields[try .dpopNonce.tryUnwrap]
+			guard let nonce else {
 				return nil
 			}
 
 			//henceforth should throw instead of return nil as nonce is expected
 			return try IndexedNonce(
-				responseUrl: dataResponse.response.url,
 				requestUrl: requestUrl,
 				nonce: nonce
 			)
@@ -50,11 +48,14 @@ struct Test {
 		}
 
 		let signedRequest = try await dpopSigner.addProof(
-			request: .init(url: url),
+			request: .init(request: .init(url: url)),
 			token: token
 		)
 
-		let dpopHeader = try #require(signedRequest.value(forHTTPHeaderField: "DPoP"))
+		let dpopHeader = try signedRequest.request
+			.headerFields[try .dpop.tryUnwrap]
+			.tryUnwrap
+
 		let jwt = try JWT(string: dpopHeader)
 
 		let header = try JSONDecoder().decode(
@@ -135,12 +136,14 @@ extension JWT.JWK {
 struct MockFetcher {
 	let host: String = "example.com"
 
-	let resolver: @Sendable (URLRequest) throws -> HTTPDataResponse
+	let resolver: @Sendable (BundledHTTPRequest) throws -> HTTPDataResponse
 }
 
 extension MockFetcher: HTTPFetcher {
-	func data(for request: URLRequest) async throws -> HTTPDataResponse {
-		let url = try #require(request.url)
+	func data(
+		for request: BundledHTTPRequest
+	) async throws -> GermConvenience.HTTPDataResponse {
+		let url = try #require(request.request.url)
 		assert(url.scheme == "https")
 		assert(url.host() == host)
 

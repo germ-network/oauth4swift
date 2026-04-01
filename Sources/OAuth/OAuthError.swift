@@ -1,5 +1,6 @@
 import Foundation
 import GermConvenience
+import HTTPTypes
 
 //this is growing to the point where it should get broken down into subdomains
 enum OAuthError: Error {
@@ -20,8 +21,8 @@ enum OAuthError: Error {
 	case issuingServerMismatch(String, String)
 	case accessDenied
 	case invalidScope
-	case httpResponse(response: HTTPURLResponse)
-	case oauthError(OAuthErrorResponse, Int)
+	case httpResponse(response: HTTPDataResponse)
+	case oauthError(OAuthErrorResponse, HTTPResponse.Status)
 	case notImplemented
 }
 
@@ -58,7 +59,7 @@ extension OAuthError: LocalizedError {
 		case .invalidScope:
 			"The requested scope is invalid, unknown, or malformed."
 		case .httpResponse(let response):
-			"HTTP error with status code: \(response.statusCode), response: \(response)"
+			"HTTP error with status code: \(response.response.status.code), response: \(response)"
 		case .oauthError(let errorBody, let statusCode):
 			"OAuth error with status code: \(statusCode),  body: \(errorBody)"
 		case .notImplemented: "Not implemented"

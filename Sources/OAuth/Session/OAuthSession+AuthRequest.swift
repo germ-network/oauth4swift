@@ -10,7 +10,7 @@ import GermConvenience
 
 extension OAuthSessionCapabilities {
 	public func authResponse(
-		for request: URLRequest,
+		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
 		let sessionState = try session
 		let serverMetadata = try await lazyServerMetadata.lazyValue(
@@ -22,13 +22,12 @@ extension OAuthSessionCapabilities {
 		let result = try await retryNonceRequest(request: request)
 
 		// FIXME: This isn't really to spec: 401 doesn't mean "refresh", it just means unauthorized.
-		switch result.response.statusCode {
-		case 200..<300:
+		if result.response.status.kind == .successful {
 			return result
-		case 401:
-			break
-		default:
-			throw OAuthError.httpResponse(response: result.response)
+		}
+
+		guard case result.response.status.code = 401 else {
+			throw OAuthError.httpResponse(response: result)
 		}
 
 		//try to refresh the token
@@ -38,7 +37,7 @@ extension OAuthSessionCapabilities {
 	}
 
 	func retryNonceRequest(
-		request: URLRequest,
+		request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
 		let response = try await protectedResource(for: request)
 		//retry if nonceError
@@ -51,7 +50,7 @@ extension OAuthSessionCapabilities {
 	//needs to have optional access to a dpopSigner, so it is a method
 	//on a OAutSessionCapabilities and not a static method
 	func protectedResource(
-		for request: URLRequest,
+		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
 		let session = try session
 
@@ -62,13 +61,13 @@ extension OAuthSessionCapabilities {
 	}
 
 	func resource(
-		for request: URLRequest,
+		for request: BundledHTTPRequest,
 		accessToken: String,
 	) async throws -> HTTPDataResponse {
 		if let dpopSigner = self as? DPoPSigning {
 			var request = request
-			request.setValue(
-				"DPoP \(accessToken)", forHTTPHeaderField: "authorization")
+			request.request.headerFields[.authorization] = "DPoP \(accessToken)"
+
 			return try await dpopSigner.authenticated(
 				request: request,
 				token: accessToken,
@@ -76,8 +75,8 @@ extension OAuthSessionCapabilities {
 			)
 		} else {
 			var request = request
-			request.setValue(
-				"Bearer \(accessToken)", forHTTPHeaderField: "authorization")
+			request.request.headerFields[.authorization] = "Bearer \(accessToken)"
+
 			return try await authFetcher.data(for: request)
 		}
 	}
@@ -154,12 +153,10 @@ extension HTTPDataResponse {
 
 	///is very different from oauth4web that seems to just parse the header
 	var isDPoPNonceError: Bool {
-		switch response.statusCode {
+		switch response.status.code {
 		case 401:
 			//this only works if it is the first challenge in the header error
-			if let wwwAuthHeader = response.value(
-				forHTTPHeaderField: "WWW-Authenticate")
-			{
+			if let wwwAuthHeader = response.headerFields[.wwwAuthenticate] {
 				if wwwAuthHeader.starts(with: "DPoP") {
 					return wwwAuthHeader.contains("error=\"use_dpop_nonce\"")
 				}
