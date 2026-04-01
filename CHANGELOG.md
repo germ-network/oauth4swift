@@ -1,5 +1,34 @@
 # @germ-network/oauth4swift
 
+## 0.2.0
+
+### Minor Changes
+
+- [#13](https://github.com/germ-network/oauth4swift/pull/13) [`fab1414`](https://github.com/germ-network/oauth4swift/commit/fab141411927b00ed356ca9102e207c9593a5613) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Change signature for tokenValidator
+
+  `tokenValidator` previously returned a `SessionState.Mutable` which leaked internal implementation details into the consuming code. Instead, `tokenValidator` now just asynchronously returns a `Bool` and the `SessionState.Mutable` is constructed in the `processAuthorizationCodeOAuth2Response` method and the private `refresh` method in `OAuthSessionCapabilities`.
+
+  The `tokenValidator` also now receives an "immutable" copy of the previous `SessionState`, allowing clients to validate that for instance the `additionalParams` on a token haven't changed during refresh. When `tokenValidator` is called from `processAuthorizationCodeOAuth2Response`, the previous `SessionState` is nil, since we don't have a previous session.
+
+- [#16](https://github.com/germ-network/oauth4swift/pull/16) [`daf14a5`](https://github.com/germ-network/oauth4swift/commit/daf14a56914b5b98e8c67b3406545af77e0241f7) Thanks [@germ-mark](https://github.com/germ-mark)! - adopt swift-http-types via GermConvenience
+
+  add typed HTTPField.Name(s) for DPoP and DPoP-Nonce
+
+### Patch Changes
+
+- [#13](https://github.com/germ-network/oauth4swift/pull/13) [`c8cd10f`](https://github.com/germ-network/oauth4swift/commit/c8cd10ffe48c1cbe7a16d9cc07e8b5fb8766a8b2) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Store OAuth Client in SessionState
+
+- [#15](https://github.com/germ-network/oauth4swift/pull/15) [`3e82534`](https://github.com/germ-network/oauth4swift/commit/3e82534d87a072fd5ecf4dcd3f5b5ec919581a49) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Fix handling of missing scope in token response
+
+- [#13](https://github.com/germ-network/oauth4swift/pull/13) [`e7ba1d0`](https://github.com/germ-network/oauth4swift/commit/e7ba1d09872a724ac8dd700f29757fc7a517d845) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Add support for draft-ietf-oauth-refresh-token-expiration
+
+  The new [draft-ietf-oauth-refresh-token-expiration](https://drafts.oauth.net/rt-expiration/draft-ietf-oauth-refresh-token-expiration.html) from the OAuth WG at IETF allows for Authorization Servers to signal to clients when:
+
+  - the Authorization Grant expires
+  - the Refresh Token expires
+
+  This allows a client to know that the refresh token isn't even valid anymore, before attempting to do a token refresh.
+
 ## 0.1.0
 
 ### Minor Changes
