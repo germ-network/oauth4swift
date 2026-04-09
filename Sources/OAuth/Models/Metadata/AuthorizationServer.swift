@@ -80,10 +80,10 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 	let jwksUri: URL?
 
 	/// URL of the authorization endpoint
-	public let authorizationEndpoint: URL
+	let authorizationEndpoint: URL
 
 	/// URL of the token endpoint
-	public let tokenEndpoint: URL
+	let tokenEndpoint: URL
 
 	/// Authentication methods supported at token endpoint (RFC 8414 Section 2)
 	let tokenEndpointAuthMethodsSupported: [String]?
@@ -131,7 +131,7 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 	let registrationEndpoint: URL?
 
 	/// DPoP signing algorithms supported (RFC 9449 Section 5.1)
-	let dpopSigningAlgValuesSupported: [String]?
+	public let dpopSigningAlgValuesSupported: [String]?
 
 	/// Protected resource URIs (RFC 9728 Section 4)
 	let protectedResources: [URL]?
