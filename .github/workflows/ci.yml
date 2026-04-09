@@ -23,14 +23,13 @@ jobs:
     runs-on: macOS-26
     timeout-minutes: 30
     env:
-      DEVELOPER_DIR: /Applications/Xcode_26.2.app
+      DEVELOPER_DIR: /Applications/Xcode_26.4.app
     strategy:
       matrix:
         destination:
           - "platform=macOS"
           - "platform=macOS,variant=Mac Catalyst"
-          - "platform=iOS Simulator,name=iPhone 16e"
-          - "platform=iOS Simulator,name=iPhone Air"
+          - "platform=iOS Simulator,name=iPhone 17"
           # - "platform=tvOS Simulator,name=Apple TV"
           # - "platform=watchOS Simulator,name=Apple Watch Series 10 (42mm)"
           # - "platform=visionOS Simulator,name=Apple Vision Pro"
