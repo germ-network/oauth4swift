@@ -80,10 +80,10 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 	let jwksUri: URL?
 
 	/// URL of the authorization endpoint
-	let authorizationEndpoint: URL
+	public let authorizationEndpoint: URL
 
 	/// URL of the token endpoint
-	let tokenEndpoint: URL
+	public let tokenEndpoint: URL
 
 	/// Authentication methods supported at token endpoint (RFC 8414 Section 2)
 	let tokenEndpointAuthMethodsSupported: [String]?
