@@ -106,8 +106,9 @@ extension OAuthSessionCapabilities {
 	private func refresh(
 		state: SessionState,
 	) async throws -> SessionState.Mutable {
-		let authServerMetadata = try await authServerRequestOptions.authFetcher
-			.authServerDiscovery(issuer: try await retriableIssuer)
+		let authServerMetadata = try await lazyServerMetadata.lazyValue(
+			isolation: self
+		)
 
 		let httpResponse = try await authServerRequestOptions.refreshTokenGrantRequest(
 			authServerMetadata: authServerMetadata,
