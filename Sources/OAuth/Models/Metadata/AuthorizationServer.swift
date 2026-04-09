@@ -131,7 +131,7 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 	let registrationEndpoint: URL?
 
 	/// DPoP signing algorithms supported (RFC 9449 Section 5.1)
-	let dpopSigningAlgValuesSupported: [String]?
+	public let dpopSigningAlgValuesSupported: [String]?
 
 	/// Protected resource URIs (RFC 9728 Section 4)
 	let protectedResources: [URL]?
