@@ -13,6 +13,7 @@ import Logging
 //for authorize
 public struct AuthorizeInputs {
 	let clientMetadata: OAuthClient
+	let clientAuthentication: any OAuthClientAuthenticatable
 	let requestedScopes: [String]
 	let stateToken: String
 	let pkceVerifier: PKCEVerifier
@@ -21,6 +22,7 @@ public struct AuthorizeInputs {
 
 	public init(
 		clientMetadata: OAuthClient,
+		clientAuthentication: any OAuthClientAuthenticatable,
 		scopes: [String]? = nil,
 		stateToken: String = UUID().uuidString,
 		pkceVerifier: PKCEVerifier = .init(),
@@ -28,6 +30,7 @@ public struct AuthorizeInputs {
 		issuer: URL
 	) {
 		self.clientMetadata = clientMetadata
+		self.clientAuthentication = clientAuthentication
 		self.stateToken = stateToken
 		self.pkceVerifier = pkceVerifier
 		self.parConfig = parConfig
@@ -95,7 +98,8 @@ public struct AuthServerRequestOptions: Sendable {
 			let parHTTPResponse = try await pushedAuthorizationRequest(
 				authServerMetadata: authServerMetadata,
 				clientMetadata: authorizeInputs.clientMetadata,
-				params: parParams,
+				clientAuthentication: authorizeInputs.clientAuthentication,
+				parameters: parParams,
 				//TODO: get these from a config
 				headers: [],
 			)
@@ -106,8 +110,8 @@ public struct AuthServerRequestOptions: Sendable {
 
 			let tokenURL = try Self.authorizationURL(
 				authEndpoint: authServerMetadata.authorizationEndpoint,
+				clientId: clientId,
 				parRequestURI: parResponse.requestURI,
-				clientId: clientId
 			)
 
 			let scheme = try authorizeInputs.clientMetadata.redirectURIScheme
@@ -127,18 +131,23 @@ public struct AuthServerRequestOptions: Sendable {
 	func pushedAuthorizationRequest(
 		authServerMetadata: AuthServerMetadata,
 		clientMetadata: OAuthClient,
-		params: [String: String],
+		clientAuthentication: any OAuthClientAuthenticatable,
+		parameters: [String: String],
 		headers: [HTTPField],
 	) async throws -> HTTPDataResponse {
 		let parEndpoint = try authServerMetadata.resolve(
 			endpoint: .par)
 
-		var modifiedParams = params
-		modifiedParams["client_id"] = clientMetadata.clientId
+		var rawHeaders = HTTPFields(headers)
+		rawHeaders[.accept] = HTTPContentType.json.rawValue
+		rawHeaders[.contentType] = HTTPContentType.formData.rawValue
 
-		var headers = HTTPFields(headers)
-		headers[.accept] = HTTPContentType.json.rawValue
-		headers[.contentType] = HTTPContentType.formData.rawValue
+		let (params, headers) = try await clientAuthentication.authenticate(
+			client: clientMetadata,
+			authorizationServer: authServerMetadata,
+			parameters: FormParameters(parameters),
+			headers: rawHeaders
+		)
 
 		let request = try BundledHTTPRequest(
 			request: .init(
@@ -146,7 +155,7 @@ public struct AuthServerRequestOptions: Sendable {
 				url: parEndpoint,
 				headerFields: headers
 			),
-			body: modifiedParams.urlEncodedHTTPBody
+			parameters: params
 		)
 
 		if let dpopSigner {
@@ -162,8 +171,8 @@ public struct AuthServerRequestOptions: Sendable {
 
 	static private func authorizationURL(
 		authEndpoint: URL,
-		parRequestURI: String,
 		clientId: String,
+		parRequestURI: String,
 	) throws -> URL {
 		var components = URLComponents(url: authEndpoint, resolvingAgainstBaseURL: false)
 
@@ -188,8 +197,10 @@ public struct AuthServerRequestOptions: Sendable {
 
 		let httpResponse = try await authorizationCodeGrantRequest(
 			authServerMetadata: authServerMetadata,
-			redirectURI: authInputs.clientMetadata.redirectURI,
+			client: authInputs.clientMetadata,
+			clientAuthentication: authInputs.clientAuthentication,
 			callbackParameters: callbackParameters,
+			redirectURI: authInputs.clientMetadata.redirectURI,
 			pkceVerifier: authInputs.pkceVerifier.verifier,
 			additionalParameters: additionalParameters,
 		)
@@ -203,6 +214,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 		return .init(
 			client: authInputs.clientMetadata,
+			clientAuthentication: authInputs.clientAuthentication,
 			dPopKey: try await dpopSigner?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
 			additionalParams: additionalParams,
@@ -216,8 +228,10 @@ public struct AuthServerRequestOptions: Sendable {
 
 	public func authorizationCodeGrantRequest(
 		authServerMetadata: AuthServerMetadata,
-		redirectURI: URL,
+		client: OAuthClient,
+		clientAuthentication: any OAuthClientAuthenticatable,
 		callbackParameters: OAuthComponents.AuthResponseParameters,
+		redirectURI: URL,
 		pkceVerifier: String?,
 		additionalParameters: [String: String],
 	) async throws -> HTTPDataResponse {
@@ -225,7 +239,7 @@ public struct AuthServerRequestOptions: Sendable {
 			throw OAuthError.missingAuthCode
 		}
 
-		var parameters = additionalParameters
+		var parameters = FormParameters(additionalParameters)
 		parameters["redirect_uri"] = redirectURI.absoluteString
 		parameters["code"] = code
 
@@ -235,6 +249,8 @@ public struct AuthServerRequestOptions: Sendable {
 
 		return try await tokenEndpointRequest(
 			authServerMetadata: authServerMetadata,
+			client: client,
+			clientAuthentication: clientAuthentication,
 			grantType: .authorizationCode,
 			parameters: parameters,
 		)
@@ -283,13 +299,17 @@ public struct AuthServerRequestOptions: Sendable {
 
 	func refreshTokenGrantRequest(
 		authServerMetadata: AuthServerMetadata,
+		client: OAuthClient,
+		clientAuthentication: any OAuthClientAuthenticatable,
 		refreshToken: String,
 	) async throws -> HTTPDataResponse {
-		var parameters = additionalParameters
-		parameters["refresh_token"] = refreshToken
+		var parameters = FormParameters(additionalParameters)
+		parameters.set(name: "refresh_token", value: refreshToken)
 
 		return try await tokenEndpointRequest(
 			authServerMetadata: authServerMetadata,
+			client: client,
+			clientAuthentication: clientAuthentication,
 			grantType: .refreshToken,
 			parameters: parameters,
 		)
@@ -297,17 +317,26 @@ public struct AuthServerRequestOptions: Sendable {
 
 	func tokenEndpointRequest(
 		authServerMetadata: AuthServerMetadata,
+		client: OAuthClient,
+		clientAuthentication: any OAuthClientAuthenticatable,
 		grantType: GrantType,
-		parameters: [String: String],
+		parameters: FormParameters,
 	) async throws -> HTTPDataResponse {
 		let url = try authServerMetadata.resolve(endpoint: .token)
 
-		var modifiedParams = parameters
-		modifiedParams["grant_type"] = grantType.rawValue
+		var parametersWithGrantType = parameters
+		parametersWithGrantType["grant_type"] = grantType.rawValue
 
-		let headers = HTTPFields(
+		let rawHeaders = HTTPFields(
 			dictionaryLiteral: (.accept, HTTPContentType.json.rawValue),
 			(.contentType, HTTPContentType.formData.rawValue),
+		)
+
+		let (parameters, headers) = try await clientAuthentication.authenticate(
+			client: client,
+			authorizationServer: authServerMetadata,
+			parameters: parametersWithGrantType,
+			headers: rawHeaders
 		)
 
 		let request = try BundledHTTPRequest(
@@ -316,7 +345,7 @@ public struct AuthServerRequestOptions: Sendable {
 				url: url,
 				headerFields: headers
 			),
-			body: modifiedParams.urlEncodedHTTPBody
+			parameters: parameters
 		)
 
 		if let dpopSigner {
@@ -328,13 +357,5 @@ public struct AuthServerRequestOptions: Sendable {
 		} else {
 			return try await authFetcher.data(for: request)
 		}
-	}
-}
-
-extension [String: String] {
-	var urlEncodedHTTPBody: Data {
-		map({ [$0, $1].joined(separator: "=") })
-			.joined(separator: "&")
-			.utf8Data
 	}
 }
