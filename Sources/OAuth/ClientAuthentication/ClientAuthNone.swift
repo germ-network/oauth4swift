@@ -3,11 +3,11 @@ import GermConvenience
 import HTTPTypes
 
 public struct ClientAuthNone: OAuthClientAuthenticatable {
-	let clientId: String
+	public var tokenEndpointAuthMethod = "none"
 
-	public init(clientId: String) {
-		self.clientId = clientId
-	}
+	public init() {}
+	public init(from decoder: any Decoder) throws {}
+	public func encode(to encoder: any Encoder) throws {}
 
 	public func authenticate(
 		client: OAuthClient,
@@ -19,6 +19,4 @@ public struct ClientAuthNone: OAuthClientAuthenticatable {
 		params["client_id"] = client.clientId
 		return (params, headers)
 	}
-
-	public func encode(to encoder: any Encoder) throws {}
 }

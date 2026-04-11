@@ -214,7 +214,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 		return .init(
 			client: authInputs.clientMetadata,
-			clientAuthentication: authInputs.clientAuthentication,
+			// clientAuthentication: authInputs.clientAuthentication,
 			dPopKey: try await dpopSigner?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
 			additionalParams: additionalParams,
