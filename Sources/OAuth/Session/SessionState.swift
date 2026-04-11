@@ -126,6 +126,7 @@ public class SessionState {
 extension SessionState {
 	public struct Archive: Sendable, Codable {
 		let client: OAuthClient
+		let clientAuthentication: any OAuthClientAuthenticatable
 		let dPopKey: DPoPKey?
 		let issuingServer: String?
 
