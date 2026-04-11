@@ -21,11 +21,11 @@ extension OAuthSessionCapabilities {
 
 		let result = try await retryNonceRequest(request: request)
 
-		// FIXME: This isn't really to spec: 401 doesn't mean "refresh", it just means unauthorized.
 		if result.response.status.kind == .successful {
 			return result
 		}
 
+		// FIXME: This isn't really to spec: 401 doesn't mean "refresh", it just means unauthorized.
 		guard case result.response.status.code = 401 else {
 			throw OAuthError.httpResponse(response: result)
 		}
