@@ -145,6 +145,7 @@ extension OAuthSessionCapabilities {
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
 
+		try refreshed(sessionMutable: newSessionState)
 		return newSessionState
 	}
 }
