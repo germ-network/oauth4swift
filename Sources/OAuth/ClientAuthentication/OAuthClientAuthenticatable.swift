@@ -1,7 +1,7 @@
 import GermConvenience
 import HTTPTypes
 
-public protocol OAuthClientAuthenticatable: Codable, Hashable, Sendable {
+public protocol OAuthClientAuthenticatable: Sendable {
 	var tokenEndpointAuthMethod: String { get }
 
 	func authenticate(
@@ -11,7 +11,4 @@ public protocol OAuthClientAuthenticatable: Codable, Hashable, Sendable {
 		headers: HTTPFields,
 	) async throws
 		-> (FormParameters, HTTPFields)
-
-	func encode(to encoder: any Encoder) throws
-	init(from decoder: any Decoder) throws
 }
