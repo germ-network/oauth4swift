@@ -10,16 +10,6 @@ public struct ClientAuthSecretPost: OAuthClientAuthenticatable {
 		self.clientSecret = clientSecret
 	}
 
-	public init(from decoder: any Decoder) throws {
-		let container = try decoder.singleValueContainer()
-		self.clientSecret = try container.decode(String.self)
-	}
-
-	public func encode(to encoder: any Encoder) throws {
-		var container = encoder.singleValueContainer()
-		try container.encode(self.clientSecret)
-	}
-
 	public func authenticate(
 		client: OAuthClient,
 		authorizationServer: AuthServerMetadata,
