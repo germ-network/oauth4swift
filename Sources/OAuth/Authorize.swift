@@ -15,25 +15,25 @@ public struct AuthorizeInputs {
 	let clientMetadata: OAuthClient
 	let clientAuthentication: any OAuthClientAuthenticatable
 	let requestedScopes: [String]
-	let stateToken: String
 	let pkceVerifier: PKCEVerifier
-	let parConfig: PARConfiguration?
+	let parameters: FormParameters?
 	let issuer: URL
+	var stateToken: String?
 
 	public init(
 		clientMetadata: OAuthClient,
 		clientAuthentication: any OAuthClientAuthenticatable,
 		scopes: [String]? = nil,
-		stateToken: String = UUID().uuidString,
+		stateToken: String?,
 		pkceVerifier: PKCEVerifier = .init(),
-		parConfig: PARConfiguration?,
+		parameters: FormParameters?,
 		issuer: URL
 	) {
 		self.clientMetadata = clientMetadata
 		self.clientAuthentication = clientAuthentication
 		self.stateToken = stateToken
 		self.pkceVerifier = pkceVerifier
-		self.parConfig = parConfig
+		self.parameters = parameters
 		self.issuer = issuer
 
 		if let scopes {
@@ -75,77 +75,98 @@ public struct AuthServerRequestOptions: Sendable {
 		authorizeInputs: AuthorizeInputs,
 		userAuthenticator: UserAuthenticator,
 	) async throws -> SessionState.Archive {
-		let clientId = authorizeInputs.clientMetadata.clientId
-		let challenge = authorizeInputs.pkceVerifier.challenge
-		let scopes = authorizeInputs.requestedScopes.joined(separator: " ")
-
 		let authServerMetadata = try await authFetcher.authServerDiscovery(
 			issuer: authorizeInputs.issuer
 		)
 
-		if let parConfig = authorizeInputs.parConfig {
-			let parParams = [
-				"client_id": clientId,
-				"state": authorizeInputs.stateToken,
-				"scope": scopes,
-				"response_type": "code",
-				"redirect_uri": authorizeInputs.clientMetadata.redirectURI
-					.absoluteString,
-				"code_challenge": challenge.value,
-				"code_challenge_method": challenge.method,
-			].merging(parConfig.parameters, uniquingKeysWith: { a, b in a })
+		var authorizeInputs = authorizeInputs
 
+		// If PKCE is not supported, and we don't have a state parameter, generate a
+		// state parameter using a UUID:
+		if authorizeInputs.stateToken == nil {
+			switch authServerMetadata.codeChallengeMethodsSupported?.contains("S256") {
+			case nil, false:
+				authorizeInputs.stateToken = UUID().uuidString
+			default:
+				break
+			}
+		}
+
+		let clientId = authorizeInputs.clientMetadata.clientId
+		let challenge = authorizeInputs.pkceVerifier.challenge
+		let scopes = authorizeInputs.requestedScopes.joined(separator: " ")
+		var parameters = FormParameters([
+			"client_id": clientId,
+			"scope": scopes,
+			"response_type": "code",
+			"redirect_uri": authorizeInputs.clientMetadata.redirectURI
+				.absoluteString,
+			"code_challenge": challenge.value,
+			"code_challenge_method": challenge.method,
+		])
+
+		// todo: merging with authorizeInputs.parameters
+		// if let additionalParameters = authorizeInputs.parameters {
+		// 	parameters = parameters.merging(additionalParameters, uniquingKeysWith: { a, b in a }))
+
+		if let state = authorizeInputs.stateToken {
+			parameters["state"] = state
+		}
+
+		// If we're using PAR, perform the request and replace the parameters for
+		// authorization:
+		if authServerMetadata.pushedAuthorizationRequestEndpoint != nil {
 			let parHTTPResponse = try await pushedAuthorizationRequest(
 				authServerMetadata: authServerMetadata,
 				clientMetadata: authorizeInputs.clientMetadata,
 				clientAuthentication: authorizeInputs.clientAuthentication,
-				parameters: parParams,
-				//TODO: get these from a config
-				headers: [],
+				parameters: parameters
 			)
 
 			let parResponse = try OAuthComponents.processPushedAuthorizationResponse(
 				response: parHTTPResponse
 			)
 
-			let tokenURL = try Self.authorizationURL(
-				authEndpoint: authServerMetadata.authorizationEndpoint,
-				clientId: clientId,
-				parRequestURI: parResponse.requestURI,
-			)
-
-			let scheme = try authorizeInputs.clientMetadata.redirectURIScheme
-
-			let callbackURL = try await userAuthenticator(tokenURL, scheme)
-
-			return try await finishAuthorization(
-				callbackURL: callbackURL,
-				authInputs: authorizeInputs,
-				authServerMetadata: authServerMetadata,
-			)
-		} else {
-			throw OAuthError.notImplemented
+			parameters = FormParameters([
+				"client_id": clientId,
+				"request_uri": parResponse.requestURI,
+			])
 		}
+
+		let authorizationUrl = try Self.authorizationURL(
+			authorizationEndpoint: authServerMetadata.authorizationEndpoint,
+			parameters: parameters
+		)
+
+		let scheme = try authorizeInputs.clientMetadata.redirectURIScheme
+
+		let callbackURL = try await userAuthenticator(authorizationUrl, scheme)
+
+		return try await finishAuthorization(
+			callbackURL: callbackURL,
+			authInputs: authorizeInputs,
+			authServerMetadata: authServerMetadata,
+		)
 	}
 
 	func pushedAuthorizationRequest(
 		authServerMetadata: AuthServerMetadata,
 		clientMetadata: OAuthClient,
 		clientAuthentication: any OAuthClientAuthenticatable,
-		parameters: [String: String],
-		headers: [HTTPField],
+		parameters: FormParameters,
+		headers: HTTPFields? = nil,
 	) async throws -> HTTPDataResponse {
 		let parEndpoint = try authServerMetadata.resolve(
 			endpoint: .par)
 
-		var rawHeaders = HTTPFields(headers)
+		var rawHeaders = headers ?? HTTPFields()
 		rawHeaders[.accept] = HTTPContentType.json.rawValue
 		rawHeaders[.contentType] = HTTPContentType.formData.rawValue
 
 		let (params, headers) = try await clientAuthentication.authenticate(
 			client: clientMetadata,
 			authorizationServer: authServerMetadata,
-			parameters: FormParameters(parameters),
+			parameters: parameters,
 			headers: rawHeaders
 		)
 
@@ -155,7 +176,7 @@ public struct AuthServerRequestOptions: Sendable {
 				url: parEndpoint,
 				headerFields: headers
 			),
-			parameters: params
+			body: params.data
 		)
 
 		if let dpopSigner {
@@ -170,16 +191,13 @@ public struct AuthServerRequestOptions: Sendable {
 	}
 
 	static private func authorizationURL(
-		authEndpoint: URL,
-		clientId: String,
-		parRequestURI: String,
+		authorizationEndpoint: URL,
+		parameters: FormParameters
 	) throws -> URL {
-		var components = URLComponents(url: authEndpoint, resolvingAgainstBaseURL: false)
+		var components = URLComponents(
+			url: authorizationEndpoint, resolvingAgainstBaseURL: false)
 
-		components?.queryItems = [
-			URLQueryItem(name: "request_uri", value: parRequestURI),
-			URLQueryItem(name: "client_id", value: clientId),
-		]
+		components?.queryItems = parameters.asQueryItems()
 
 		return try (components?.url).tryUnwrap
 	}
@@ -214,7 +232,6 @@ public struct AuthServerRequestOptions: Sendable {
 
 		return .init(
 			client: authInputs.clientMetadata,
-			// clientAuthentication: authInputs.clientAuthentication,
 			dPopKey: try await dpopSigner?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
 			additionalParams: additionalParams,
@@ -304,7 +321,7 @@ public struct AuthServerRequestOptions: Sendable {
 		refreshToken: String,
 	) async throws -> HTTPDataResponse {
 		var parameters = FormParameters(additionalParameters)
-		parameters.set(name: "refresh_token", value: refreshToken)
+		parameters["refresh_token"] = refreshToken
 
 		return try await tokenEndpointRequest(
 			authServerMetadata: authServerMetadata,
@@ -345,7 +362,7 @@ public struct AuthServerRequestOptions: Sendable {
 				url: url,
 				headerFields: headers
 			),
-			parameters: parameters
+			body: parameters.data
 		)
 
 		if let dpopSigner {
