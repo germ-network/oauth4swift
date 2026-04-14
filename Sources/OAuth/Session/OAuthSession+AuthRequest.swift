@@ -112,6 +112,9 @@ extension OAuthSessionCapabilities {
 
 		let httpResponse = try await authServerRequestOptions.refreshTokenGrantRequest(
 			authServerMetadata: authServerMetadata,
+			client: state.client,
+			// FIXME once we can restore the Client Authentication in SessionState
+			clientAuthentication: ClientAuthNone(),
 			refreshToken: state.mutable.refreshToken.tryUnwrap.value,
 		)
 		let tokenResponse = try OAuthComponents.processRefreshTokenResponse(
