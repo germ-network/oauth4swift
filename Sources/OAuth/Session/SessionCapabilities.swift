@@ -21,8 +21,5 @@ public protocol OAuthSessionCapabilities: Actor {
 	//should not follow redirects
 	var authFetcher: HTTPFetcher { get }
 
-	//auth
-	var retriableIssuer: URL { get async throws }
-
 	var authServerRequestOptions: AuthServerRequestOptions { get }
 }
