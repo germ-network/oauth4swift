@@ -10,21 +10,21 @@ import Foundation
 import GermConvenience
 
 extension OAuth {
-	public protocol SessionCapabilities: Actor {
+	public protocol SessionCapabilities: Actor, ClientAuthenticatable {
 		var clientId: String { get }
-		
+
 		var lazyServerMetadata: LazyResource<AuthServerMetadata> { get }
-		
+
 		var session: SessionState { get throws }
 		func refreshed(sessionMutable: SessionState.Mutable) throws
 		var refreshTask: Task<SessionState.Mutable, Error>? { get set }
-		
+
 		//should not follow redirects
 		var authFetcher: HTTPFetcher { get }
-		
+
 		//auth
 		var retriableIssuer: URL { get async throws }
-		
+
 		var authServerRequestOptions: AuthServerRequestOptions { get }
 	}
 }
