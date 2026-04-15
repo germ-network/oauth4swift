@@ -111,8 +111,8 @@ extension OAuthSessionCapabilities {
 		)
 
 		let httpResponse = try await authServerRequestOptions.refreshTokenGrantRequest(
+			clientId: clientId,
 			authServerMetadata: authServerMetadata,
-			client: state.client,
 			// FIXME once we can restore the Client Authentication in SessionState
 			clientAuthentication: ClientAuthNone(),
 			refreshToken: state.mutable.refreshToken.tryUnwrap.value,
@@ -125,7 +125,7 @@ extension OAuthSessionCapabilities {
 		//tokenResponse; also passes the current session state to allow verifying
 		//that the token sub hasn't changed during refresh:
 		let previousState = ImmutableSessionState(
-			client: state.client,
+			clientId: state.clientId,
 			issuingServer: state.issuingServer,
 			additionalParams: state.additionalParams,
 			grantScopes: state.grantScopes

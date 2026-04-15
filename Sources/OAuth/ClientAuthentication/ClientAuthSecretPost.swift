@@ -11,14 +11,11 @@ public struct ClientAuthSecretPost: OAuthClientAuthenticatable {
 	}
 
 	public func authenticate(
-		client: OAuthClient,
-		authorizationServer: AuthServerMetadata,
-		parameters: FormParameters,
-		headers: HTTPFields
+		inputs: OAuthComponents.ClientAuthInputs
 	) async throws -> (FormParameters, HTTPFields) {
-		var params = parameters
-		params["client_id"] = client.clientId
+		var params = inputs.parameters
+		params["client_id"] = inputs.clientId
 		params["client_secret"] = clientSecret
-		return (params, headers)
+		return (params, inputs.headers)
 	}
 }

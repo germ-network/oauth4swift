@@ -12,35 +12,33 @@ import Logging
 
 //for authorize
 public struct AuthorizeInputs {
-	let clientMetadata: OAuthClient
+	let clientId: String
+	let scopes: [String]
+	let redirectURI: URL
 	let clientAuthentication: any OAuthClientAuthenticatable
-	let requestedScopes: [String]
 	let pkceVerifier: PKCEVerifier
 	let parameters: FormParameters?
 	let issuer: URL
 	var stateToken: String?
 
 	public init(
-		clientMetadata: OAuthClient,
+		clientId: String,
+		redirectURI: URL,
 		clientAuthentication: any OAuthClientAuthenticatable,
-		scopes: [String]? = nil,
+		scopes: [String],
 		stateToken: String?,
 		pkceVerifier: PKCEVerifier = .init(),
 		parameters: FormParameters?,
 		issuer: URL
 	) {
-		self.clientMetadata = clientMetadata
+		self.clientId = clientId
+		self.redirectURI = redirectURI
 		self.clientAuthentication = clientAuthentication
+		self.scopes = scopes
 		self.stateToken = stateToken
 		self.pkceVerifier = pkceVerifier
 		self.parameters = parameters
 		self.issuer = issuer
-
-		if let scopes {
-			self.requestedScopes = scopes
-		} else {
-			self.requestedScopes = clientMetadata.scopes
-		}
 	}
 }
 
@@ -92,14 +90,13 @@ public struct AuthServerRequestOptions: Sendable {
 			}
 		}
 
-		let clientId = authorizeInputs.clientMetadata.clientId
 		let challenge = authorizeInputs.pkceVerifier.challenge
-		let scopes = authorizeInputs.requestedScopes.joined(separator: " ")
+		let scopes = authorizeInputs.scopes.joined(separator: " ")
 		var parameters = FormParameters([
-			"client_id": clientId,
+			"client_id": authorizeInputs.clientId,
 			"scope": scopes,
 			"response_type": "code",
-			"redirect_uri": authorizeInputs.clientMetadata.redirectURI
+			"redirect_uri": authorizeInputs.redirectURI
 				.absoluteString,
 			"code_challenge": challenge.value,
 			"code_challenge_method": challenge.method,
@@ -117,8 +114,8 @@ public struct AuthServerRequestOptions: Sendable {
 		// authorization:
 		if authServerMetadata.pushedAuthorizationRequestEndpoint != nil {
 			let parHTTPResponse = try await pushedAuthorizationRequest(
+				clientId: authorizeInputs.clientId,
 				authServerMetadata: authServerMetadata,
-				clientMetadata: authorizeInputs.clientMetadata,
 				clientAuthentication: authorizeInputs.clientAuthentication,
 				parameters: parameters
 			)
@@ -128,7 +125,7 @@ public struct AuthServerRequestOptions: Sendable {
 			)
 
 			parameters = FormParameters([
-				"client_id": clientId,
+				"client_id": authorizeInputs.clientId,
 				"request_uri": parResponse.requestURI,
 			])
 		}
@@ -138,7 +135,8 @@ public struct AuthServerRequestOptions: Sendable {
 			parameters: parameters
 		)
 
-		let scheme = try authorizeInputs.clientMetadata.redirectURIScheme
+		let scheme = try authorizeInputs.redirectURI.scheme
+			.tryUnwrap(OAuthError.missingScheme)
 
 		let callbackURL = try await userAuthenticator(authorizationUrl, scheme)
 
@@ -150,8 +148,8 @@ public struct AuthServerRequestOptions: Sendable {
 	}
 
 	func pushedAuthorizationRequest(
+		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientMetadata: OAuthClient,
 		clientAuthentication: any OAuthClientAuthenticatable,
 		parameters: FormParameters,
 		headers: HTTPFields? = nil,
@@ -164,10 +162,12 @@ public struct AuthServerRequestOptions: Sendable {
 		rawHeaders[.contentType] = HTTPContentType.formData.rawValue
 
 		let (params, headers) = try await clientAuthentication.authenticate(
-			client: clientMetadata,
-			authorizationServer: authServerMetadata,
-			parameters: parameters,
-			headers: rawHeaders
+			inputs: .init(
+				clientId: clientId,
+				authServerMetadata: authServerMetadata,
+				parameters: parameters,
+				headers: rawHeaders
+			)
 		)
 
 		let request = try BundledHTTPRequest(
@@ -214,11 +214,11 @@ public struct AuthServerRequestOptions: Sendable {
 		)
 
 		let httpResponse = try await authorizationCodeGrantRequest(
+			clientId: authInputs.clientId,
 			authServerMetadata: authServerMetadata,
-			client: authInputs.clientMetadata,
 			clientAuthentication: authInputs.clientAuthentication,
 			callbackParameters: callbackParameters,
-			redirectURI: authInputs.clientMetadata.redirectURI,
+			redirectURI: authInputs.redirectURI,
 			pkceVerifier: authInputs.pkceVerifier.verifier,
 			additionalParameters: additionalParameters,
 		)
@@ -226,12 +226,12 @@ public struct AuthServerRequestOptions: Sendable {
 		let (mutableSessionState, additionalParams) =
 			try await processAuthorizationCodeOAuth2Response(
 				authServerMetadata: authServerMetadata,
-				client: authInputs.clientMetadata,
+				scopes: authInputs.scopes,
 				response: httpResponse
 			)
 
 		return .init(
-			client: authInputs.clientMetadata,
+			clientId: authInputs.clientId,
 			dPopKey: try await dpopSigner?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
 			additionalParams: additionalParams,
@@ -244,8 +244,8 @@ public struct AuthServerRequestOptions: Sendable {
 	}
 
 	public func authorizationCodeGrantRequest(
+		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		client: OAuthClient,
 		clientAuthentication: any OAuthClientAuthenticatable,
 		callbackParameters: OAuthComponents.AuthResponseParameters,
 		redirectURI: URL,
@@ -265,8 +265,8 @@ public struct AuthServerRequestOptions: Sendable {
 		}
 
 		return try await tokenEndpointRequest(
+			clientId: clientId,
 			authServerMetadata: authServerMetadata,
-			client: client,
 			clientAuthentication: clientAuthentication,
 			grantType: .authorizationCode,
 			parameters: parameters,
@@ -275,7 +275,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 	func processAuthorizationCodeOAuth2Response(
 		authServerMetadata: AuthServerMetadata,
-		client: OAuthClient,
+		scopes: [String],
 		response: HTTPDataResponse
 	) async throws -> (SessionState.Mutable, [String: String]?) {
 		let tokenResponse = try OAuthComponents.processGenericAccessToken(
@@ -307,7 +307,9 @@ public struct AuthServerRequestOptions: Sendable {
 				value: tokenResponse.refreshToken,
 				timeout: tokenResponse.refreshTokenTimeout),
 			scopes: OAuthComponents.parseTokenScope(
-				tokenResponse.scope, parent: client.scopes),
+				tokenResponse.scope,
+				parent: scopes
+			),
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
 
@@ -315,8 +317,8 @@ public struct AuthServerRequestOptions: Sendable {
 	}
 
 	func refreshTokenGrantRequest(
+		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		client: OAuthClient,
 		clientAuthentication: any OAuthClientAuthenticatable,
 		refreshToken: String,
 	) async throws -> HTTPDataResponse {
@@ -324,8 +326,8 @@ public struct AuthServerRequestOptions: Sendable {
 		parameters["refresh_token"] = refreshToken
 
 		return try await tokenEndpointRequest(
+			clientId: clientId,
 			authServerMetadata: authServerMetadata,
-			client: client,
 			clientAuthentication: clientAuthentication,
 			grantType: .refreshToken,
 			parameters: parameters,
@@ -333,8 +335,8 @@ public struct AuthServerRequestOptions: Sendable {
 	}
 
 	func tokenEndpointRequest(
+		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		client: OAuthClient,
 		clientAuthentication: any OAuthClientAuthenticatable,
 		grantType: GrantType,
 		parameters: FormParameters,
@@ -350,10 +352,12 @@ public struct AuthServerRequestOptions: Sendable {
 		)
 
 		let (parameters, headers) = try await clientAuthentication.authenticate(
-			client: client,
-			authorizationServer: authServerMetadata,
-			parameters: parametersWithGrantType,
-			headers: rawHeaders
+			inputs: .init(
+				clientId: clientId,
+				authServerMetadata: authServerMetadata,
+				parameters: parametersWithGrantType,
+				headers: rawHeaders
+			)
 		)
 
 		let request = try BundledHTTPRequest(

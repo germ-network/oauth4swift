@@ -12,20 +12,17 @@ public struct ClientAuthSecretBasic: OAuthClientAuthenticatable {
 	}
 
 	public func authenticate(
-		client: OAuthClient,
-		authorizationServer: AuthServerMetadata,
-		parameters: FormParameters,
-		headers: HTTPFields
+		inputs: OAuthComponents.ClientAuthInputs
 	) async throws -> (FormParameters, HTTPFields) {
 		let basicAuth = [
-			client.clientId,
+			inputs.clientId,
 			clientSecret,
 		].joined(separator: ":")
 
-		var headers = headers
+		var headers = inputs.headers
 		// Replace the authorization header:
 		headers[.authorization] = basicAuth.utf8Data.base64EncodedString()
 
-		return (parameters, headers)
+		return (inputs.parameters, headers)
 	}
 }

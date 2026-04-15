@@ -54,7 +54,7 @@ public struct RefreshToken: OAuthToken {
 
 //best way to express fixed key and variable accessToken is as a reference type
 public class SessionState {
-	public let client: OAuthClient
+	public let clientId: String
 	public let issuingServer: String?
 	//stores the additional parameters from the TokenResponse
 	public let additionalParams: [String: String]?
@@ -66,14 +66,14 @@ public class SessionState {
 	var mutable: Mutable
 
 	public init(
-		client: OAuthClient,
+		clientId: String,
 		dPopKey: DPoPKey?,
 		issuingServer: String? = nil,
 		additionalParams: [String: String]? = nil,
 		grantScopes: [String]?,
 		mutable: Mutable
 	) {
-		self.client = client
+		self.clientId = clientId
 		self.dPopKey = dPopKey
 		self.issuingServer = issuingServer
 		self.additionalParams = additionalParams
@@ -125,7 +125,7 @@ public class SessionState {
 
 extension SessionState {
 	public struct Archive: Sendable, Codable {
-		let client: OAuthClient
+		let clientId: String
 		let dPopKey: DPoPKey?
 		let issuingServer: String?
 
@@ -135,14 +135,14 @@ extension SessionState {
 		public let mutable: SessionState.Mutable
 
 		public init(
-			client: OAuthClient,
+			clientId: String,
 			dPopKey: DPoPKey?,
 			issuingServer: String?,
 			additionalParams: [String: String]?,
 			grantScopes: [String]?,
 			mutable: SessionState.Mutable
 		) {
-			self.client = client
+			self.clientId = clientId
 			self.dPopKey = dPopKey
 			self.issuingServer = issuingServer
 			self.additionalParams = additionalParams
@@ -152,7 +152,7 @@ extension SessionState {
 
 		public func merge(update: SessionState.Mutable) -> Self {
 			.init(
-				client: client,
+				clientId: clientId,
 				dPopKey: dPopKey,
 				issuingServer: issuingServer,
 				additionalParams: additionalParams,
@@ -164,7 +164,7 @@ extension SessionState {
 
 	public convenience init(archive: Archive) {
 		self.init(
-			client: archive.client,
+			clientId: archive.clientId,
 			dPopKey: archive.dPopKey,
 			issuingServer: archive.issuingServer,
 			additionalParams: archive.additionalParams,
@@ -175,7 +175,7 @@ extension SessionState {
 
 	public var archive: Archive {
 		.init(
-			client: client,
+			clientId: clientId,
 			dPopKey: dPopKey,
 			issuingServer: issuingServer,
 			additionalParams: additionalParams,
@@ -186,7 +186,7 @@ extension SessionState {
 }
 
 public struct ImmutableSessionState: Sendable {
-	public let client: OAuthClient
+	public let clientId: String
 	public let issuingServer: String?
 	//stores the additional parameters from the TokenResponse
 	public let additionalParams: [String: String]?
@@ -194,12 +194,12 @@ public struct ImmutableSessionState: Sendable {
 	public let grantScopes: [String]?
 
 	public init(
-		client: OAuthClient,
+		clientId: String,
 		issuingServer: String? = nil,
 		additionalParams: [String: String]? = nil,
 		grantScopes: [String]?
 	) {
-		self.client = client
+		self.clientId = clientId
 		self.issuingServer = issuingServer
 		self.additionalParams = additionalParams
 		self.grantScopes = grantScopes

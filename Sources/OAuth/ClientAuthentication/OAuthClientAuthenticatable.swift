@@ -5,10 +5,7 @@ public protocol OAuthClientAuthenticatable: Sendable {
 	var tokenEndpointAuthMethod: String { get }
 
 	func authenticate(
-		client: OAuthClient,
-		authorizationServer: AuthServerMetadata,
-		parameters: FormParameters,
-		headers: HTTPFields,
+		inputs: OAuthComponents.ClientAuthInputs
 	) async throws
 		-> (FormParameters, HTTPFields)
 }
