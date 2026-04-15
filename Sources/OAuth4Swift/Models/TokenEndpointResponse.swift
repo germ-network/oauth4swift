@@ -36,7 +36,7 @@ public struct TokenEndpointResponse {
 			case TokenType.bearer.rawValue:
 				self = .bearer
 			default:
-				throw OAuthError.unrecognizedTokenType
+				throw OAuth.Errors.unrecognizedTokenType
 			}
 		}
 	}

@@ -216,7 +216,7 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 			}
 
 		guard url.scheme == "https" else {
-			throw OAuthError.insecureScheme
+			throw OAuth.Errors.insecureScheme
 		}
 
 		return url

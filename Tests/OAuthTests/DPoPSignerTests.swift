@@ -10,7 +10,7 @@ import Foundation
 import GermConvenience
 import Testing
 
-@testable import OAuth
+@testable import OAuth4Swift
 
 struct Test {
 	let dpopSigner = AuthDPopState(

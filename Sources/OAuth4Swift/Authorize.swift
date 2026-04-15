@@ -136,7 +136,7 @@ public struct AuthServerRequestOptions: Sendable {
 		)
 
 		let scheme = try authorizeInputs.redirectURI.scheme
-			.tryUnwrap(OAuthError.missingScheme)
+			.tryUnwrap(OAuth.Errors.missingScheme)
 
 		let callbackURL = try await userAuthenticator(authorizationUrl, scheme)
 
@@ -253,7 +253,7 @@ public struct AuthServerRequestOptions: Sendable {
 		additionalParameters: [String: String],
 	) async throws -> HTTPDataResponse {
 		guard let code = callbackParameters["code"].first else {
-			throw OAuthError.missingAuthCode
+			throw OAuth.Errors.missingAuthCode
 		}
 
 		var parameters = FormParameters(additionalParameters)
@@ -285,7 +285,7 @@ public struct AuthServerRequestOptions: Sendable {
 		//server can really issue the token for that `sub` parameter in the
 		//tokenResponse
 		if try await tokenValidator(tokenResponse, authServerMetadata, nil) == false {
-			throw OAuthError.tokenInvalid
+			throw OAuth.Errors.tokenInvalid
 		}
 
 		let additionalParams = tokenResponse.additionalFields?

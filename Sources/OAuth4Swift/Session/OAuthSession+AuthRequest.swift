@@ -27,7 +27,7 @@ extension OAuth.SessionCapabilities {
 
 		// FIXME: This isn't really to spec: 401 doesn't mean "refresh", it just means unauthorized.
 		guard case result.response.status.code = 401 else {
-			throw OAuthError.httpResponse(response: result)
+			throw OAuth.Errors.httpResponse(response: result)
 		}
 
 		//try to refresh the token
@@ -134,7 +134,7 @@ extension OAuth.SessionCapabilities {
 		if try await authServerRequestOptions.tokenValidator(
 			tokenResponse, authServerMetadata, previousState) == false
 		{
-			throw OAuthError.tokenInvalid
+			throw OAuth.Errors.tokenInvalid
 		}
 
 		let newSessionState = SessionState.Mutable(
@@ -170,7 +170,7 @@ extension HTTPDataResponse {
 		case 400:
 			do {
 				let err = try JSONDecoder().decode(
-					OAuthErrorResponse.self, from: data)
+					OAuth.ErrorResponse.self, from: data)
 				return err.error == "use_dpop_nonce"
 			} catch {
 				return false

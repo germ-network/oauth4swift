@@ -22,14 +22,14 @@ extension OAuth {
 			.success(
 				code: 201,
 				decodeResult: PARResponse.self,
-				orError: OAuthErrorResponse.self
+				orError: OAuth.ErrorResponse.self
 			)
 
 		switch parsed {
 		case .result(let result):
 			return result
 		case .error(let errorResponse, let errorCode):
-			throw OAuthError.oauthError(errorResponse, errorCode)
+			throw OAuth.Errors.oauthError(errorResponse, errorCode)
 		}
 	}
 
@@ -68,7 +68,7 @@ extension OAuth {
 		//validate state if we have an expected state:
 		if let expectedState {
 			guard state == expectedState else {
-				throw OAuthError.stateTokenMismatch(state ?? "[nil]", expectedState)
+				throw Errors.stateTokenMismatch(state ?? "[nil]", expectedState)
 			}
 		}
 
@@ -77,12 +77,12 @@ extension OAuth {
 		if iss == nil
 			&& authServerMetadata.authorizationResponseIssParameterSupported == true
 		{
-			throw OAuthError.missingIssuer
+			throw Errors.missingIssuer
 		}
 
 		if let iss {
 			guard iss == authServerMetadata.issuer else {
-				throw OAuthError.issuingServerMismatch(
+				throw Errors.issuingServerMismatch(
 					iss,
 					authServerMetadata.issuer
 				)
@@ -104,15 +104,15 @@ extension OAuth {
 			// The error should always be lowercase, but just being defensive:
 			switch error.lowercased() {
 			case "access_denied":
-				throw OAuthError.accessDenied
+				throw Errors.accessDenied
 			case "invalid_request":
-				throw OAuthError.invalidRequest
+				throw Errors.invalidRequest
 			case "invalid_scope":
-				throw OAuthError.invalidScope
+				throw Errors.invalidScope
 			default:
 				// We do actually have error and error_description parameters, so we
 				// return an error with those present.
-				throw OAuthError.redirectError(
+				throw Errors.redirectError(
 					error.lowercased(), errorDescription)
 			}
 		}
@@ -162,7 +162,7 @@ extension OAuth {
 			try response
 			.success(
 				decodeResult: TokenEndpointResponse.self,
-				orError: OAuthErrorResponse.self
+				orError: OAuth.ErrorResponse.self
 			)
 
 		switch decodedResponse {
@@ -171,11 +171,11 @@ extension OAuth {
 		case .error(let e, let statusCode):
 			switch e.error {
 			case "invalid_request":
-				throw OAuthError.invalidRequest
+				throw Errors.invalidRequest
 			case "invalid_response":
-				throw OAuthError.invalidResponse
+				throw Errors.invalidResponse
 			default:
-				throw OAuthError.oauthError(e, statusCode)
+				throw Errors.oauthError(e, statusCode)
 			}
 		}
 	}
@@ -246,7 +246,7 @@ extension HTTPFetcher {
 		request: BundledHTTPRequest
 	) async throws -> HTTPDataResponse? {
 		guard request.request.scheme == "https" else {
-			throw OAuthError.insecureScheme
+			throw OAuth.Errors.insecureScheme
 		}
 		let result = try await data(for: request)
 		if result.response.status == .notFound {
