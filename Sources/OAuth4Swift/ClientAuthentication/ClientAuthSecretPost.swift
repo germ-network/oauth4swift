@@ -2,7 +2,7 @@ import Foundation
 import GermConvenience
 import HTTPTypes
 
-public struct ClientAuthSecretPost: OAuthClientAuthenticatable {
+public struct ClientAuthSecretPost: OAuth.ClientAuthenticatable {
 	private let clientSecret: String
 	public var tokenEndpointAuthMethod = "client_secret_post"
 
@@ -11,7 +11,7 @@ public struct ClientAuthSecretPost: OAuthClientAuthenticatable {
 	}
 
 	public func authenticate(
-		inputs: OAuthComponents.ClientAuthInputs
+		inputs: OAuth.ClientAuthInputs
 	) async throws -> (FormParameters, HTTPFields) {
 		var params = inputs.parameters
 		params["client_id"] = inputs.clientId

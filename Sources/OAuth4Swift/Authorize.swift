@@ -15,7 +15,7 @@ public struct AuthorizeInputs {
 	let clientId: String
 	let scopes: [String]
 	let redirectURI: URL
-	let clientAuthentication: any OAuthClientAuthenticatable
+	let clientAuthentication: any OAuth.ClientAuthenticatable
 	let pkceVerifier: PKCEVerifier
 	let parameters: FormParameters?
 	let issuer: URL
@@ -24,7 +24,7 @@ public struct AuthorizeInputs {
 	public init(
 		clientId: String,
 		redirectURI: URL,
-		clientAuthentication: any OAuthClientAuthenticatable,
+		clientAuthentication: any OAuth.ClientAuthenticatable,
 		scopes: [String],
 		stateToken: String?,
 		pkceVerifier: PKCEVerifier = .init(),
@@ -120,7 +120,7 @@ public struct AuthServerRequestOptions: Sendable {
 				parameters: parameters
 			)
 
-			let parResponse = try OAuthComponents.processPushedAuthorizationResponse(
+			let parResponse = try OAuth.processPushedAuthorizationResponse(
 				response: parHTTPResponse
 			)
 
@@ -150,7 +150,7 @@ public struct AuthServerRequestOptions: Sendable {
 	func pushedAuthorizationRequest(
 		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthentication: any OAuthClientAuthenticatable,
+		clientAuthentication: any OAuth.ClientAuthenticatable,
 		parameters: FormParameters,
 		headers: HTTPFields? = nil,
 	) async throws -> HTTPDataResponse {
@@ -207,7 +207,7 @@ public struct AuthServerRequestOptions: Sendable {
 		authInputs: AuthorizeInputs,
 		authServerMetadata: AuthServerMetadata,
 	) async throws -> SessionState.Archive {
-		let callbackParameters = try OAuthComponents.validateAuthResponse(
+		let callbackParameters = try OAuth.validateAuthResponse(
 			authServerMetadata: authServerMetadata,
 			callbackURL: callbackURL,
 			expectedState: authInputs.stateToken
@@ -246,8 +246,8 @@ public struct AuthServerRequestOptions: Sendable {
 	public func authorizationCodeGrantRequest(
 		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthentication: any OAuthClientAuthenticatable,
-		callbackParameters: OAuthComponents.AuthResponseParameters,
+		clientAuthentication: any OAuth.ClientAuthenticatable,
+		callbackParameters: OAuth.AuthResponseParameters,
 		redirectURI: URL,
 		pkceVerifier: String?,
 		additionalParameters: [String: String],
@@ -278,7 +278,7 @@ public struct AuthServerRequestOptions: Sendable {
 		scopes: [String],
 		response: HTTPDataResponse
 	) async throws -> (SessionState.Mutable, [String: String]?) {
-		let tokenResponse = try OAuthComponents.processGenericAccessToken(
+		let tokenResponse = try OAuth.processGenericAccessToken(
 			response: response)
 
 		//check the token response is valid, e.g., asserting the authorization
@@ -306,7 +306,7 @@ public struct AuthServerRequestOptions: Sendable {
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
 				timeout: tokenResponse.refreshTokenTimeout),
-			scopes: OAuthComponents.parseTokenScope(
+			scopes: OAuth.parseTokenScope(
 				tokenResponse.scope,
 				parent: scopes
 			),
@@ -319,7 +319,7 @@ public struct AuthServerRequestOptions: Sendable {
 	func refreshTokenGrantRequest(
 		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthentication: any OAuthClientAuthenticatable,
+		clientAuthentication: any OAuth.ClientAuthenticatable,
 		refreshToken: String,
 	) async throws -> HTTPDataResponse {
 		var parameters = FormParameters(additionalParameters)
@@ -337,7 +337,7 @@ public struct AuthServerRequestOptions: Sendable {
 	func tokenEndpointRequest(
 		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthentication: any OAuthClientAuthenticatable,
+		clientAuthentication: any OAuth.ClientAuthenticatable,
 		grantType: GrantType,
 		parameters: FormParameters,
 	) async throws -> HTTPDataResponse {

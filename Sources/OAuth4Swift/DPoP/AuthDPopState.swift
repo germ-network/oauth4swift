@@ -24,7 +24,7 @@ public actor AuthDPopState: DPoPSigning {
 		self.decoder = decoder
 	}
 
-	public func getNonce(origin: String) -> OAuth.IndexedNonce? {
+	public func getNonce(origin: String) -> IndexedNonce? {
 		nonceCache.object(forKey: origin as NSString)
 	}
 

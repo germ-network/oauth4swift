@@ -13,7 +13,7 @@ import GermConvenience
 #endif
 
 ///Direct analog to oauth4web's OAuth module in providing stateless API as building blocks for a full client
-public enum OAuthComponents {
+extension OAuth {
 	static public func processPushedAuthorizationResponse(
 		response: HTTPDataResponse
 	) throws -> PARResponse {

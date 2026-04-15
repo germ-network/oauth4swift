@@ -9,7 +9,7 @@ import Foundation
 import GermConvenience
 import HTTPTypes
 
-extension OAuthComponents {
+extension OAuth {
 	public struct ClientAuthInputs {
 		public let clientId: String
 		public let authServerMetadata: AuthServerMetadata

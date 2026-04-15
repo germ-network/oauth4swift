@@ -8,7 +8,7 @@
 import Foundation
 import GermConvenience
 
-extension OAuthSessionCapabilities {
+extension OAuth.SessionCapabilities {
 	public func authResponse(
 		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
@@ -114,10 +114,10 @@ extension OAuthSessionCapabilities {
 			clientId: clientId,
 			authServerMetadata: authServerMetadata,
 			// FIXME once we can restore the Client Authentication in SessionState
-			clientAuthentication: ClientAuthNone(),
+			clientAuthentication: OAuth.ClientAuthNone(),
 			refreshToken: state.mutable.refreshToken.tryUnwrap.value,
 		)
-		let tokenResponse = try OAuthComponents.processRefreshTokenResponse(
+		let tokenResponse = try OAuth.processRefreshTokenResponse(
 			response: httpResponse)
 
 		//check the token response is valid, e.g., asserting the authorization
@@ -144,7 +144,7 @@ extension OAuthSessionCapabilities {
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
 				timeout: tokenResponse.refreshTokenTimeout),
-			scopes: OAuthComponents.parseTokenScope(
+			scopes: OAuth.parseTokenScope(
 				tokenResponse.scope, parent: previousState.grantScopes),
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
