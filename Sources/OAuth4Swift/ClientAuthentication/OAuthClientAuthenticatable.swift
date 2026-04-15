@@ -3,7 +3,7 @@ import HTTPTypes
 
 extension OAuth {
 	public protocol ClientAuthenticatable: Sendable {
-		var tokenEndpointAuthMethod: String { get }
+		var tokenEndpointAuthMethod: TokenEndpointMethods { get }
 
 		func authenticate(
 			inputs: OAuth.ClientAuthInputs

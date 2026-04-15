@@ -7,7 +7,7 @@ import HTTPTypes
 ///which inherits from ClientAuthenticatable
 extension OAuth {
 	public struct ClientAuthNone: ClientAuthenticatable {
-		public var tokenEndpointAuthMethod = "none"
+		public var tokenEndpointAuthMethod: OAuth.TokenEndpointMethods = .none
 
 		public func authenticate(
 			inputs: OAuth.ClientAuthInputs

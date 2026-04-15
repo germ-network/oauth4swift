@@ -4,7 +4,7 @@ import HTTPTypes
 
 public struct ClientAuthSecretPost: OAuth.ClientAuthenticatable {
 	private let clientSecret: String
-	public var tokenEndpointAuthMethod = "client_secret_post"
+	public var tokenEndpointAuthMethod: OAuth.TokenEndpointMethods = .clientSecretPost
 
 	public init(clientSecret: String) {
 		self.clientSecret = clientSecret
