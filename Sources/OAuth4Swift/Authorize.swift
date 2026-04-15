@@ -15,7 +15,7 @@ public struct AuthorizeInputs {
 	let clientId: String
 	let scopes: [String]
 	let redirectURI: URL
-	let clientAuthentication: any OAuth.ClientAuthenticatable
+	let clientAuthentication: any OAuth.AuthComponent
 	let pkceVerifier: PKCEVerifier
 	let parameters: FormParameters?
 	let issuer: URL
@@ -24,7 +24,7 @@ public struct AuthorizeInputs {
 	public init(
 		clientId: String,
 		redirectURI: URL,
-		clientAuthentication: any OAuth.ClientAuthenticatable,
+		clientAuthentication: any OAuth.AuthComponent,
 		scopes: [String],
 		stateToken: String?,
 		pkceVerifier: PKCEVerifier = .init(),
@@ -150,7 +150,7 @@ public struct AuthServerRequestOptions: Sendable {
 	func pushedAuthorizationRequest(
 		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthentication: any OAuth.ClientAuthenticatable,
+		clientAuthentication: any OAuth.AuthComponent,
 		parameters: FormParameters,
 		headers: HTTPFields? = nil,
 	) async throws -> HTTPDataResponse {
@@ -246,7 +246,7 @@ public struct AuthServerRequestOptions: Sendable {
 	public func authorizationCodeGrantRequest(
 		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthentication: any OAuth.ClientAuthenticatable,
+		clientAuthentication: any OAuth.AuthComponent,
 		callbackParameters: OAuth.AuthResponseParameters,
 		redirectURI: URL,
 		pkceVerifier: String?,
@@ -319,7 +319,7 @@ public struct AuthServerRequestOptions: Sendable {
 	func refreshTokenGrantRequest(
 		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthentication: any OAuth.ClientAuthenticatable,
+		clientAuthentication: any OAuth.AuthComponent,
 		refreshToken: String,
 	) async throws -> HTTPDataResponse {
 		var parameters = FormParameters(additionalParameters)
@@ -337,7 +337,7 @@ public struct AuthServerRequestOptions: Sendable {
 	func tokenEndpointRequest(
 		clientId: String,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthentication: any OAuth.ClientAuthenticatable,
+		clientAuthentication: any OAuth.AuthComponent,
 		grantType: GrantType,
 		parameters: FormParameters,
 	) async throws -> HTTPDataResponse {

@@ -6,7 +6,7 @@ import HTTPTypes
 ///Oauth expects to interact with the protocol through an implementation of SessionCapabilities
 ///which inherits from ClientAuthenticatable
 extension OAuth {
-	public struct ClientAuthNone: ClientAuthenticatable {
+	public struct ClientAuthNone: AuthComponent {
 		public var tokenEndpointAuthMethod: OAuth.TokenEndpointMethods = .none
 
 		public func authenticate(

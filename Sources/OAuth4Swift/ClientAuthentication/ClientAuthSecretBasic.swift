@@ -3,7 +3,7 @@ import GermConvenience
 import HTTPTypes
 
 // Usage not recommended, use ClientAuthSecretPost
-public struct ClientAuthSecretBasic: OAuth.ClientAuthenticatable {
+public struct ClientAuthSecretBasic: OAuth.AuthComponent {
 	private let clientSecret: String
 	public var tokenEndpointAuthMethod: OAuth.TokenEndpointMethods = .clientSecretBasic
 

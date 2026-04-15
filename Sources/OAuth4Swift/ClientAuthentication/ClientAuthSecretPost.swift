@@ -2,7 +2,7 @@ import Foundation
 import GermConvenience
 import HTTPTypes
 
-public struct ClientAuthSecretPost: OAuth.ClientAuthenticatable {
+public struct ClientAuthSecretPost: OAuth.AuthComponent {
 	private let clientSecret: String
 	public var tokenEndpointAuthMethod: OAuth.TokenEndpointMethods = .clientSecretPost
 
