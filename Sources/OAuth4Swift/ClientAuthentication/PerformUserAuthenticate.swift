@@ -37,21 +37,22 @@ extension OAuth.Authorizer {
 
 		let challenge = authorizeInputs.pkceVerifier.challenge
 		let scopes = authorizeInputs.clientInfo.scopes.joined(separator: " ")
-		
+
 		//any parameters we set in OAuth override conflicting parameters
 		//from the client app
 		var parameters = authorizeInputs.additionalParameters ?? .init()
-		
-		parameters.mergeReplacingValues(with: .init(
-			[
-				"scope": scopes,
-				"response_type": "code",
-				"redirect_uri": authorizeInputs.clientInfo.redirectURI
-					.absoluteString,
-				"code_challenge": challenge.value,
-				"code_challenge_method": challenge.method,
-			]
-		))
+
+		parameters.mergeReplacingValues(
+			with: .init(
+				[
+					"scope": scopes,
+					"response_type": "code",
+					"redirect_uri": authorizeInputs.clientInfo.redirectURI
+						.absoluteString,
+					"code_challenge": challenge.value,
+					"code_challenge_method": challenge.method,
+				]
+			))
 
 		if let stateToken {
 			parameters["state"] = stateToken
@@ -72,7 +73,7 @@ extension OAuth.Authorizer {
 
 			//reset the parameters
 			parameters = FormParameters([
-				"client_id":authorizeInputs.clientInfo.clientId,
+				"client_id": authorizeInputs.clientInfo.clientId,
 				"request_uri": parResponse.requestURI,
 			])
 		}
@@ -111,11 +112,11 @@ extension OAuth.Authorizer {
 		authServerMetadata: AuthServerMetadata,
 		parameters: FormParameters,
 		headers: HTTPFields? = nil,
-		clientAuthenticator: any OAuth.ClientAuthenticatable
+		clientAuthenticator: any OAuth.ClientAuth.Authenticable
 	) async throws -> HTTPDataResponse {
 		let parEndpoint = try authServerMetadata.resolve(
 			endpoint: .par)
-		
+
 		var rawHeaders = headers ?? HTTPFields()
 		rawHeaders[.accept] = HTTPContentType.json.rawValue
 		rawHeaders[.contentType] = HTTPContentType.formUrlEncoded.rawValue
@@ -136,7 +137,7 @@ extension OAuth.Authorizer {
 		callbackURL: URL,
 		expectedState: String?,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthenticator: any OAuth.ClientAuthenticatable
+		clientAuthenticator: any OAuth.ClientAuth.Authenticable
 	) async throws -> OAuth.SessionState.Archive {
 		let callbackParameters = try OAuth.validateAuthResponse(
 			authServerMetadata: authServerMetadata,

@@ -2,12 +2,12 @@ import Foundation
 import GermConvenience
 import HTTPTypes
 
-extension OAuth {
-	public protocol ClientAuthenticatable: Sendable {
+extension OAuth.ClientAuth {
+	public protocol Authenticable: Sendable {
 		var tokenEndpointAuthMethod: TokenEndpointMethods { get }
 
 		func authenticate(
-			inputs: ClientAuthInputs
+			inputs: Inputs
 		) async throws -> (FormParameters, HTTPFields)
 
 		var authFetcher: HTTPFetcher { get }
@@ -15,11 +15,11 @@ extension OAuth {
 	}
 }
 
-extension OAuth.ClientAuthenticatable {
+extension OAuth.ClientAuth.Authenticable {
 	func authenticatedRequest(
 		url: URL,
 		method: HTTPRequest.Method,
-		inputs: OAuth.ClientAuthInputs,
+		inputs: OAuth.ClientAuth.Inputs,
 		retry: Bool
 	) async throws -> HTTPDataResponse {
 		let (parameters, headers) = try await authenticate(
@@ -58,7 +58,7 @@ extension OAuth.ClientAuthenticatable {
 	}
 }
 
-extension OAuth.ClientAuthenticatable {
+extension OAuth.ClientAuth.Authenticable {
 	public func authorizationCodeGrantRequest(
 		authServerMetadata: AuthServerMetadata,
 		callbackParameters: OAuth.AuthResponseParameters,

@@ -82,7 +82,8 @@ extension OAuth.SessionCapabilities {
 	}
 
 	//conserving in that it reuses result if a refresh is alread in flght
-	private func conservingRefresh(state: OAuth.SessionState) async throws -> OAuth.SessionState.TokenState
+	private func conservingRefresh(state: OAuth.SessionState) async throws
+		-> OAuth.SessionState.TokenState
 	{
 		if let refreshTask {
 			return try await refreshTask.value

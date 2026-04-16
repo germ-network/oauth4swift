@@ -1,5 +1,5 @@
 //
-//  AuthComponent.swift
+//  Component.swift
 //  OAuth4Swift
 //
 //  Created by Mark @ Germ on 4/15/26.
@@ -9,40 +9,40 @@ import Foundation
 import GermConvenience
 import HTTPTypes
 
-extension OAuth {
-	public protocol ClientAuthComponent: Sendable {
+extension OAuth.ClientAuth {
+	public protocol Component: Sendable {
 		var tokenEndpointAuthMethod: TokenEndpointMethods { get }
 
 		func authenticate(
 			clientId: String,
-			inputs: OAuth.ClientAuthInputs
+			inputs: OAuth.ClientAuth.Inputs
 		) async throws
 			-> (FormParameters, HTTPFields)
 
 		var archive: Data? { get throws }
 	}
 
-	public typealias ClientAuthComponentFactory =
+	public typealias ComponentFactory =
 		@Sendable (
 			TokenEndpointMethods,
 			Data?
-		) throws -> any ClientAuthComponent
+		) throws -> any Component
 
-	public static let DefaultClientAuthComponentFactory: ClientAuthComponentFactory = {
+	public static let DefaultFactory: ComponentFactory = {
 		method,
 		archive in
 		switch method {
 		case .none:
-			return ClientAuthNone()
+			return None()
 		case .clientSecretBasic:
-			return ClientAuthSecretBasic(
+			return SecretBasic(
 				clientSecret: try JSONDecoder().decode(
 					String.self,
 					from: archive.tryUnwrap
 				)
 			)
 		case .clientSecretPost:
-			return ClientAuthSecretPost(
+			return SecretPost(
 				clientSecret: try JSONDecoder().decode(
 					String.self,
 					from: archive.tryUnwrap

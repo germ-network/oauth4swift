@@ -1,5 +1,5 @@
 //
-//  NegotiateClientAuth.swift
+//  Authorizer.swift
 //  OAuth4Swift
 //
 //  Created by Mark @ Germ on 4/16/26.
@@ -10,25 +10,25 @@ import GermConvenience
 
 extension OAuth {
 	public protocol Authorizer {
-		var authorizeInputs: OAuth.AuthorizeInputs { get }
+		var authorizeInputs: AuthorizeInputs { get }
 		var authServerRequestOptions: AuthServerRequestOptions { get }
 		var userAuthenticator: UserAuthenticator { get }
-		
+
 		func negotiate(authServerMetadata: AuthServerMetadata) throws
-		-> ClientAuthenticatable
-		
+			-> ClientAuth.Authenticable
+
 		var authFetcher: HTTPFetcher { get }
 	}
 }
 
 extension OAuth {
 	public struct AuthorizeInputs: Sendable {
-		public let clientInfo: OAuth.ClientInfo
+		public let clientInfo: ClientInfo
 		let pkceVerifier: PKCEVerifier
 		let issuer: URL
 		let inputToken: String?
 		let additionalParameters: FormParameters?
-		
+
 		public init(
 			clientInfo: ClientInfo,
 			pkceVerifier: PKCEVerifier = .init(),

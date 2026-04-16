@@ -10,7 +10,7 @@ import Foundation
 import GermConvenience
 
 extension OAuth {
-	public protocol SessionCapabilities: Actor, ClientAuthenticatable {
+	public protocol SessionCapabilities: Actor, ClientAuth.Authenticable {
 		nonisolated var clientId: String { get }
 
 		var lazyServerMetadata: LazyResource<AuthServerMetadata> { get }

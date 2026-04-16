@@ -1,5 +1,5 @@
 //
-//  Authorize.swift
+//  AuthServerRequestOptions.swift
 //  OAuth
 //
 //  Created by Mark @ Germ on 3/8/26.
@@ -17,15 +17,15 @@ import Logging
 extension OAuth {
 	public struct AuthServerRequestOptions: Sendable {
 		public typealias TokenValidator =
-		@Sendable (
-			TokenEndpointResponse,
-			AuthServerMetadata,
-			SessionState.Snapshot?
-		) async throws -> Bool
-		
+			@Sendable (
+				TokenEndpointResponse,
+				AuthServerMetadata,
+				SessionState.Snapshot?
+			) async throws -> Bool
+
 		let additionalParameters: [String: String]
 		let tokenValidator: TokenValidator
-		
+
 		public init(
 			additionalParameters: [String: String],
 			tokenValidator: @escaping TokenValidator,

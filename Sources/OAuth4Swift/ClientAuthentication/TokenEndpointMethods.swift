@@ -8,7 +8,7 @@
 import Foundation
 
 ///https://www.iana.org/assignments/oauth-parameters/oauth-parameters.xml#token-endpoint-auth-method
-extension OAuth {
+extension OAuth.ClientAuth {
 	public enum TokenEndpointMethods: String, Codable, Sendable {
 		case none
 		case clientSecretPost = "client_secret_post"

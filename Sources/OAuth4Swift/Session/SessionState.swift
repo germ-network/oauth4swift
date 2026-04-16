@@ -7,11 +7,13 @@
 
 import Foundation
 
-public protocol OAuthToken: Codable, Hashable, Sendable {
-	var expiry: Date? { get }
+extension OAuth {
+	public protocol Token: Codable, Hashable, Sendable {
+		var expiry: Date? { get }
+	}
 }
 
-extension OAuthToken {
+extension OAuth.Token {
 	public var valid: Bool {
 		guard let date = expiry else { return true }
 
@@ -19,35 +21,37 @@ extension OAuthToken {
 	}
 }
 
-public struct AccessToken: OAuthToken {
-	public let value: String
-	public let expiry: Date?
+extension OAuth {
+	public struct AccessToken: Token {
+		public let value: String
+		public let expiry: Date?
 
-	public init(value: String, expiresIn seconds: Int?) {
-		self.value = value
-		if let seconds {
-			self.expiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
-		} else {
-			self.expiry = nil
+		public init(value: String, expiresIn seconds: Int?) {
+			self.value = value
+			if let seconds {
+				self.expiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
+			} else {
+				self.expiry = nil
+			}
 		}
 	}
-}
 
-/// Holds a refresh token value and optionally it's expiry
-public struct RefreshToken: OAuthToken {
-	public let value: String
-	public let expiry: Date?
+	/// Holds a refresh token value and optionally it's expiry
+	public struct RefreshToken: Token {
+		public let value: String
+		public let expiry: Date?
 
-	public init?(value: String?, timeout seconds: Int?) {
-		guard let value else {
-			return nil
-		}
+		public init?(value: String?, timeout seconds: Int?) {
+			guard let value else {
+				return nil
+			}
 
-		self.value = value
-		if let seconds {
-			self.expiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
-		} else {
-			self.expiry = nil
+			self.value = value
+			if let seconds {
+				self.expiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
+			} else {
+				self.expiry = nil
+			}
 		}
 	}
 }
@@ -63,18 +67,18 @@ extension OAuth {
 		public let dPopKey: DPoPKey?
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
-		
+
 		//mutable state
-		let authComponent: any OAuth.ClientAuthComponent
+		let authComponent: any ClientAuth.Component
 		var tokenState: TokenState
-		
+
 		public init(
 			clientId: String,
 			dPopKey: DPoPKey?,
 			issuingServer: String? = nil,
 			additionalParams: [String: String]? = nil,
 			grantScopes: [String]?,
-			authComponent: some OAuth.ClientAuthComponent,
+			authComponent: some ClientAuth.Component,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
@@ -85,15 +89,15 @@ extension OAuth {
 			self.authComponent = authComponent
 			self.tokenState = tokenState
 		}
-		
+
 		public struct TokenState: Codable, Sendable {
 			var grantExpiry: Date?
 			var accessToken: AccessToken
 			var refreshToken: RefreshToken?
-			
+
 			// User authorized scopes
 			var scopes: [String]
-			
+
 			public init(
 				accessToken: AccessToken,
 				refreshToken: RefreshToken? = nil,
@@ -103,30 +107,31 @@ extension OAuth {
 				self.accessToken = accessToken
 				self.refreshToken = refreshToken
 				self.scopes = scopes
-				
+
 				// Support for Authorization Grants with expiry:
 				// https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html
 				if let seconds {
-					self.grantExpiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
+					self.grantExpiry = Date(
+						timeIntervalSinceNow: TimeInterval(seconds))
 				} else {
 					self.grantExpiry = nil
 				}
 			}
-			
+
 			/// Determines if the token object is valid.
 			///
 			/// A token without an expiry is unconditionally valid.
 			public var valid: Bool {
 				guard let date = grantExpiry else { return true }
-				
+
 				return date.timeIntervalSinceNow > 0
 			}
 		}
-		
+
 		public func updated(tokenState: TokenState) {
 			self.tokenState = tokenState
 		}
-		
+
 		public var authArchive: Data? {
 			get throws {
 				try authComponent.archive
@@ -138,7 +143,7 @@ extension OAuth {
 extension OAuth.SessionState {
 	public struct Archive: Sendable, Codable {
 		let clientId: String
-		let clientAuthMethod: OAuth.TokenEndpointMethods
+		let clientAuthMethod: OAuth.ClientAuth.TokenEndpointMethods
 		let dPopKey: DPoPKey?
 		let issuingServer: String?
 
@@ -146,17 +151,17 @@ extension OAuth.SessionState {
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
 		public var clientAuth: Data?
-		public var tokenState: OAuth.SessionState.TokenState
+		public var tokenState: TokenState
 
 		public init(
 			clientId: String,
-			clientAuthMethod: OAuth.TokenEndpointMethods,
+			clientAuthMethod: OAuth.ClientAuth.TokenEndpointMethods,
 			dPopKey: DPoPKey?,
 			issuingServer: String?,
 			additionalParams: [String: String]?,
 			grantScopes: [String]?,
 			clientAuth: Data?,
-			tokenState: OAuth.SessionState.TokenState
+			tokenState: TokenState
 		) {
 			self.clientId = clientId
 			self.clientAuthMethod = clientAuthMethod
@@ -167,14 +172,14 @@ extension OAuth.SessionState {
 			self.clientAuth = clientAuth
 			self.tokenState = tokenState
 		}
-		
+
 		public struct Mutable: Codable, Sendable {
 			public let clientAuth: Data?
-			public let tokenState: OAuth.SessionState.TokenState
-			
+			public let tokenState: TokenState
+
 			public init(
 				clientAuth: Data?,
-				tokenState: OAuth.SessionState.TokenState
+				tokenState: TokenState
 			) {
 				self.clientAuth = clientAuth
 				self.tokenState = tokenState
@@ -184,8 +189,8 @@ extension OAuth.SessionState {
 
 	public convenience init(
 		archive: Archive,
-		clientAuthFactory: OAuth.ClientAuthComponentFactory = OAuth
-			.DefaultClientAuthComponentFactory
+		clientAuthFactory: OAuth.ClientAuth.ComponentFactory = OAuth
+			.ClientAuth.DefaultFactory
 	) throws {
 		self.init(
 			clientId: archive.clientId,
