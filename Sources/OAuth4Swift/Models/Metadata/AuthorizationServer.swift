@@ -86,7 +86,7 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 	let tokenEndpoint: URL
 
 	/// Authentication methods supported at token endpoint (RFC 8414 Section 2)
-	let tokenEndpointAuthMethodsSupported: [String]?
+	public let tokenEndpointAuthMethodsSupported: [String]?
 
 	/// Signing algorithms supported for token endpoint authentication
 	let tokenEndpointAuthSigningAlgValuesSupported: [String]?
