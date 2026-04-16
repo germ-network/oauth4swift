@@ -126,6 +126,12 @@ extension OAuth {
 		public func updated(tokenState: TokenState) {
 			self.tokenState = tokenState
 		}
+		
+		public var authArchive: Data? {
+			get throws {
+				try authComponent.archive
+			}
+		}
 	}
 }
 
