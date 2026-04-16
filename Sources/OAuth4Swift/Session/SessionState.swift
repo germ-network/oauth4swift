@@ -168,7 +168,7 @@ extension OAuth.SessionState {
 			self.tokenState = tokenState
 		}
 		
-		public struct Mutable: Codable {
+		public struct Mutable: Codable, Sendable {
 			public let clientAuth: Data?
 			public let tokenState: OAuth.SessionState.TokenState
 			
