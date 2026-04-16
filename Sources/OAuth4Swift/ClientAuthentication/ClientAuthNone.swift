@@ -8,6 +8,8 @@ import HTTPTypes
 extension OAuth {
 	public struct ClientAuthNone: ClientAuthComponent {
 		public var tokenEndpointAuthMethod: OAuth.TokenEndpointMethods = .none
+		
+		public init() {}
 
 		public func authenticate(
 			clientId: String,
