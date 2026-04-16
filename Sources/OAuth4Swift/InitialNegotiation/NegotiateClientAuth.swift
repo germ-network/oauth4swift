@@ -24,7 +24,7 @@ extension OAuth {
 }
 
 extension OAuth {
-	public struct AuthorizeInputs {
+	public struct AuthorizeInputs: Sendable {
 		let scopes: [String]
 		let redirectURI: URL
 		let pkceVerifier: PKCEVerifier
