@@ -36,14 +36,14 @@ extension OAuth.Authorizer {
 		}()
 
 		let challenge = authorizeInputs.pkceVerifier.challenge
-		
+		let scopes = authorizeInputs.clientInfo.scopes.joined(separator: "%20")
 		var parameters = FormParameters([
-			"scope": authorizeInputs.clientInfo.scopes,
-			"response_type": ["code"],
-			"redirect_uri": [authorizeInputs.clientInfo.redirectURI
-				.absoluteString],
-			"code_challenge": [challenge.value],
-			"code_challenge_method": [challenge.method],
+			"scope": scopes,
+			"response_type": "code",
+			"redirect_uri": authorizeInputs.clientInfo.redirectURI
+				.absoluteString,
+			"code_challenge": challenge.value,
+			"code_challenge_method": challenge.method,
 		])
 
 		// todo: merging with authorizeInputs.parameters
