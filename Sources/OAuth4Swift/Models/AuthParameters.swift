@@ -11,7 +11,6 @@ import HTTPTypes
 
 extension OAuth {
 	public struct ClientAuthInputs {
-		public let clientId: String
 		public let authServerMetadata: AuthServerMetadata
 		public let parameters: FormParameters
 		public let headers: HTTPFields

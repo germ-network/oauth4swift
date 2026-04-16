@@ -11,7 +11,7 @@ import GermConvenience
 import HTTPTypes
 
 public protocol DPoPSigning: Actor {
-	var dpopKey: DPoPKey { get throws }
+	nonisolated var dpopKey: DPoPKey { get throws }
 
 	func getNonce(origin: String) -> IndexedNonce?
 	func cacheNonce(response: HTTPDataResponse, requestUrl: URL) throws
@@ -75,7 +75,7 @@ extension DPoPSigning {
 	func authenticated(
 		request: BundledHTTPRequest,
 		token: String?,
-		fetcher: HTTPFetcher
+		fetcher: HTTPFetcher,
 	) async throws -> HTTPDataResponse {
 		let proofRequest = try addProof(
 			request: request,

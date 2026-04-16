@@ -3,7 +3,7 @@ import GermConvenience
 import HTTPTypes
 
 // Usage not recommended, use ClientAuthSecretPost
-public struct ClientAuthSecretBasic: OAuth.AuthComponent {
+public struct ClientAuthSecretBasic: OAuth.ClientAuthComponent {
 	private let clientSecret: String
 	public var tokenEndpointAuthMethod: OAuth.TokenEndpointMethods = .clientSecretBasic
 
@@ -12,10 +12,11 @@ public struct ClientAuthSecretBasic: OAuth.AuthComponent {
 	}
 
 	public func authenticate(
+		clientId: String,
 		inputs: OAuth.ClientAuthInputs
 	) async throws -> (FormParameters, HTTPFields) {
 		let basicAuth = [
-			inputs.clientId,
+			clientId,
 			clientSecret,
 		].joined(separator: ":")
 
@@ -24,5 +25,11 @@ public struct ClientAuthSecretBasic: OAuth.AuthComponent {
 		headers[.authorization] = basicAuth.utf8Data.base64EncodedString()
 
 		return (inputs.parameters, headers)
+	}
+
+	public var archive: Data? {
+		get throws {
+			try JSONEncoder().encode(clientSecret)
+		}
 	}
 }

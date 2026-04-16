@@ -63,7 +63,9 @@ public class SessionState {
 	//stores the authorization grant scope:
 	public let grantScopes: [String]?
 
-	var mutable: Mutable
+	//mutable state
+	let authComponent: any OAuth.ClientAuthComponent
+	var tokenState: TokenState
 
 	public init(
 		clientId: String,
@@ -71,23 +73,25 @@ public class SessionState {
 		issuingServer: String? = nil,
 		additionalParams: [String: String]? = nil,
 		grantScopes: [String]?,
-		mutable: Mutable
+		authComponent: some OAuth.ClientAuthComponent,
+		tokenState: TokenState
 	) {
 		self.clientId = clientId
 		self.dPopKey = dPopKey
 		self.issuingServer = issuingServer
 		self.additionalParams = additionalParams
 		self.grantScopes = grantScopes
-		self.mutable = mutable
+		self.authComponent = authComponent
+		self.tokenState = tokenState
 	}
 
-	public struct Mutable: Sendable, Codable {
-		let grantExpiry: Date?
-		let accessToken: AccessToken
-		let refreshToken: RefreshToken?
+	public struct TokenState: Codable, Sendable {
+		var grantExpiry: Date?
+		var accessToken: AccessToken
+		var refreshToken: RefreshToken?
 
 		// User authorized scopes
-		let scopes: [String]
+		var scopes: [String]
 
 		public init(
 			accessToken: AccessToken,
@@ -117,91 +121,106 @@ public class SessionState {
 			return date.timeIntervalSinceNow > 0
 		}
 	}
-
-	public func updated(mutable: Mutable) {
-		self.mutable = mutable
-	}
 }
 
 extension SessionState {
 	public struct Archive: Sendable, Codable {
 		let clientId: String
+		let clientAuthMethod: OAuth.TokenEndpointMethods
 		let dPopKey: DPoPKey?
 		let issuingServer: String?
 
 		public let additionalParams: [String: String]?
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
-		public let mutable: SessionState.Mutable
+		public let clientAuth: Data?
+		public let tokenState: SessionState.TokenState
 
 		public init(
 			clientId: String,
+			clientAuthMethod: OAuth.TokenEndpointMethods,
 			dPopKey: DPoPKey?,
 			issuingServer: String?,
 			additionalParams: [String: String]?,
 			grantScopes: [String]?,
-			mutable: SessionState.Mutable
+			clientAuth: Data?,
+			tokenState: SessionState.TokenState
 		) {
 			self.clientId = clientId
+			self.clientAuthMethod = clientAuthMethod
 			self.dPopKey = dPopKey
 			self.issuingServer = issuingServer
 			self.additionalParams = additionalParams
 			self.grantScopes = grantScopes
-			self.mutable = mutable
+			self.clientAuth = clientAuth
+			self.tokenState = tokenState
 		}
 
-		public func merge(update: SessionState.Mutable) -> Self {
-			.init(
-				clientId: clientId,
-				dPopKey: dPopKey,
-				issuingServer: issuingServer,
-				additionalParams: additionalParams,
-				grantScopes: grantScopes,
-				mutable: update
-			)
-		}
+		//		public func merge(update: SessionState.Mutable) -> Self {
+		//			.init(
+		//				clientId: clientId,
+		//				clientAuthMethod: clientAuthMethod,
+		//				dPopKey: dPopKey,
+		//				issuingServer: issuingServer,
+		//				additionalParams: additionalParams,
+		//				grantScopes: grantScopes,
+		//				mutable: update
+		//			)
+		//		}
 	}
 
-	public convenience init(archive: Archive) {
+	public convenience init(
+		archive: Archive,
+		clientAuthFactory: OAuth.ClientAuthComponentFactory = OAuth
+			.DefaultClientAuthComponentFactory
+	) throws {
 		self.init(
 			clientId: archive.clientId,
 			dPopKey: archive.dPopKey,
 			issuingServer: archive.issuingServer,
 			additionalParams: archive.additionalParams,
 			grantScopes: archive.grantScopes,
-			mutable: archive.mutable
+			authComponent: try clientAuthFactory(
+				archive.clientAuthMethod,
+				archive
+					.clientAuth),
+			tokenState: archive.tokenState
 		)
 	}
 
 	public var archive: Archive {
-		.init(
-			clientId: clientId,
-			dPopKey: dPopKey,
-			issuingServer: issuingServer,
-			additionalParams: additionalParams,
-			grantScopes: grantScopes,
-			mutable: mutable
-		)
+		get throws {
+			.init(
+				clientId: clientId,
+				clientAuthMethod: authComponent.tokenEndpointAuthMethod,
+				dPopKey: dPopKey,
+				issuingServer: issuingServer,
+				additionalParams: additionalParams,
+				grantScopes: grantScopes,
+				clientAuth: try authComponent.archive,
+				tokenState: tokenState
+			)
+		}
 	}
 }
 
-public struct ImmutableSessionState: Sendable {
-	public let clientId: String
-	public let issuingServer: String?
-	//stores the additional parameters from the TokenResponse
-	public let additionalParams: [String: String]?
-	//stores the authorization grant scope:
-	public let grantScopes: [String]?
+//for tokenValidator
+extension SessionState {
+	public struct Snapshot: Sendable {
+		public let issuingServer: String?
+		//stores the additional parameters from the TokenResponse
+		public let additionalParams: [String: String]?
+		//stores the authorization grant scope:
+		public let grantScopes: [String]?
 
-	public init(
-		clientId: String,
-		issuingServer: String? = nil,
-		additionalParams: [String: String]? = nil,
-		grantScopes: [String]?
-	) {
-		self.clientId = clientId
-		self.issuingServer = issuingServer
-		self.additionalParams = additionalParams
-		self.grantScopes = grantScopes
+		public init(
+			issuingServer: String? = nil,
+			additionalParams: [String: String]? = nil,
+			grantScopes: [String]?
+		) {
+			self.issuingServer = issuingServer
+			self.additionalParams = additionalParams
+			self.grantScopes = grantScopes
+		}
 	}
 }

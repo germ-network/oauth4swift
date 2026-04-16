@@ -16,13 +16,13 @@ extension OAuth {
 		public let error: String
 		public let errorDescription: String?
 		public let errorURI: URL?
-		
+
 		enum CodingKeys: String, CodingKey {
 			case error
 			case errorDescription = "error_description"
 			case errorURI = "error_uri"
 		}
-		
+
 		//	public enum ErrorCodes: String, Sendable, Codable {
 		//		case unauthorizedClient = "unauthorized_client"
 		//		case accessDenied = "access_denied"

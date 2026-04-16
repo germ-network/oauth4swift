@@ -25,7 +25,7 @@ extension OAuth {
 		case httpResponse(response: HTTPDataResponse)
 		case oauthError(OAuth.ErrorResponse, HTTPResponse.Status)
 		case notImplemented
-		
+
 		public var errorDescription: String? {
 			switch self {
 			case .missingScheme: "Missing scheme"

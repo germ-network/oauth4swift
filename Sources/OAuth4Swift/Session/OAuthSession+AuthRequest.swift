@@ -56,7 +56,7 @@ extension OAuth.SessionCapabilities {
 
 		return try await resource(
 			for: request,
-			accessToken: session.mutable.accessToken.value,
+			accessToken: session.tokenState.accessToken.value,
 		)
 	}
 
@@ -82,7 +82,8 @@ extension OAuth.SessionCapabilities {
 	}
 
 	//conserving in that it reuses result if a refresh is alread in flght
-	private func conservingRefresh(state: SessionState) async throws -> SessionState.Mutable {
+	private func conservingRefresh(state: SessionState) async throws -> SessionState.TokenState
+	{
 		if let refreshTask {
 			return try await refreshTask.value
 		}
@@ -105,17 +106,17 @@ extension OAuth.SessionCapabilities {
 	//and processRefreshTokenResponse in oauth4web
 	private func refresh(
 		state: SessionState,
-	) async throws -> SessionState.Mutable {
-		let authServerMetadata = try await lazyServerMetadata.lazyValue(
-			isolation: self
-		)
+	) async throws -> SessionState.TokenState {
+		let authServerMetadata =
+			try await authFetcher
+			.authServerDiscovery(issuer: try await retriableIssuer)
+			.tryUnwrap
 
-		let httpResponse = try await authServerRequestOptions.refreshTokenGrantRequest(
-			clientId: clientId,
+		let httpResponse = try await refreshTokenGrantRequest(
 			authServerMetadata: authServerMetadata,
-			// FIXME once we can restore the Client Authentication in SessionState
-			clientAuthentication: OAuth.ClientAuthNone(),
-			refreshToken: state.mutable.refreshToken.tryUnwrap.value,
+			additionalParameters: authServerRequestOptions.additionalParameters,
+
+			refreshToken: state.tokenState.refreshToken.tryUnwrap.value,
 		)
 		let tokenResponse = try OAuth.processRefreshTokenResponse(
 			response: httpResponse)
@@ -124,8 +125,7 @@ extension OAuth.SessionCapabilities {
 		//server can really issue the token for that `sub` parameter in the
 		//tokenResponse; also passes the current session state to allow verifying
 		//that the token sub hasn't changed during refresh:
-		let previousState = ImmutableSessionState(
-			clientId: state.clientId,
+		let previousState = SessionState.Snapshot(
 			issuingServer: state.issuingServer,
 			additionalParams: state.additionalParams,
 			grantScopes: state.grantScopes
@@ -137,7 +137,7 @@ extension OAuth.SessionCapabilities {
 			throw OAuth.Errors.tokenInvalid
 		}
 
-		let newSessionState = SessionState.Mutable(
+		let newTokenState = SessionState.TokenState(
 			accessToken: .init(
 				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
 			),
@@ -149,8 +149,10 @@ extension OAuth.SessionCapabilities {
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
 
-		try refreshed(sessionMutable: newSessionState)
-		return newSessionState
+
+		try refreshed(tokenState: newTokenState)
+
+		return newTokenState
 	}
 }
 

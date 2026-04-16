@@ -132,21 +132,3 @@ extension JWT.JWK {
 		}
 	}
 }
-
-struct MockFetcher {
-	let host: String = "example.com"
-
-	let resolver: @Sendable (BundledHTTPRequest) throws -> HTTPDataResponse
-}
-
-extension MockFetcher: HTTPFetcher {
-	func data(
-		for request: BundledHTTPRequest
-	) async throws -> GermConvenience.HTTPDataResponse {
-		let url = try #require(request.request.url)
-		assert(url.scheme == "https")
-		assert(url.host() == host)
-
-		return try resolver(request)
-	}
-}
