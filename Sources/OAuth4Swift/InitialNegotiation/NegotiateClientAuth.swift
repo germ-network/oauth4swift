@@ -10,8 +10,6 @@ import GermConvenience
 
 extension OAuth {
 	public protocol Authorizer {
-		nonisolated var clientId: String { get }
-		
 		var authorizeInputs: OAuth.AuthorizeInputs { get }
 		var authServerRequestOptions: AuthServerRequestOptions { get }
 		var userAuthenticator: UserAuthenticator { get }
@@ -25,21 +23,18 @@ extension OAuth {
 
 extension OAuth {
 	public struct AuthorizeInputs: Sendable {
-		let scopes: [String]
-		let redirectURI: URL
+		let clientInfo: OAuth.ClientInfo
 		let pkceVerifier: PKCEVerifier
 		let issuer: URL
 		let inputToken: String?
 		
 		public init(
-			scopes: [String],
-			redirectURI: URL,
+			clientInfo: ClientInfo,
 			pkceVerifier: PKCEVerifier = .init(),
 			issuer: URL,
 			inputToken: String?,
 		) {
-			self.scopes = scopes
-			self.redirectURI = redirectURI
+			self.clientInfo = clientInfo
 			self.pkceVerifier = pkceVerifier
 			self.issuer = issuer
 			self.inputToken = inputToken

@@ -8,7 +8,7 @@
 import Foundation
 
 extension OAuth {
-	public struct Client: Codable, Hashable, Sendable {
+	public struct ClientInfo: Codable, Hashable, Sendable {
 		public let clientId: String
 		
 		//should be a subset of the scopes our client actually has:

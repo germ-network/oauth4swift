@@ -36,12 +36,12 @@ extension OAuth.Authorizer {
 		}()
 
 		let challenge = authorizeInputs.pkceVerifier.challenge
-		let scopes = authorizeInputs.scopes.joined(separator: " ")
+		let scopes = authorizeInputs.clientInfo.scopes.joined(separator: " ")
 		var parameters = FormParameters([
-			"client_id": clientId,
+			"client_id": authorizeInputs.clientInfo.clientId,
 			"scope": scopes,
 			"response_type": "code",
-			"redirect_uri": authorizeInputs.redirectURI
+			"redirect_uri": authorizeInputs.clientInfo.redirectURI
 				.absoluteString,
 			"code_challenge": challenge.value,
 			"code_challenge_method": challenge.method,
@@ -69,7 +69,7 @@ extension OAuth.Authorizer {
 			)
 
 			parameters = FormParameters([
-				"client_id": clientId,
+				"client_id":authorizeInputs.clientInfo.clientId,
 				"request_uri": parResponse.requestURI,
 			])
 		}
@@ -79,7 +79,7 @@ extension OAuth.Authorizer {
 			parameters: parameters
 		)
 
-		let scheme = try authorizeInputs.redirectURI.scheme
+		let scheme = try authorizeInputs.clientInfo.redirectURI.scheme
 			.tryUnwrap(OAuth.Errors.missingScheme)
 
 		let callbackURL = try await userAuthenticator(authorizationUrl, scheme)
@@ -144,7 +144,7 @@ extension OAuth.Authorizer {
 		let httpResponse = try await clientAuthenticator.authorizationCodeGrantRequest(
 			authServerMetadata: authServerMetadata,
 			callbackParameters: callbackParameters,
-			redirectURI: authorizeInputs.redirectURI,
+			redirectURI: authorizeInputs.clientInfo.redirectURI,
 			pkceVerifier: authorizeInputs.pkceVerifier.verifier,
 			additionalParameters: authServerRequestOptions.additionalParameters,
 		)
@@ -152,13 +152,13 @@ extension OAuth.Authorizer {
 		let (tokenState, additionalParams) =
 			try await processAuthorizationCodeOAuth2Response(
 				authServerMetadata: authServerMetadata,
-				scopes: authorizeInputs.scopes,
+				scopes: authorizeInputs.clientInfo.scopes,
 				response: httpResponse,
 				tokenValidator: authServerRequestOptions.tokenValidator
 			)
 
 		return .init(
-			clientId: clientId,
+			clientId: authorizeInputs.clientInfo.clientId,
 			clientAuthMethod: clientAuthenticator.tokenEndpointAuthMethod,
 			dPopKey: try (self as? DPoPSigning)?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
