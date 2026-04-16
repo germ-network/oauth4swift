@@ -23,7 +23,7 @@ extension OAuth {
 
 extension OAuth {
 	public struct AuthorizeInputs: Sendable {
-		let clientInfo: OAuth.ClientInfo
+		public let clientInfo: OAuth.ClientInfo
 		let pkceVerifier: PKCEVerifier
 		let issuer: URL
 		let inputToken: String?
