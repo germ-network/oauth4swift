@@ -10,12 +10,8 @@ import GermConvenience
 import HTTPTypes
 import Logging
 
-extension OAuth.NegotiateClientAuth {
-	public func performUserAuthentication(
-		authorizeInputs: AuthorizeInputs,
-		authServerOptions: AuthServerRequestOptions,
-		userAuthenticator: UserAuthenticator,
-	) async throws -> SessionState.Archive {
+extension OAuth.Authorizer {
+	public func performUserAuthentication() async throws -> SessionState.Archive {
 		let authServerMetadata = try await authFetcher.authServerDiscovery(
 			issuer: authorizeInputs.issuer
 		).tryUnwrap
@@ -90,10 +86,8 @@ extension OAuth.NegotiateClientAuth {
 
 		return try await finishAuthorization(
 			callbackURL: callbackURL,
-			authInputs: authorizeInputs,
 			expectedState: stateToken,
 			authServerMetadata: authServerMetadata,
-			authServerRequestOptions: authServerOptions,
 			clientAuthenticator: clientAuthenticator
 		)
 	}
@@ -137,10 +131,8 @@ extension OAuth.NegotiateClientAuth {
 
 	func finishAuthorization(
 		callbackURL: URL,
-		authInputs: AuthorizeInputs,
 		expectedState: String?,
 		authServerMetadata: AuthServerMetadata,
-		authServerRequestOptions: AuthServerRequestOptions,
 		clientAuthenticator: any OAuth.ClientAuthenticatable
 	) async throws -> SessionState.Archive {
 		let callbackParameters = try OAuth.validateAuthResponse(
@@ -152,15 +144,15 @@ extension OAuth.NegotiateClientAuth {
 		let httpResponse = try await clientAuthenticator.authorizationCodeGrantRequest(
 			authServerMetadata: authServerMetadata,
 			callbackParameters: callbackParameters,
-			redirectURI: authInputs.redirectURI,
-			pkceVerifier: authInputs.pkceVerifier.verifier,
+			redirectURI: authorizeInputs.redirectURI,
+			pkceVerifier: authorizeInputs.pkceVerifier.verifier,
 			additionalParameters: authServerRequestOptions.additionalParameters,
 		)
 
 		let (tokenState, additionalParams) =
 			try await processAuthorizationCodeOAuth2Response(
 				authServerMetadata: authServerMetadata,
-				scopes: authInputs.scopes,
+				scopes: authorizeInputs.scopes,
 				response: httpResponse,
 				tokenValidator: authServerRequestOptions.tokenValidator
 			)

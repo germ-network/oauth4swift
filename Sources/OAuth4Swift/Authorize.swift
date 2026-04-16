@@ -10,29 +10,6 @@ import GermConvenience
 import HTTPTypes
 import Logging
 
-///for authorize only
-public struct AuthorizeInputs {
-	let scopes: [String]
-	let redirectURI: URL
-	let pkceVerifier: PKCEVerifier
-	let issuer: URL
-	let inputToken: String?
-
-	public init(
-		scopes: [String],
-		redirectURI: URL,
-		pkceVerifier: PKCEVerifier = .init(),
-		issuer: URL,
-		inputToken: String?,
-	) {
-		self.scopes = scopes
-		self.redirectURI = redirectURI
-		self.pkceVerifier = pkceVerifier
-		self.issuer = issuer
-		self.inputToken = inputToken
-	}
-}
-
 ///Shared code among the initial auth flow and subsequent refresh
 ///Client defined paramenters for requests to the Auth server, for refresh and user auth requests.
 ///does not include the issuer so that it can be lazily \=etched

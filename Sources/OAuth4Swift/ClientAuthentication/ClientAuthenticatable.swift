@@ -3,19 +3,9 @@ import GermConvenience
 import HTTPTypes
 
 extension OAuth {
-	public protocol NegotiateClientAuth {
-		nonisolated var clientId: String { get }
-		func negotiate(authServerMetadata: AuthServerMetadata) throws
-			-> ClientAuthenticatable
-
-		var authFetcher: HTTPFetcher { get }
-	}
-
 	public protocol ClientAuthenticatable: Sendable {
-		//		nonisolated var clientId: String { get }
 		var tokenEndpointAuthMethod: TokenEndpointMethods { get }
 
-		//
 		func authenticate(
 			inputs: ClientAuthInputs
 		) async throws -> (FormParameters, HTTPFields)
