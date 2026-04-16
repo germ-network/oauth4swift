@@ -145,8 +145,8 @@ extension OAuth.SessionState {
 		public let additionalParams: [String: String]?
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
-		public let clientAuth: Data?
-		public let tokenState: OAuth.SessionState.TokenState
+		public var clientAuth: Data?
+		public var tokenState: OAuth.SessionState.TokenState
 
 		public init(
 			clientId: String,
@@ -180,18 +180,6 @@ extension OAuth.SessionState {
 				self.tokenState = tokenState
 			}
 		}
-
-		//		public func merge(update: SessionState.Mutable) -> Self {
-		//			.init(
-		//				clientId: clientId,
-		//				clientAuthMethod: clientAuthMethod,
-		//				dPopKey: dPopKey,
-		//				issuingServer: issuingServer,
-		//				additionalParams: additionalParams,
-		//				grantScopes: grantScopes,
-		//				mutable: update
-		//			)
-		//		}
 	}
 
 	public convenience init(
