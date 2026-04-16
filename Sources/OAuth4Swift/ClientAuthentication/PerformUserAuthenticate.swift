@@ -36,7 +36,7 @@ extension OAuth.Authorizer {
 		}()
 
 		let challenge = authorizeInputs.pkceVerifier.challenge
-		let scopes = authorizeInputs.clientInfo.scopes.joined(separator: "%20")
+		let scopes = authorizeInputs.clientInfo.scopes.joined(separator: " ")
 		var parameters = FormParameters([
 			"scope": scopes,
 			"response_type": "code",
