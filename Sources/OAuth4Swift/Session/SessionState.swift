@@ -122,6 +122,10 @@ extension OAuth {
 				return date.timeIntervalSinceNow > 0
 			}
 		}
+		
+		public func updated(tokenState: TokenState) {
+			self.tokenState = tokenState
+		}
 	}
 }
 
