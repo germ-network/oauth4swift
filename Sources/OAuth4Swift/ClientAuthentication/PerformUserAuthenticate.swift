@@ -38,7 +38,6 @@ extension OAuth.Authorizer {
 		let challenge = authorizeInputs.pkceVerifier.challenge
 		
 		var parameters = FormParameters([
-			"client_id": [authorizeInputs.clientInfo.clientId],
 			"scope": authorizeInputs.clientInfo.scopes,
 			"response_type": ["code"],
 			"redirect_uri": [authorizeInputs.clientInfo.redirectURI
