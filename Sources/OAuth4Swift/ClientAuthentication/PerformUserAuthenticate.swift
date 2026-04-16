@@ -37,18 +37,21 @@ extension OAuth.Authorizer {
 
 		let challenge = authorizeInputs.pkceVerifier.challenge
 		let scopes = authorizeInputs.clientInfo.scopes.joined(separator: " ")
-		var parameters = FormParameters([
-			"scope": scopes,
-			"response_type": "code",
-			"redirect_uri": authorizeInputs.clientInfo.redirectURI
-				.absoluteString,
-			"code_challenge": challenge.value,
-			"code_challenge_method": challenge.method,
-		])
-
-		// todo: merging with authorizeInputs.parameters
-		// if let additionalParameters = authorizeInputs.parameters {
-		// 	parameters = parameters.merging(additionalParameters, uniquingKeysWith: { a, b in a }))
+		
+		//any parameters we set in OAuth override conflicting parameters
+		//from the client app
+		var parameters = authorizeInputs.additionalParameters ?? .init()
+		
+		parameters.mergeReplacingValues(with: .init(
+			[
+				"scope": scopes,
+				"response_type": "code",
+				"redirect_uri": authorizeInputs.clientInfo.redirectURI
+					.absoluteString,
+				"code_challenge": challenge.value,
+				"code_challenge_method": challenge.method,
+			]
+		))
 
 		if let stateToken {
 			parameters["state"] = stateToken
@@ -67,6 +70,7 @@ extension OAuth.Authorizer {
 				response: parHTTPResponse
 			)
 
+			//reset the parameters
 			parameters = FormParameters([
 				"client_id":authorizeInputs.clientInfo.clientId,
 				"request_uri": parResponse.requestURI,

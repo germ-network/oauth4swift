@@ -27,17 +27,20 @@ extension OAuth {
 		let pkceVerifier: PKCEVerifier
 		let issuer: URL
 		let inputToken: String?
+		let additionalParameters: FormParameters?
 		
 		public init(
 			clientInfo: ClientInfo,
 			pkceVerifier: PKCEVerifier = .init(),
 			issuer: URL,
 			inputToken: String?,
+			additionalParameters: FormParameters?
 		) {
 			self.clientInfo = clientInfo
 			self.pkceVerifier = pkceVerifier
 			self.issuer = issuer
 			self.inputToken = inputToken
+			self.additionalParameters = additionalParameters
 		}
 	}
 }
