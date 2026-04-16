@@ -10,7 +10,7 @@ import GermConvenience
 import HTTPTypes
 
 extension OAuth {
-	public struct ClientAuthInputs {
+	public struct ClientAuthInputs: Sendable {
 		public let authServerMetadata: AuthServerMetadata
 		public let parameters: FormParameters
 		public let headers: HTTPFields
