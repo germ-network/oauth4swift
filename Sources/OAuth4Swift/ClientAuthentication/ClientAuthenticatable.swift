@@ -110,9 +110,10 @@ extension OAuth.ClientAuthenticatable {
 		var parametersWithGrantType = parameters
 		parametersWithGrantType["grant_type"] = grantType.rawValue
 
+		let (formHeader, _) = HTTPContentType.formEncoded
 		let rawHeaders = HTTPFields(
 			dictionaryLiteral: (.accept, HTTPContentType.json.rawValue),
-			(.contentType, HTTPContentType.formData.rawValue),
+			(.contentType, formHeader),
 		)
 
 		return try await authenticatedRequest(

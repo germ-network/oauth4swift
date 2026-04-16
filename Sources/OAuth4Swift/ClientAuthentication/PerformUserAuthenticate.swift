@@ -113,9 +113,11 @@ extension OAuth.Authorizer {
 		let parEndpoint = try authServerMetadata.resolve(
 			endpoint: .par)
 
+		let (formHeader, _) = HTTPContentType.formEncoded
+		
 		var rawHeaders = headers ?? HTTPFields()
 		rawHeaders[.accept] = HTTPContentType.json.rawValue
-		rawHeaders[.contentType] = HTTPContentType.formData.rawValue
+		rawHeaders[.contentType] = formHeader
 
 		return try await clientAuthenticator.authenticatedRequest(
 			url: parEndpoint,
