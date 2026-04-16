@@ -163,8 +163,16 @@ extension OAuth.SessionState {
 		}
 		
 		public struct Mutable: Codable {
-			let clientAuth: Data?
-			let tokenState: OAuth.SessionState.TokenState
+			public let clientAuth: Data?
+			public let tokenState: OAuth.SessionState.TokenState
+			
+			public init(
+				clientAuth: Data?,
+				tokenState: OAuth.SessionState.TokenState
+			) {
+				self.clientAuth = clientAuth
+				self.tokenState = tokenState
+			}
 		}
 
 		//		public func merge(update: SessionState.Mutable) -> Self {
