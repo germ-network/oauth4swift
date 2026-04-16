@@ -8,12 +8,14 @@
 import Foundation
 
 ///https://datatracker.ietf.org/doc/html/rfc9126#name-successful-response
-public struct PARResponse: Codable, Hashable, Sendable {
-	public let requestURI: String
-	public let expiresIn: Int
-
-	enum CodingKeys: String, CodingKey {
-		case requestURI = "request_uri"
-		case expiresIn = "expires_in"
+extension OAuth {
+	public struct PARResponse: Codable, Hashable, Sendable {
+		public let requestURI: String
+		public let expiresIn: Int
+		
+		enum CodingKeys: String, CodingKey {
+			case requestURI = "request_uri"
+			case expiresIn = "expires_in"
+		}
 	}
 }

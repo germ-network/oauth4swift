@@ -82,7 +82,7 @@ extension OAuth.SessionCapabilities {
 	}
 
 	//conserving in that it reuses result if a refresh is alread in flght
-	private func conservingRefresh(state: SessionState) async throws -> SessionState.TokenState
+	private func conservingRefresh(state: OAuth.SessionState) async throws -> OAuth.SessionState.TokenState
 	{
 		if let refreshTask {
 			return try await refreshTask.value
@@ -105,8 +105,8 @@ extension OAuth.SessionCapabilities {
 	//compare to refreshTokenGrantRequest
 	//and processRefreshTokenResponse in oauth4web
 	private func refresh(
-		state: SessionState,
-	) async throws -> SessionState.TokenState {
+		state: OAuth.SessionState,
+	) async throws -> OAuth.SessionState.TokenState {
 		let authServerMetadata =
 			try await authFetcher
 			.authServerDiscovery(issuer: try await retriableIssuer)
@@ -125,7 +125,7 @@ extension OAuth.SessionCapabilities {
 		//server can really issue the token for that `sub` parameter in the
 		//tokenResponse; also passes the current session state to allow verifying
 		//that the token sub hasn't changed during refresh:
-		let previousState = SessionState.Snapshot(
+		let previousState = OAuth.SessionState.Snapshot(
 			issuingServer: state.issuingServer,
 			additionalParams: state.additionalParams,
 			grantScopes: state.grantScopes
@@ -137,7 +137,7 @@ extension OAuth.SessionCapabilities {
 			throw OAuth.Errors.tokenInvalid
 		}
 
-		let newTokenState = SessionState.TokenState(
+		let newTokenState = OAuth.SessionState.TokenState(
 			accessToken: .init(
 				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
 			),

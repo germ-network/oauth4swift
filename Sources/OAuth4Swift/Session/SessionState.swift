@@ -53,77 +53,79 @@ public struct RefreshToken: OAuthToken {
 }
 
 //best way to express fixed key and variable accessToken is as a reference type
-public class SessionState {
-	public let clientId: String
-	public let issuingServer: String?
-	//stores the additional parameters from the TokenResponse
-	public let additionalParams: [String: String]?
-	//not mandatory in OAuth 2.1
-	public let dPopKey: DPoPKey?
-	//stores the authorization grant scope:
-	public let grantScopes: [String]?
-
-	//mutable state
-	let authComponent: any OAuth.ClientAuthComponent
-	var tokenState: TokenState
-
-	public init(
-		clientId: String,
-		dPopKey: DPoPKey?,
-		issuingServer: String? = nil,
-		additionalParams: [String: String]? = nil,
-		grantScopes: [String]?,
-		authComponent: some OAuth.ClientAuthComponent,
-		tokenState: TokenState
-	) {
-		self.clientId = clientId
-		self.dPopKey = dPopKey
-		self.issuingServer = issuingServer
-		self.additionalParams = additionalParams
-		self.grantScopes = grantScopes
-		self.authComponent = authComponent
-		self.tokenState = tokenState
-	}
-
-	public struct TokenState: Codable, Sendable {
-		var grantExpiry: Date?
-		var accessToken: AccessToken
-		var refreshToken: RefreshToken?
-
-		// User authorized scopes
-		var scopes: [String]
-
+extension OAuth {
+	public class SessionState {
+		public let clientId: String
+		public let issuingServer: String?
+		//stores the additional parameters from the TokenResponse
+		public let additionalParams: [String: String]?
+		//not mandatory in OAuth 2.1
+		public let dPopKey: DPoPKey?
+		//stores the authorization grant scope:
+		public let grantScopes: [String]?
+		
+		//mutable state
+		let authComponent: any OAuth.ClientAuthComponent
+		var tokenState: TokenState
+		
 		public init(
-			accessToken: AccessToken,
-			refreshToken: RefreshToken? = nil,
-			scopes: [String] = [],
-			grantExpiresIn seconds: Int? = nil
+			clientId: String,
+			dPopKey: DPoPKey?,
+			issuingServer: String? = nil,
+			additionalParams: [String: String]? = nil,
+			grantScopes: [String]?,
+			authComponent: some OAuth.ClientAuthComponent,
+			tokenState: TokenState
 		) {
-			self.accessToken = accessToken
-			self.refreshToken = refreshToken
-			self.scopes = scopes
-
-			// Support for Authorization Grants with expiry:
-			// https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html
-			if let seconds {
-				self.grantExpiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
-			} else {
-				self.grantExpiry = nil
-			}
+			self.clientId = clientId
+			self.dPopKey = dPopKey
+			self.issuingServer = issuingServer
+			self.additionalParams = additionalParams
+			self.grantScopes = grantScopes
+			self.authComponent = authComponent
+			self.tokenState = tokenState
 		}
-
-		/// Determines if the token object is valid.
-		///
-		/// A token without an expiry is unconditionally valid.
-		public var valid: Bool {
-			guard let date = grantExpiry else { return true }
-
-			return date.timeIntervalSinceNow > 0
+		
+		public struct TokenState: Codable, Sendable {
+			var grantExpiry: Date?
+			var accessToken: AccessToken
+			var refreshToken: RefreshToken?
+			
+			// User authorized scopes
+			var scopes: [String]
+			
+			public init(
+				accessToken: AccessToken,
+				refreshToken: RefreshToken? = nil,
+				scopes: [String] = [],
+				grantExpiresIn seconds: Int? = nil
+			) {
+				self.accessToken = accessToken
+				self.refreshToken = refreshToken
+				self.scopes = scopes
+				
+				// Support for Authorization Grants with expiry:
+				// https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html
+				if let seconds {
+					self.grantExpiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
+				} else {
+					self.grantExpiry = nil
+				}
+			}
+			
+			/// Determines if the token object is valid.
+			///
+			/// A token without an expiry is unconditionally valid.
+			public var valid: Bool {
+				guard let date = grantExpiry else { return true }
+				
+				return date.timeIntervalSinceNow > 0
+			}
 		}
 	}
 }
 
-extension SessionState {
+extension OAuth.SessionState {
 	public struct Archive: Sendable, Codable {
 		let clientId: String
 		let clientAuthMethod: OAuth.TokenEndpointMethods
@@ -134,7 +136,7 @@ extension SessionState {
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
 		public let clientAuth: Data?
-		public let tokenState: SessionState.TokenState
+		public let tokenState: OAuth.SessionState.TokenState
 
 		public init(
 			clientId: String,
@@ -144,7 +146,7 @@ extension SessionState {
 			additionalParams: [String: String]?,
 			grantScopes: [String]?,
 			clientAuth: Data?,
-			tokenState: SessionState.TokenState
+			tokenState: OAuth.SessionState.TokenState
 		) {
 			self.clientId = clientId
 			self.clientAuthMethod = clientAuthMethod
@@ -205,7 +207,7 @@ extension SessionState {
 }
 
 //for tokenValidator
-extension SessionState {
+extension OAuth.SessionState {
 	public struct Snapshot: Sendable {
 		public let issuingServer: String?
 		//stores the additional parameters from the TokenResponse

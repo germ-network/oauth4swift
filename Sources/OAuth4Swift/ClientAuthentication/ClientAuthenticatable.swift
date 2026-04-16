@@ -102,7 +102,7 @@ extension OAuth.ClientAuthenticatable {
 
 	func tokenEndpointRequest(
 		authServerMetadata: AuthServerMetadata,
-		grantType: GrantType,
+		grantType: OAuth.GrantType,
 		parameters: FormParameters,
 	) async throws -> HTTPDataResponse {
 		let url = try authServerMetadata.resolve(endpoint: .token)

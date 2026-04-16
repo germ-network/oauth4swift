@@ -11,7 +11,7 @@ import HTTPTypes
 import Logging
 
 extension OAuth.Authorizer {
-	public func performUserAuthentication() async throws -> SessionState.Archive {
+	public func performUserAuthentication() async throws -> OAuth.SessionState.Archive {
 		let authServerMetadata = try await authFetcher.authServerDiscovery(
 			issuer: authorizeInputs.issuer
 		).tryUnwrap
@@ -134,7 +134,7 @@ extension OAuth.Authorizer {
 		expectedState: String?,
 		authServerMetadata: AuthServerMetadata,
 		clientAuthenticator: any OAuth.ClientAuthenticatable
-	) async throws -> SessionState.Archive {
+	) async throws -> OAuth.SessionState.Archive {
 		let callbackParameters = try OAuth.validateAuthResponse(
 			authServerMetadata: authServerMetadata,
 			callbackURL: callbackURL,
@@ -176,8 +176,8 @@ extension OAuth.Authorizer {
 		authServerMetadata: AuthServerMetadata,
 		scopes: [String],
 		response: HTTPDataResponse,
-		tokenValidator: AuthServerRequestOptions.TokenValidator
-	) async throws -> (SessionState.TokenState, [String: String]?) {
+		tokenValidator: OAuth.AuthServerRequestOptions.TokenValidator
+	) async throws -> (OAuth.SessionState.TokenState, [String: String]?) {
 		let tokenResponse = try OAuth.processGenericAccessToken(
 			response: response)
 
@@ -199,7 +199,7 @@ extension OAuth.Authorizer {
 				}
 			}
 
-		let sessionState = SessionState.TokenState(
+		let sessionState = OAuth.SessionState.TokenState(
 			accessToken: .init(
 				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
 			),

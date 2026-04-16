@@ -8,8 +8,10 @@
 import Foundation
 import GermConvenience
 
-enum GrantType: String {
-	case authorizationCode = "authorization_code"
-	case refreshToken = "refresh_token"
-	case clientCredentials = "client_credentials"
+extension OAuth {
+	enum GrantType: String {
+		case authorizationCode = "authorization_code"
+		case refreshToken = "refresh_token"
+		case clientCredentials = "client_credentials"
+	}
 }
