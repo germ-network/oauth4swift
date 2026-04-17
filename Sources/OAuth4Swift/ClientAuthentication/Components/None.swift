@@ -16,7 +16,7 @@ extension OAuth.ClientAuth {
 			inputs: Inputs
 		) async throws -> (FormParameters, HTTPFields) {
 			var params = inputs.parameters
-			params["client_id"] = clientId
+			params["client_id"] = [clientId]
 			return (params, inputs.headers)
 		}
 

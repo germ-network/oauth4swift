@@ -91,7 +91,7 @@ extension OAuth.Authorizer {
 			))
 
 		if let stateToken {
-			parameters["state"] = stateToken
+			parameters["state"] = [stateToken]
 		}
 
 		// If we're using PAR, perform the request and replace the parameters for

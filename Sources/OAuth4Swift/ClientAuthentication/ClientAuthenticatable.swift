@@ -71,11 +71,11 @@ extension OAuth.ClientAuth.Authenticable {
 		}
 
 		var parameters = FormParameters(additionalParameters)
-		parameters["redirect_uri"] = redirectURI.absoluteString
-		parameters["code"] = code
+		parameters["redirect_uri"] = [redirectURI.absoluteString]
+		parameters["code"] = [code]
 
 		if let pkceVerifier {
-			parameters["code_verifier"] = pkceVerifier
+			parameters["code_verifier"] = [pkceVerifier]
 		}
 
 		return try await tokenEndpointRequest(
@@ -91,7 +91,7 @@ extension OAuth.ClientAuth.Authenticable {
 		refreshToken: String,
 	) async throws -> HTTPDataResponse {
 		var parameters = FormParameters(additionalParameters)
-		parameters["refresh_token"] = refreshToken
+		parameters["refresh_token"] = [refreshToken]
 
 		return try await tokenEndpointRequest(
 			authServerMetadata: authServerMetadata,
@@ -108,7 +108,7 @@ extension OAuth.ClientAuth.Authenticable {
 		let url = try authServerMetadata.resolve(endpoint: .token)
 
 		var parametersWithGrantType = parameters
-		parametersWithGrantType["grant_type"] = grantType.rawValue
+		parametersWithGrantType["grant_type"] = [grantType.rawValue]
 
 		let rawHeaders = HTTPFields(
 			dictionaryLiteral: (.accept, HTTPContentType.json.rawValue),
