@@ -12,12 +12,12 @@ the provided default implementation of an authorized request that automatically 
 if necessary
 
 
+## Contributing and Collaboration
+We welcome contributions!
 
-### Linting and Practices
-The repo has a .editorconfig and .swift-format setup. We use both swift
-formatter and linter:
-```
-swift format . -ri && swift format lint . -r
-```
+Please follow our [guidelines for contributing code](./CONTRIBUTING.md)
 
-We also use the [periphery static analyzer](https://github.com/peripheryapp/periphery) and have a configured `periphery.yml`
+To give clarity of what is expected of our members, Germ has adopted the
+code of conduct defined by the Contributor Covenant. This document is used
+across many open source communities, and we think it articulates our values
+well. For more, see the [Code of Conduct](./CODE_OF_CONDUCT.md)
