@@ -204,7 +204,7 @@ extension HTTPFetcher {
 	//should not redirect
 	public func resourceDiscoveryRequest(
 		url: URL,
-	) async throws -> ProtectedResourceMetadata {
+	) async throws -> ProtectedResourceMetadata? {
 		//TODO: should properly prepend, not append
 		let url = url.appending(
 			path: "/.well-known/oauth-protected-resource"
@@ -217,13 +217,15 @@ extension HTTPFetcher {
 			)
 		)
 
-		return try await performDiscovery(request: request)
+		return try await performDiscovery(request: request)?
 			.expectSuccess()
 			.decode()
 
 	}
 
-	public func authServerDiscovery(issuer: URL) async throws -> AuthServerMetadata {
+	public func authServerDiscovery(
+		issuer: URL
+	) async throws -> AuthServerMetadata? {
 		let url = issuer.appending(
 			path: "/.well-known/oauth-authorization-server"
 		)
@@ -234,17 +236,22 @@ extension HTTPFetcher {
 				url: url
 			)
 		)
-		return try await performDiscovery(request: request)
+		return try await performDiscovery(request: request)?
 			.expectSuccess()
 			.decode()
 	}
 
+	//when we perform discovery, treat a 404 as a nil result
 	func performDiscovery(
 		request: BundledHTTPRequest
-	) async throws -> HTTPDataResponse {
+	) async throws -> HTTPDataResponse? {
 		guard request.request.scheme == "https" else {
 			throw OAuthError.insecureScheme
 		}
-		return try await data(for: request)
+		let result = try await data(for: request)
+		if result.response.status == .notFound {
+			return nil
+		}
+		return result
 	}
 }
