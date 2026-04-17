@@ -223,7 +223,6 @@ extension HTTPFetcher {
 
 	}
 
-
 	public func authServerDiscovery(endpoint: URL) async throws -> AuthServerMetadata? {
 		let url = endpoint.appending(
 			path: "/.well-known/oauth-authorization-server"
