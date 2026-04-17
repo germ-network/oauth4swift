@@ -78,7 +78,7 @@ public struct AuthServerRequestOptions: Sendable {
 
 		let authServerMetadata = try await authFetcher.authServerDiscovery(
 			issuer: authorizeInputs.issuer
-		)
+		).tryUnwrap
 
 		if let parConfig = authorizeInputs.parConfig {
 			let parParams = [
