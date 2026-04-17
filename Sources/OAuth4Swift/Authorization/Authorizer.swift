@@ -15,10 +15,6 @@ extension OAuth {
 		var authorizeInputs: AuthorizeInputs { get }
 		var authServerRequestOptions: AuthServerRequestOptions { get }
 		var userAuthenticator: UserAuthenticator { get }
-
-		func negotiate(authServerMetadata: AuthServerMetadata) throws
-			-> ClientAuth.Authenticable
-
 		var authFetcher: HTTPFetcher { get }
 	}
 }
@@ -27,35 +23,37 @@ extension OAuth {
 	public struct AuthorizeInputs: Sendable {
 		public let clientInfo: ClientInfo
 		let pkceVerifier: PKCEVerifier
+		let authServerMetadata: AuthServerMetadata
+		//the client should resolve authEndpoint from authServerMetadata
 		let authEndpoint: URL
 		let inputToken: String?
 		let additionalParameters: FormParameters?
+		//Client fetched the AuthServerMetadata to resolve authEndpoint,
+		//so it should be able to
+		let clientAuthenticator: ClientAuth.Authenticable
 
 		public init(
 			clientInfo: ClientInfo,
 			pkceVerifier: PKCEVerifier = .init(),
+			authServerMetadata: AuthServerMetadata,
 			authEndpoint: URL,
 			inputToken: String?,
-			additionalParameters: FormParameters?
+			additionalParameters: FormParameters?,
+			clientAuthenticator: ClientAuth.Authenticable
 		) {
 			self.clientInfo = clientInfo
 			self.pkceVerifier = pkceVerifier
+			self.authServerMetadata = authServerMetadata
 			self.authEndpoint = authEndpoint
 			self.inputToken = inputToken
 			self.additionalParameters = additionalParameters
+			self.clientAuthenticator = clientAuthenticator
 		}
 	}
 }
 
 extension OAuth.Authorizer {
 	public func performUserAuthentication() async throws -> OAuth.SessionState.Archive {
-		let authServerMetadata = try await authFetcher.authServerDiscovery(
-			endpoint: authorizeInputs.authEndpoint
-		).tryUnwrap
-
-		let clientAuthenticator = try negotiate(
-			authServerMetadata: authServerMetadata
-		)
 
 		// If PKCE is not supported, and we don't have a state parameter, generate a
 		// state parameter using a UUID:
@@ -64,7 +62,8 @@ extension OAuth.Authorizer {
 				return inputToken
 			}
 
-			switch authServerMetadata.codeChallengeMethodsSupported?.contains("S256") {
+			switch authorizeInputs.authServerMetadata.codeChallengeMethodsSupported?
+				.contains("S256") {
 			case nil, false:
 				return UUID().uuidString
 			default:
@@ -97,11 +96,11 @@ extension OAuth.Authorizer {
 
 		// If we're using PAR, perform the request and replace the parameters for
 		// authorization:
-		if authServerMetadata.pushedAuthorizationRequestEndpoint != nil {
+		if authorizeInputs.authServerMetadata.pushedAuthorizationRequestEndpoint != nil {
 			let parHTTPResponse = try await pushedAuthorizationRequest(
-				authServerMetadata: authServerMetadata,
+				authServerMetadata: authorizeInputs.authServerMetadata,
 				parameters: parameters,
-				clientAuthenticator: clientAuthenticator
+				clientAuthenticator: authorizeInputs.clientAuthenticator
 			)
 
 			let parResponse = try OAuth.processPushedAuthorizationResponse(
@@ -116,7 +115,7 @@ extension OAuth.Authorizer {
 		}
 
 		let authorizationUrl = try Self.authorizationURL(
-			authorizationEndpoint: authServerMetadata.authorizationEndpoint,
+			authorizationEndpoint: authorizeInputs .authServerMetadata.authorizationEndpoint,
 			parameters: parameters
 		)
 
@@ -128,8 +127,8 @@ extension OAuth.Authorizer {
 		return try await finishAuthorization(
 			callbackURL: callbackURL,
 			expectedState: stateToken,
-			authServerMetadata: authServerMetadata,
-			clientAuthenticator: clientAuthenticator
+			authServerMetadata: authorizeInputs.authServerMetadata,
+			clientAuthenticator: authorizeInputs.clientAuthenticator
 		)
 	}
 
