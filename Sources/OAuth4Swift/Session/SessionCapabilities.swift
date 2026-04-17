@@ -20,7 +20,6 @@ extension OAuth {
 		var refreshTask: Task<SessionState.TokenState, Error>? { get set }
 
 		//auth
-		var retriableIssuer: URL { get async throws }
 		var authServerRequestOptions: AuthServerRequestOptions { get }
 	}
 }
