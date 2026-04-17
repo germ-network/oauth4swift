@@ -110,7 +110,7 @@ extension OAuth.SessionCapabilities {
 	) async throws -> OAuth.SessionState.TokenState {
 		let authServerMetadata =
 			try await authFetcher
-			.authServerDiscovery(issuer: try await retriableIssuer)
+			.authServerDiscovery(endpoint: try await retriableIssuer)
 			.tryUnwrap
 
 		let httpResponse = try await refreshTokenGrantRequest(

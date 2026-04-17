@@ -27,20 +27,20 @@ extension OAuth {
 	public struct AuthorizeInputs: Sendable {
 		public let clientInfo: ClientInfo
 		let pkceVerifier: PKCEVerifier
-		let issuer: URL
+		let authEndpoint: URL
 		let inputToken: String?
 		let additionalParameters: FormParameters?
 
 		public init(
 			clientInfo: ClientInfo,
 			pkceVerifier: PKCEVerifier = .init(),
-			issuer: URL,
+			authEndpoint: URL,
 			inputToken: String?,
 			additionalParameters: FormParameters?
 		) {
 			self.clientInfo = clientInfo
 			self.pkceVerifier = pkceVerifier
-			self.issuer = issuer
+			self.authEndpoint = authEndpoint
 			self.inputToken = inputToken
 			self.additionalParameters = additionalParameters
 		}
@@ -50,8 +50,8 @@ extension OAuth {
 extension OAuth.Authorizer {
 	public func performUserAuthentication() async throws -> OAuth.SessionState.Archive {
 		let authServerMetadata = try await authFetcher.authServerDiscovery(
-			issuer: authorizeInputs.issuer
-		)
+			endpoint: authorizeInputs.authEndpoint
+		).tryUnwrap
 
 		let clientAuthenticator = try negotiate(
 			authServerMetadata: authServerMetadata
