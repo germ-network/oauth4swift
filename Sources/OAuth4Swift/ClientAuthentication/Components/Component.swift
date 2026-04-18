@@ -28,7 +28,7 @@ extension OAuth.ClientAuth {
 			Data?
 		) throws -> any Component
 
-	public static let DefaultFactory: ComponentFactory = {
+	public static let defaultFactory: ComponentFactory = {
 		method,
 		archive in
 		switch method {
