@@ -15,7 +15,7 @@ import Logging
 ///does not include the issuer so that it can be lazily fetched
 
 extension OAuth {
-	public struct AuthServerRequestOptions: Sendable {
+	public struct TokenRequestOptions: Sendable {
 		public typealias TokenValidator =
 			@Sendable (
 				TokenEndpointResponse,

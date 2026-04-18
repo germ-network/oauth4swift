@@ -13,7 +13,7 @@ import Logging
 extension OAuth {
 	public protocol Authorizer {
 		var authorizeInputs: AuthorizeInputs { get }
-		var authServerRequestOptions: AuthServerRequestOptions { get }
+		var tokenRequestOptions: TokenRequestOptions { get }
 		var authFetcher: HTTPFetcher { get }
 	}
 }
@@ -65,7 +65,8 @@ extension OAuth.Authorizer {
 			}
 
 			switch authorizeInputs.authServerMetadata.codeChallengeMethodsSupported?
-				.contains("S256") {
+				.contains("S256")
+			{
 			case nil, false:
 				return UUID().uuidString
 			default:
@@ -117,7 +118,8 @@ extension OAuth.Authorizer {
 		}
 
 		let authorizationUrl = try Self.authorizationURL(
-			authorizationEndpoint: authorizeInputs .authServerMetadata.authorizationEndpoint,
+			authorizationEndpoint: authorizeInputs.authServerMetadata
+				.authorizationEndpoint,
 			parameters: parameters
 		)
 
@@ -191,7 +193,7 @@ extension OAuth.Authorizer {
 			callbackParameters: callbackParameters,
 			redirectURI: authorizeInputs.clientInfo.redirectURI,
 			pkceVerifier: authorizeInputs.pkceVerifier.verifier,
-			additionalParameters: authServerRequestOptions.additionalParameters,
+			additionalParameters: tokenRequestOptions.additionalParameters,
 		)
 
 		let (tokenState, additionalParams) =
@@ -199,7 +201,7 @@ extension OAuth.Authorizer {
 				authServerMetadata: authServerMetadata,
 				scopes: authorizeInputs.clientInfo.scopes,
 				response: httpResponse,
-				tokenValidator: authServerRequestOptions.tokenValidator
+				tokenValidator: tokenRequestOptions.tokenValidator
 			)
 
 		return .init(
@@ -221,7 +223,7 @@ extension OAuth.Authorizer {
 		authServerMetadata: AuthServerMetadata,
 		scopes: [String],
 		response: HTTPDataResponse,
-		tokenValidator: OAuth.AuthServerRequestOptions.TokenValidator
+		tokenValidator: OAuth.TokenRequestOptions.TokenValidator
 	) async throws -> (OAuth.SessionState.TokenState, [String: String]?) {
 		let tokenResponse = try OAuth.processGenericAccessToken(
 			response: response)

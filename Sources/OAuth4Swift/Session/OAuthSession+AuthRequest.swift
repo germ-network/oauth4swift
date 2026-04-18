@@ -108,7 +108,8 @@ extension OAuth.SessionCapabilities {
 	private func refresh(
 		state: OAuth.SessionState,
 	) async throws -> OAuth.SessionState.TokenState {
-		let authServerMetadata = try await lazyServerMetadata
+		let authServerMetadata =
+			try await lazyServerMetadata
 			.lazyValue(isolation: self)
 
 		let httpResponse = try await refreshTokenGrantRequest(
@@ -147,7 +148,6 @@ extension OAuth.SessionCapabilities {
 				tokenResponse.scope, parent: previousState.grantScopes),
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
-
 
 		try refreshed(tokenState: newTokenState)
 
