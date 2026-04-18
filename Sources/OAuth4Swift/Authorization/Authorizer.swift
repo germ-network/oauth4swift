@@ -14,7 +14,6 @@ extension OAuth {
 	public protocol Authorizer {
 		var authorizeInputs: AuthorizeInputs { get }
 		var authServerRequestOptions: AuthServerRequestOptions { get }
-		var userAuthenticator: UserAuthenticator { get }
 		var authFetcher: HTTPFetcher { get }
 	}
 }
@@ -30,7 +29,8 @@ extension OAuth {
 		let additionalParameters: FormParameters?
 		//Client fetched the AuthServerMetadata to resolve authEndpoint,
 		//so it should be able to
-		let clientAuthenticator: ClientAuth.Authenticable
+		let userAuthenticator: UserAuthenticator
+		let clientAuthenticator: any ClientAuth.Authenticable
 
 		public init(
 			clientInfo: ClientInfo,
@@ -39,7 +39,8 @@ extension OAuth {
 			authEndpoint: URL,
 			inputToken: String?,
 			additionalParameters: FormParameters?,
-			clientAuthenticator: ClientAuth.Authenticable
+			userAuthenticator: @escaping UserAuthenticator,
+			clientAuthenticator: some ClientAuth.Authenticable
 		) {
 			self.clientInfo = clientInfo
 			self.pkceVerifier = pkceVerifier
@@ -47,6 +48,7 @@ extension OAuth {
 			self.authEndpoint = authEndpoint
 			self.inputToken = inputToken
 			self.additionalParameters = additionalParameters
+			self.userAuthenticator = userAuthenticator
 			self.clientAuthenticator = clientAuthenticator
 		}
 	}
@@ -122,7 +124,10 @@ extension OAuth.Authorizer {
 		let scheme = try authorizeInputs.clientInfo.redirectURI.scheme
 			.tryUnwrap(OAuth.Errors.missingScheme)
 
-		let callbackURL = try await userAuthenticator(authorizationUrl, scheme)
+		let callbackURL = try await authorizeInputs.userAuthenticator(
+			authorizationUrl,
+			scheme
+		)
 
 		return try await finishAuthorization(
 			callbackURL: callbackURL,
