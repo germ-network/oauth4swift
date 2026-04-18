@@ -27,8 +27,6 @@ extension OAuth {
 		let authEndpoint: URL
 		let inputToken: String?
 		let additionalParameters: FormParameters?
-		//Client fetched the AuthServerMetadata to resolve authEndpoint,
-		//so it should be able to
 		let userAuthenticator: UserAuthenticator
 		let clientAuthenticator: any ClientAuth.Authenticable
 
