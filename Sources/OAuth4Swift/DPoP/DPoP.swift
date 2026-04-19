@@ -14,7 +14,7 @@ extension OAuth {
 		public enum Alg: Codable, Hashable, Sendable {
 			case es256
 		}
-		
+
 		//This is for now, congruent to its archive
 		//TODO: simplify this into an archive and
 		public struct Key: Codable, Hashable, Sendable {
@@ -22,7 +22,9 @@ extension OAuth {
 			let keyData: Data
 
 			public static func generateP256() -> Self {
-				.init(alg: .es256, keyData: P256.Signing.PrivateKey().rawRepresentation)
+				.init(
+					alg: .es256,
+					keyData: P256.Signing.PrivateKey().rawRepresentation)
 			}
 
 			public init(alg: Alg, keyData: Data) {
@@ -56,6 +58,3 @@ extension OAuth {
 
 	}
 }
-
-
-

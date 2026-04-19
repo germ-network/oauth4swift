@@ -20,7 +20,7 @@ extension OAuth.DPoP {
 		let expiresAt: Int
 		let nonce: String?
 		let accessTokenHash: String?
-		
+
 		enum CodingKeys: String, CodingKey {
 			case uniqueCode = "jti"
 			case httpMethod = "htm"
@@ -30,7 +30,7 @@ extension OAuth.DPoP {
 			case nonce
 			case accessTokenHash = "ath"
 		}
-		
+
 		init(
 			endpointUrl: URL,
 			httpMethod: String,

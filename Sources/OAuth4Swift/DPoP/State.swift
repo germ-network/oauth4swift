@@ -13,10 +13,10 @@ import GermConvenience
 extension OAuth.DPoP {
 	public class State {
 		public let signingKey: Key
-		
+
 		public let nonceCache: NSCache<NSString, IndexedNonce> = NSCache()
 		private let decoder: NonceDecoder
-		
+
 		public init(
 			signingKey: Key,
 			decoder: @escaping OAuth.DPoP.NonceDecoder
@@ -24,15 +24,16 @@ extension OAuth.DPoP {
 			self.signingKey = signingKey
 			self.decoder = decoder
 		}
-		
+
 		public func getNonce(origin: String) -> IndexedNonce? {
 			nonceCache.object(forKey: origin as NSString)
 		}
-		
+
 		public func cacheNonce(response: HTTPDataResponse, requestUrl: URL) throws {
 			let indexedNonce = try decoder(response, requestUrl)
 			if let indexedNonce {
-				nonceCache.setObject(indexedNonce, forKey: indexedNonce.origin as NSString)
+				nonceCache.setObject(
+					indexedNonce, forKey: indexedNonce.origin as NSString)
 			}
 		}
 	}

@@ -12,7 +12,7 @@ extension OAuth.DPoP {
 	enum Errors: LocalizedError {
 		case requestInvalid(HTTPRequest)
 		case mismatchedArchive
-		
+
 		var errorDescription: String? {
 			switch self {
 			case .requestInvalid: "Request is not valid"

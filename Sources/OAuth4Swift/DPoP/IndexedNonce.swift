@@ -10,7 +10,7 @@ import GermConvenience
 
 extension OAuth.DPoP {
 	public typealias NonceDecoder = (HTTPDataResponse, URL) throws -> IndexedNonce?
-	
+
 	//NSCache requires class values
 	public final class IndexedNonce {
 		public let origin: String
@@ -32,4 +32,3 @@ extension OAuth.DPoP {
 		}
 	}
 }
-

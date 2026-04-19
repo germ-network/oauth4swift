@@ -205,9 +205,7 @@ extension OAuth.Authorizer {
 		return .init(
 			clientId: authorizeInputs.clientInfo.clientId,
 			clientAuthMethod: clientAuthenticator.tokenEndpointAuthMethod,
-			dPopKey: await (
-				clientAuthenticator as? OAuth.DPoP.Signing
-			)?.dpopKey,
+			dPopKey: await (clientAuthenticator as? OAuth.DPoP.Signing)?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
 			additionalParams: additionalParams,
 			// We save the first authorization response's scopes as the Authorization

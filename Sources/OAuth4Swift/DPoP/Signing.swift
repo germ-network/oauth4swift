@@ -13,7 +13,7 @@ import HTTPTypes
 extension OAuth.DPoP {
 	public protocol Signing: Actor {
 		var dpopKey: Key { get }
-		
+
 		func getNonce(origin: String) -> IndexedNonce?
 		func cacheNonce(response: HTTPDataResponse, requestUrl: URL) throws
 	}

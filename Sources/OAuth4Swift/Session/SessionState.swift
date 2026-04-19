@@ -236,7 +236,7 @@ extension OAuth.DPoP.State {
 		case (nil, nil):
 			nil
 		case (.some(let key), .some(let decoder)):
-				.init(signingKey: key, decoder: decoder)
+			.init(signingKey: key, decoder: decoder)
 		default:
 			throw OAuth.DPoP.Errors.mismatchedArchive
 		}
@@ -261,5 +261,26 @@ extension OAuth.SessionState {
 			self.additionalParams = additionalParams
 			self.grantScopes = grantScopes
 		}
+	}
+}
+
+extension OAuth.SessionState.Archive {
+	static public func mock() -> Self {
+		.init(
+			clientId: "app.example.com",
+			clientAuthMethod: .none,
+			dPopKey: .generateP256(),
+			issuingServer: "ussure.example.com",
+			additionalParams: nil,
+			grantScopes: nil,
+			clientAuth: nil,
+			tokenState: .mock()
+		)
+	}
+}
+
+extension OAuth.SessionState.TokenState {
+	static public func mock() -> Self {
+		.init(accessToken: .init(value: UUID().uuidString, expiresIn: nil))
 	}
 }
