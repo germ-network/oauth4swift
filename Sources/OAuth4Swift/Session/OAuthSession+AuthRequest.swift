@@ -64,7 +64,7 @@ extension OAuth.SessionCapabilities {
 		for request: BundledHTTPRequest,
 		accessToken: String,
 	) async throws -> HTTPDataResponse {
-		if let dpopSigner = self as? DPoPSigning {
+		if let dpopSigner = self as? OAuth.DPoP.Signing {
 			var request = request
 			request.request.headerFields[.authorization] = "DPoP \(accessToken)"
 

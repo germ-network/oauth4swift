@@ -13,7 +13,7 @@ import Testing
 @testable import OAuth4Swift
 
 struct TestJWTSigning {
-	let key = DPoPKey.generateP256()
+	let key = OAuth.DPoP.Key.generateP256()
 
 	@Test func testSigning() async throws {
 		let payload = UUID().uuidString

@@ -10,21 +10,21 @@ import GermConvenience
 import OAuth4Swift
 
 ///A simple actor to manage dpop state for initial auth
-public actor IsolatedDPopState: DPoPSigning {
-	let state: DPopState
+public actor IsolatedDPopState: OAuth.DPoP.Signing {
+	let state: OAuth.DPoP.State
 
-	public var dpopKey: DPoPKey {
-		state.dpopKey
+	public var dpopKey: OAuth.DPoP.Key {
+		state.signingKey
 	}
 
 	public init(
-		dpopKey: DPoPKey,
-		decoder: @escaping (HTTPDataResponse, URL) throws -> IndexedNonce?
+		dpopKey: OAuth.DPoP.Key,
+		decoder: @escaping OAuth.DPoP.NonceDecoder
 	) {
-		self.state = .init(dpopKey: dpopKey, decoder: decoder)
+		self.state = .init(signingKey: dpopKey, decoder: decoder)
 	}
 
-	public func getNonce(origin: String) -> IndexedNonce? {
+	public func getNonce(origin: String) -> OAuth.DPoP.IndexedNonce? {
 		state.getNonce(origin: origin)
 	}
 

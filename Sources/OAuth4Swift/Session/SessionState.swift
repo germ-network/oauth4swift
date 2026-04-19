@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import GermConvenience
 
 extension OAuth {
 	public protocol Token: Codable, Hashable, Sendable {
@@ -60,11 +61,11 @@ extension OAuth {
 extension OAuth {
 	public class SessionState {
 		public let clientId: String
-		public let issuingServer: String?
+		public let issuingServer: String
 		//stores the additional parameters from the TokenResponse
 		public let additionalParams: [String: String]?
 		//not mandatory in OAuth 2.1
-		public let dPopKey: DPoPKey?
+		public let dPoPState: DPoP.State?
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
 
@@ -74,17 +75,17 @@ extension OAuth {
 
 		public init(
 			clientId: String,
-			dPopKey: DPoPKey?,
-			issuingServer: String? = nil,
+			issuingServer: String,
 			additionalParams: [String: String]? = nil,
+			dPoPState: DPoP.State?,
 			grantScopes: [String]?,
 			authComponent: some ClientAuth.Component,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
-			self.dPopKey = dPopKey
 			self.issuingServer = issuingServer
 			self.additionalParams = additionalParams
+			self.dPoPState = dPoPState
 			self.grantScopes = grantScopes
 			self.authComponent = authComponent
 			self.tokenState = tokenState
@@ -144,8 +145,8 @@ extension OAuth.SessionState {
 	public struct Archive: Sendable, Codable {
 		let clientId: String
 		let clientAuthMethod: OAuth.ClientAuth.TokenEndpointMethods
-		let dPopKey: DPoPKey?
-		let issuingServer: String?
+		let dPopKey: OAuth.DPoP.Key?
+		let issuingServer: String
 
 		public let additionalParams: [String: String]?
 		//stores the authorization grant scope:
@@ -156,8 +157,8 @@ extension OAuth.SessionState {
 		public init(
 			clientId: String,
 			clientAuthMethod: OAuth.ClientAuth.TokenEndpointMethods,
-			dPopKey: DPoPKey?,
-			issuingServer: String?,
+			dPopKey: OAuth.DPoP.Key?,
+			issuingServer: String,
 			additionalParams: [String: String]?,
 			grantScopes: [String]?,
 			clientAuth: Data?,
@@ -190,13 +191,17 @@ extension OAuth.SessionState {
 	public convenience init(
 		archive: Archive,
 		clientAuthFactory: OAuth.ClientAuth.ComponentFactory = OAuth
-			.ClientAuth.defaultFactory
+			.ClientAuth.defaultFactory,
+		dpopDecoder: OAuth.DPoP.NonceDecoder?
 	) throws {
 		self.init(
 			clientId: archive.clientId,
-			dPopKey: archive.dPopKey,
 			issuingServer: archive.issuingServer,
 			additionalParams: archive.additionalParams,
+			dPoPState: try .restore(
+				archivedKey: archive.dPopKey,
+				decoder: dpopDecoder
+			),
 			grantScopes: archive.grantScopes,
 			authComponent: try clientAuthFactory(
 				archive.clientAuthMethod,
@@ -211,13 +216,29 @@ extension OAuth.SessionState {
 			.init(
 				clientId: clientId,
 				clientAuthMethod: authComponent.tokenEndpointAuthMethod,
-				dPopKey: dPopKey,
+				dPopKey: dPoPState?.signingKey,
 				issuingServer: issuingServer,
 				additionalParams: additionalParams,
 				grantScopes: grantScopes,
 				clientAuth: try authComponent.archive,
 				tokenState: tokenState
 			)
+		}
+	}
+}
+
+extension OAuth.DPoP.State {
+	static func restore(
+		archivedKey: OAuth.DPoP.Key?,
+		decoder: OAuth.DPoP.NonceDecoder?
+	) throws -> OAuth.DPoP.State? {
+		switch (archivedKey, decoder) {
+		case (nil, nil):
+			nil
+		case (.some(let key), .some(let decoder)):
+				.init(signingKey: key, decoder: decoder)
+		default:
+			throw OAuth.DPoP.Errors.mismatchedArchive
 		}
 	}
 }

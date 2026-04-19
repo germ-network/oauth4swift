@@ -23,7 +23,7 @@ struct Test {
 			}
 
 			//henceforth should throw instead of return nil as nonce is expected
-			return try IndexedNonce(
+			return try .init(
 				requestUrl: requestUrl,
 				nonce: nonce
 			)
@@ -87,7 +87,7 @@ struct Test {
 }
 
 extension IsolatedDPopState {
-	func cache(nonce: IndexedNonce) {
+	func cache(nonce: OAuth.DPoP.IndexedNonce) {
 		state.nonceCache.setObject(nonce, forKey: nonce.origin as NSString)
 	}
 }

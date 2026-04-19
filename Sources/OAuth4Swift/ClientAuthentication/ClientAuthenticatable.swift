@@ -35,7 +35,7 @@ extension OAuth.ClientAuth.Authenticable {
 			body: parameters.data
 		)
 
-		if let dpopSigner = self as? DPoPSigning {
+		if let dpopSigner = self as? OAuth.DPoP.Signing {
 			if retry {
 				return
 					try await dpopSigner
