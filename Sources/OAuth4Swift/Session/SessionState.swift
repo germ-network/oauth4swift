@@ -190,7 +190,7 @@ extension OAuth.SessionState {
 	public convenience init(
 		archive: Archive,
 		clientAuthFactory: OAuth.ClientAuth.ComponentFactory = OAuth
-			.ClientAuth.DefaultFactory
+			.ClientAuth.defaultFactory
 	) throws {
 		self.init(
 			clientId: archive.clientId,

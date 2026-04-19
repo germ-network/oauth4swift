@@ -13,7 +13,7 @@ import Testing
 @testable import OAuth4Swift
 
 struct Test {
-	let dpopSigner = AuthDPopState(
+	let dpopSigner = IsolatedDPopState(
 		dpopKey: .generateP256(),
 		decoder: { (dataResponse, requestUrl) in
 			let nonce = dataResponse.response
@@ -86,9 +86,9 @@ struct Test {
 	//    }
 }
 
-extension AuthDPopState {
+extension IsolatedDPopState {
 	func cache(nonce: IndexedNonce) {
-		nonceCache.setObject(nonce, forKey: nonce.origin as NSString)
+		state.nonceCache.setObject(nonce, forKey: nonce.origin as NSString)
 	}
 }
 

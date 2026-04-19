@@ -1,5 +1,5 @@
 //
-//  AuthDPopState.swift
+//  DPopState.swift
 //  OAuth
 //
 //  Created by Mark @ Germ on 3/9/26.
@@ -8,12 +8,12 @@
 import Foundation
 import GermConvenience
 
-///A simple actor to manage dpop state for initial auth
+///reusable class to encapsulate DPoP state. Should generally protect this in some isolation (Actor or @MainActor which can conform to DPoPSigning and pass its methods through
+///
+public class DPopState {
+	public let dpopKey: DPoPKey
 
-public actor AuthDPopState: DPoPSigning {
-	nonisolated public let dpopKey: DPoPKey
-
-	let nonceCache: NSCache<NSString, IndexedNonce> = NSCache()
+	public let nonceCache: NSCache<NSString, IndexedNonce> = NSCache()
 	private let decoder: (HTTPDataResponse, URL) throws -> IndexedNonce?
 
 	public init(
