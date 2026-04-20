@@ -11,10 +11,12 @@ import HTTPTypes
 import Logging
 
 extension OAuth {
-	public protocol Authorizer {
+	//may conform to DPoP.Signing if capable of it
+	public protocol Authorizer: ClientAuth.Authenticable {
 		var authorizeInputs: AuthorizeInputs { get }
 		var tokenRequestOptions: TokenRequestOptions { get }
 		var authFetcher: HTTPFetcher { get }
+		var clientAuthArchive: Data? { get async }
 	}
 }
 
@@ -28,7 +30,6 @@ extension OAuth {
 		let inputToken: String?
 		let additionalParameters: FormParameters?
 		let userAuthenticator: UserAuthenticator
-		let clientAuthenticator: any ClientAuth.Authenticable
 
 		public init(
 			clientInfo: ClientInfo,
@@ -38,7 +39,6 @@ extension OAuth {
 			inputToken: String?,
 			additionalParameters: FormParameters?,
 			userAuthenticator: @escaping UserAuthenticator,
-			clientAuthenticator: some ClientAuth.Authenticable
 		) {
 			self.clientInfo = clientInfo
 			self.pkceVerifier = pkceVerifier
@@ -47,7 +47,6 @@ extension OAuth {
 			self.inputToken = inputToken
 			self.additionalParameters = additionalParameters
 			self.userAuthenticator = userAuthenticator
-			self.clientAuthenticator = clientAuthenticator
 		}
 	}
 }
@@ -101,7 +100,7 @@ extension OAuth.Authorizer {
 			let parHTTPResponse = try await pushedAuthorizationRequest(
 				authServerMetadata: authorizeInputs.authServerMetadata,
 				parameters: parameters,
-				clientAuthenticator: authorizeInputs.clientAuthenticator
+
 			)
 
 			let parResponse = try OAuth.processPushedAuthorizationResponse(
@@ -133,7 +132,6 @@ extension OAuth.Authorizer {
 			callbackURL: callbackURL,
 			expectedState: stateToken,
 			authServerMetadata: authorizeInputs.authServerMetadata,
-			clientAuthenticator: authorizeInputs.clientAuthenticator
 		)
 	}
 
@@ -153,7 +151,6 @@ extension OAuth.Authorizer {
 		authServerMetadata: AuthServerMetadata,
 		parameters: FormParameters,
 		headers: HTTPFields? = nil,
-		clientAuthenticator: any OAuth.ClientAuth.Authenticable
 	) async throws -> HTTPDataResponse {
 		let parEndpoint = try authServerMetadata.resolve(
 			endpoint: .par)
@@ -162,7 +159,7 @@ extension OAuth.Authorizer {
 		rawHeaders[.accept] = HTTPContentType.json.rawValue
 		rawHeaders[.contentType] = HTTPContentType.formUrlEncoded.rawValue
 
-		return try await clientAuthenticator.authenticatedRequest(
+		return try await authenticatedRequest(
 			url: parEndpoint,
 			method: .post,
 			inputs: .init(
@@ -178,7 +175,6 @@ extension OAuth.Authorizer {
 		callbackURL: URL,
 		expectedState: String?,
 		authServerMetadata: AuthServerMetadata,
-		clientAuthenticator: any OAuth.ClientAuth.Authenticable
 	) async throws -> OAuth.SessionState.Archive {
 		let callbackParameters = try OAuth.validateAuthResponse(
 			authServerMetadata: authServerMetadata,
@@ -186,7 +182,7 @@ extension OAuth.Authorizer {
 			expectedState: expectedState
 		)
 
-		let httpResponse = try await clientAuthenticator.authorizationCodeGrantRequest(
+		let httpResponse = try await authorizationCodeGrantRequest(
 			authServerMetadata: authServerMetadata,
 			callbackParameters: callbackParameters,
 			redirectURI: authorizeInputs.clientInfo.redirectURI,
@@ -204,15 +200,15 @@ extension OAuth.Authorizer {
 
 		return .init(
 			clientId: authorizeInputs.clientInfo.clientId,
-			clientAuthMethod: clientAuthenticator.tokenEndpointAuthMethod,
-			dPopKey: await (clientAuthenticator as? OAuth.DPoP.Signing)?.dpopKey,
+			clientAuthMethod: tokenEndpointAuthMethod,
+			dPopKey: await (self as? OAuth.DPoP.Signing)?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
 			additionalParams: additionalParams,
 			// We save the first authorization response's scopes as the Authorization
 			// Grant's scopes, in future token refresh calls, we can change scopes up
 			// and down within the bounds of grantScopes.
 			grantScopes: tokenState.scopes,
-			clientAuth: await clientAuthenticator.clientAuthArchive,
+			clientAuth: await clientAuthArchive,
 			tokenState: tokenState
 		)
 	}

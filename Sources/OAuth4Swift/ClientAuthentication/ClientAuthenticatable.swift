@@ -11,7 +11,6 @@ extension OAuth.ClientAuth {
 		) async throws -> (FormParameters, HTTPFields)
 
 		var authFetcher: HTTPFetcher { get }
-		var clientAuthArchive: Data? { get async }
 	}
 }
 

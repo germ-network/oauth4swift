@@ -10,6 +10,7 @@ import Foundation
 import GermConvenience
 
 extension OAuth {
+	//may conform to DPoP.Signing if capable of it
 	public protocol SessionCapabilities: Actor, ClientAuth.Authenticable {
 		nonisolated var clientId: String { get }
 
