@@ -163,7 +163,6 @@ extension OAuth.Authorizer {
 		rawHeaders[.contentType] = HTTPContentType.formUrlEncoded.rawValue
 
 		return try await clientAuthenticator.authenticatedRequest(
-			isolation: self as? Actor,
 			url: parEndpoint,
 			method: .post,
 			inputs: .init(

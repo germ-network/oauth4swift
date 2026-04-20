@@ -17,7 +17,6 @@ extension OAuth.ClientAuth {
 
 extension OAuth.ClientAuth.Authenticable {
 	func authenticatedRequest(
-		isolation: (any Actor)?,
 		url: URL,
 		method: HTTPRequest.Method,
 		inputs: OAuth.ClientAuth.Inputs,
@@ -117,7 +116,6 @@ extension OAuth.ClientAuth.Authenticable {
 		)
 
 		return try await authenticatedRequest(
-			isolation: self as? Actor,
 			url: url,
 			method: .post,
 			inputs: .init(
