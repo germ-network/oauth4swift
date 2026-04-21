@@ -92,7 +92,7 @@ extension TokenEndpointResponse: Decodable {
 				// Add more types as needed
 			}
 		}
-		self.additionalFields = tempExtraFields
+		self.additionalTokenFields = tempExtraFields
 	}
 
 	struct DynamicCodingKeys: CodingKey {
