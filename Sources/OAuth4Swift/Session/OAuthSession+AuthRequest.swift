@@ -117,7 +117,7 @@ extension OAuth.SessionCapabilities {
 			additionalParameters: authServerRequestOptions.additionalParameters,
 			refreshToken: state.tokenState.refreshToken.tryUnwrap.value
 		)
-		
+
 		let tokenResponse = try OAuth.processRefreshTokenResponse(
 			response: httpResponse)
 
