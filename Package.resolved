@@ -1,13 +1,13 @@
 {
-  "originHash" : "7bb16bf0462bc24436c7e69d07d7bf4a2d3036702b31164d427edc85956edbc3",
+  "originHash" : "81f0a9315e043a606e19cd47b8a47e62557840d4a0b231df536b231ef38d4f33",
   "pins" : [
     {
       "identity" : "germconvenience",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/germ-network/GermConvenience.git",
       "state" : {
-        "branch" : "feat/form-parameters-multipart-boundary",
-        "revision" : "a0a6bee8ed64e2e436615459e90197511ec7e543"
+        "revision" : "aa6c84822b0b0093a21dd307718795a51f0aa9c9",
+        "version" : "0.1.2"
       }
     },
     {

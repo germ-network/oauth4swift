@@ -115,9 +115,9 @@ extension OAuth.SessionCapabilities {
 		let httpResponse = try await refreshTokenGrantRequest(
 			authServerMetadata: authServerMetadata,
 			additionalParameters: authServerRequestOptions.additionalParameters,
-
-			refreshToken: state.tokenState.refreshToken.tryUnwrap.value,
+			refreshToken: state.tokenState.refreshToken.tryUnwrap.value
 		)
+		
 		let tokenResponse = try OAuth.processRefreshTokenResponse(
 			response: httpResponse)
 
