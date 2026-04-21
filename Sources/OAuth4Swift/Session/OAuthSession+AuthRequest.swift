@@ -8,7 +8,7 @@
 import Foundation
 import GermConvenience
 
-extension OAuthSessionCapabilities {
+extension OAuth.SessionCapabilities {
 	public func authResponse(
 		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
@@ -21,13 +21,13 @@ extension OAuthSessionCapabilities {
 
 		let result = try await retryNonceRequest(request: request)
 
-		// FIXME: This isn't really to spec: 401 doesn't mean "refresh", it just means unauthorized.
 		if result.response.status.kind == .successful {
 			return result
 		}
 
+		// FIXME: This isn't really to spec: 401 doesn't mean "refresh", it just means unauthorized.
 		guard case result.response.status.code = 401 else {
-			throw OAuthError.httpResponse(response: result)
+			throw OAuth.Errors.httpResponse(response: result)
 		}
 
 		//try to refresh the token
@@ -41,7 +41,9 @@ extension OAuthSessionCapabilities {
 	) async throws -> HTTPDataResponse {
 		let response = try await protectedResource(for: request)
 		//retry if nonceError
-		if response.isDPoPNonceError {
+		if OAuth.DPoP.Endpoint.resource
+			.isDPoPNonceError(bundledResponse: response)
+		{
 			return try await protectedResource(for: request)
 		}
 		return response
@@ -56,7 +58,7 @@ extension OAuthSessionCapabilities {
 
 		return try await resource(
 			for: request,
-			accessToken: session.mutable.accessToken.value,
+			accessToken: session.tokenState.accessToken.value,
 		)
 	}
 
@@ -64,7 +66,7 @@ extension OAuthSessionCapabilities {
 		for request: BundledHTTPRequest,
 		accessToken: String,
 	) async throws -> HTTPDataResponse {
-		if let dpopSigner = self as? DPoPSigning {
+		if let dpopSigner = self as? OAuth.DPoP.Signing {
 			var request = request
 			request.request.headerFields[.authorization] = "DPoP \(accessToken)"
 
@@ -82,7 +84,9 @@ extension OAuthSessionCapabilities {
 	}
 
 	//conserving in that it reuses result if a refresh is alread in flght
-	private func conservingRefresh(state: SessionState) async throws -> SessionState.Mutable {
+	private func conservingRefresh(state: OAuth.SessionState) async throws
+		-> OAuth.SessionState.TokenState
+	{
 		if let refreshTask {
 			return try await refreshTask.value
 		}
@@ -104,25 +108,26 @@ extension OAuthSessionCapabilities {
 	//compare to refreshTokenGrantRequest
 	//and processRefreshTokenResponse in oauth4web
 	private func refresh(
-		state: SessionState,
-	) async throws -> SessionState.Mutable {
-		let authServerMetadata = try await lazyServerMetadata.lazyValue(
-			isolation: self
+		state: OAuth.SessionState,
+	) async throws -> OAuth.SessionState.TokenState {
+		let authServerMetadata =
+			try await lazyServerMetadata
+			.lazyValue(isolation: self)
+
+		let httpResponse = try await refreshTokenGrantRequest(
+			authServerMetadata: authServerMetadata,
+			additionalParameters: authServerRequestOptions.additionalParameters,
+			refreshToken: state.tokenState.refreshToken.tryUnwrap.value
 		)
 
-		let httpResponse = try await authServerRequestOptions.refreshTokenGrantRequest(
-			authServerMetadata: authServerMetadata,
-			refreshToken: state.mutable.refreshToken.tryUnwrap.value,
-		)
-		let tokenResponse = try OAuthComponents.processRefreshTokenResponse(
+		let tokenResponse = try OAuth.processRefreshTokenResponse(
 			response: httpResponse)
 
 		//check the token response is valid, e.g., asserting the authorization
 		//server can really issue the token for that `sub` parameter in the
 		//tokenResponse; also passes the current session state to allow verifying
 		//that the token sub hasn't changed during refresh:
-		let previousState = ImmutableSessionState(
-			client: state.client,
+		let previousState = OAuth.SessionState.Snapshot(
 			issuingServer: state.issuingServer,
 			additionalParams: state.additionalParams,
 			grantScopes: state.grantScopes
@@ -131,51 +136,23 @@ extension OAuthSessionCapabilities {
 		if try await authServerRequestOptions.tokenValidator(
 			tokenResponse, authServerMetadata, previousState) == false
 		{
-			throw OAuthError.tokenInvalid
+			throw OAuth.Errors.tokenInvalid
 		}
 
-		let newSessionState = SessionState.Mutable(
+		let newTokenState = OAuth.SessionState.TokenState(
 			accessToken: .init(
 				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
 			),
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
 				timeout: tokenResponse.refreshTokenTimeout),
-			scopes: OAuthComponents.parseTokenScope(
+			scopes: OAuth.parseTokenScope(
 				tokenResponse.scope, parent: previousState.grantScopes),
 			grantExpiresIn: tokenResponse.authorizationExpiresIn
 		)
 
-		try refreshed(sessionMutable: newSessionState)
-		return newSessionState
-	}
-}
+		try refreshed(tokenState: newTokenState)
 
-extension HTTPDataResponse {
-
-	///is very different from oauth4web that seems to just parse the header
-	var isDPoPNonceError: Bool {
-		switch response.status.code {
-		case 401:
-			//this only works if it is the first challenge in the header error
-			if let wwwAuthHeader = response.headerFields[.wwwAuthenticate] {
-				if wwwAuthHeader.starts(with: "DPoP") {
-					return wwwAuthHeader.contains("error=\"use_dpop_nonce\"")
-				}
-			}
-		// https://datatracker.ietf.org/doc/html/rfc9449#name-authorization-server-provid
-		case 400:
-			do {
-				let err = try JSONDecoder().decode(
-					OAuthErrorResponse.self, from: data)
-				return err.error == "use_dpop_nonce"
-			} catch {
-				return false
-			}
-		default:
-			return false
-		}
-
-		return false
+		return newTokenState
 	}
 }

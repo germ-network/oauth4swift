@@ -4,19 +4,19 @@
 import PackageDescription
 
 let package = Package(
-	name: "OAuth",
+	name: "OAuth4Swift",
 	platforms: [.iOS(.v16), .macOS(.v15)],
 	products: [
 		// Products define the executables and libraries a package produces, making them visible to other packages.
 		.library(
-			name: "OAuth",
-			targets: ["OAuth"]
+			name: "OAuth4Swift",
+			targets: ["OAuth4Swift"]
 		)
 	],
 	dependencies: [
 		.package(
 			url: "https://github.com/germ-network/GermConvenience.git",
-			from: "0.1.0"
+			from: "0.1.2"
 		),
 		.package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),
 		.package(
@@ -28,7 +28,7 @@ let package = Package(
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
 		// Targets can depend on other targets in this package and products from dependencies.
 		.target(
-			name: "OAuth",
+			name: "OAuth4Swift",
 			dependencies: [
 				"GermConvenience",
 				.product(name: "Crypto", package: "swift-crypto"),
@@ -37,8 +37,8 @@ let package = Package(
 			]
 		),
 		.testTarget(
-			name: "OAuthTests",
-			dependencies: ["OAuth"]
+			name: "OAuth4SwiftTests",
+			dependencies: ["OAuth4Swift"]
 		),
 	]
 )
