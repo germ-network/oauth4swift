@@ -20,7 +20,7 @@ public struct TokenEndpointResponse {
 	public let authorizationExpiresIn: Int?
 
 	//capture additional fields
-	public let additionalFields: [String: Any]?
+	public let additionalTokenFields: [String: Any]?
 
 	//TODO: allow extension for unknown types
 	//example in oauth4web: RecognizedTokenTypes
@@ -36,7 +36,7 @@ public struct TokenEndpointResponse {
 			case TokenType.bearer.rawValue:
 				self = .bearer
 			default:
-				throw OAuthError.unrecognizedTokenType
+				throw OAuth.Errors.unrecognizedTokenType
 			}
 		}
 	}
@@ -92,7 +92,7 @@ extension TokenEndpointResponse: Decodable {
 				// Add more types as needed
 			}
 		}
-		self.additionalFields = tempExtraFields
+		self.additionalTokenFields = tempExtraFields
 	}
 
 	struct DynamicCodingKeys: CodingKey {

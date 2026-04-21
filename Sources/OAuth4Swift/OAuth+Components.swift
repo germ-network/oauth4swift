@@ -13,7 +13,7 @@ import GermConvenience
 #endif
 
 ///Direct analog to oauth4web's OAuth module in providing stateless API as building blocks for a full client
-public enum OAuthComponents {
+extension OAuth {
 	static public func processPushedAuthorizationResponse(
 		response: HTTPDataResponse
 	) throws -> PARResponse {
@@ -22,14 +22,14 @@ public enum OAuthComponents {
 			.success(
 				code: 201,
 				decodeResult: PARResponse.self,
-				orError: OAuthErrorResponse.self
+				orError: OAuth.ErrorResponse.self
 			)
 
 		switch parsed {
 		case .result(let result):
 			return result
 		case .error(let errorResponse, let errorCode):
-			throw OAuthError.oauthError(errorResponse, errorCode)
+			throw OAuth.Errors.oauthError(errorResponse, errorCode)
 		}
 	}
 
@@ -68,7 +68,7 @@ public enum OAuthComponents {
 		//validate state if we have an expected state:
 		if let expectedState {
 			guard state == expectedState else {
-				throw OAuthError.stateTokenMismatch(state ?? "[nil]", expectedState)
+				throw Errors.stateTokenMismatch(state ?? "[nil]", expectedState)
 			}
 		}
 
@@ -77,12 +77,12 @@ public enum OAuthComponents {
 		if iss == nil
 			&& authServerMetadata.authorizationResponseIssParameterSupported == true
 		{
-			throw OAuthError.missingIssuer
+			throw Errors.missingIssuer
 		}
 
 		if let iss {
 			guard iss == authServerMetadata.issuer else {
-				throw OAuthError.issuingServerMismatch(
+				throw Errors.issuingServerMismatch(
 					iss,
 					authServerMetadata.issuer
 				)
@@ -104,15 +104,15 @@ public enum OAuthComponents {
 			// The error should always be lowercase, but just being defensive:
 			switch error.lowercased() {
 			case "access_denied":
-				throw OAuthError.accessDenied
+				throw Errors.accessDenied
 			case "invalid_request":
-				throw OAuthError.invalidRequest
+				throw Errors.invalidRequest
 			case "invalid_scope":
-				throw OAuthError.invalidScope
+				throw Errors.invalidScope
 			default:
 				// We do actually have error and error_description parameters, so we
 				// return an error with those present.
-				throw OAuthError.redirectError(
+				throw Errors.redirectError(
 					error.lowercased(), errorDescription)
 			}
 		}
@@ -162,7 +162,7 @@ public enum OAuthComponents {
 			try response
 			.success(
 				decodeResult: TokenEndpointResponse.self,
-				orError: OAuthErrorResponse.self
+				orError: OAuth.ErrorResponse.self
 			)
 
 		switch decodedResponse {
@@ -171,11 +171,11 @@ public enum OAuthComponents {
 		case .error(let e, let statusCode):
 			switch e.error {
 			case "invalid_request":
-				throw OAuthError.invalidRequest
+				throw Errors.invalidRequest
 			case "invalid_response":
-				throw OAuthError.invalidResponse
+				throw Errors.invalidResponse
 			default:
-				throw OAuthError.oauthError(e, statusCode)
+				throw Errors.oauthError(e, statusCode)
 			}
 		}
 	}
@@ -204,7 +204,7 @@ extension HTTPFetcher {
 	//should not redirect
 	public func resourceDiscoveryRequest(
 		url: URL,
-	) async throws -> ProtectedResourceMetadata {
+	) async throws -> ProtectedResourceMetadata? {
 		//TODO: should properly prepend, not append
 		let url = url.appending(
 			path: "/.well-known/oauth-protected-resource"
@@ -217,14 +217,14 @@ extension HTTPFetcher {
 			)
 		)
 
-		return try await performDiscovery(request: request)
+		return try await performDiscovery(request: request)?
 			.expectSuccess()
 			.decode()
 
 	}
 
-	public func authServerDiscovery(issuer: URL) async throws -> AuthServerMetadata {
-		let url = issuer.appending(
+	public func authServerDiscovery(endpoint: URL) async throws -> AuthServerMetadata? {
+		let url = endpoint.appending(
 			path: "/.well-known/oauth-authorization-server"
 		)
 
@@ -234,17 +234,22 @@ extension HTTPFetcher {
 				url: url
 			)
 		)
-		return try await performDiscovery(request: request)
+		return try await performDiscovery(request: request)?
 			.expectSuccess()
 			.decode()
 	}
 
+	//when we perform discovery, treat a 404 as a nil result
 	func performDiscovery(
 		request: BundledHTTPRequest
-	) async throws -> HTTPDataResponse {
+	) async throws -> HTTPDataResponse? {
 		guard request.request.scheme == "https" else {
-			throw OAuthError.insecureScheme
+			throw OAuth.Errors.insecureScheme
 		}
-		return try await data(for: request)
+		let result = try await data(for: request)
+		if result.response.status == .notFound {
+			return nil
+		}
+		return result
 	}
 }

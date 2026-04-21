@@ -10,10 +10,10 @@ import Foundation
 import GermConvenience
 import Testing
 
-@testable import OAuth
+@testable import OAuth4Swift
 
 struct Test {
-	let dpopSigner = AuthDPopState(
+	let dpopSigner = IsolatedDPopState(
 		dpopKey: .generateP256(),
 		decoder: { (dataResponse, requestUrl) in
 			let nonce = dataResponse.response
@@ -23,7 +23,7 @@ struct Test {
 			}
 
 			//henceforth should throw instead of return nil as nonce is expected
-			return try IndexedNonce(
+			return try .init(
 				requestUrl: requestUrl,
 				nonce: nonce
 			)
@@ -86,9 +86,9 @@ struct Test {
 	//    }
 }
 
-extension AuthDPopState {
-	func cache(nonce: IndexedNonce) {
-		nonceCache.setObject(nonce, forKey: nonce.origin as NSString)
+extension IsolatedDPopState {
+	func cache(nonce: OAuth.DPoP.IndexedNonce) {
+		state.nonceCache.setObject(nonce, forKey: nonce.origin as NSString)
 	}
 }
 
@@ -130,23 +130,5 @@ extension JWT.JWK {
 
 			return try P256.Signing.PublicKey(x963Representation: x963)
 		}
-	}
-}
-
-struct MockFetcher {
-	let host: String = "example.com"
-
-	let resolver: @Sendable (BundledHTTPRequest) throws -> HTTPDataResponse
-}
-
-extension MockFetcher: HTTPFetcher {
-	func data(
-		for request: BundledHTTPRequest
-	) async throws -> GermConvenience.HTTPDataResponse {
-		let url = try #require(request.request.url)
-		assert(url.scheme == "https")
-		assert(url.host() == host)
-
-		return try resolver(request)
 	}
 }

@@ -10,20 +10,22 @@ import Foundation
 import GermConvenience
 import HTTPTypes
 
-public protocol DPoPSigning: Actor {
-	var dpopKey: DPoPKey { get throws }
+extension OAuth.DPoP {
+	public protocol Signing: Actor {
+		var dpopKey: Key { get }
 
-	func getNonce(origin: String) -> IndexedNonce?
-	func cacheNonce(response: HTTPDataResponse, requestUrl: URL) throws
+		func getNonce(origin: String) -> IndexedNonce?
+		func cacheNonce(response: HTTPDataResponse, requestUrl: URL) throws
+	}
 }
 
-extension DPoPSigning {
+extension OAuth.DPoP.Signing {
 	func addProof(
 		request: BundledHTTPRequest,
 		token: String?
 	) throws -> BundledHTTPRequest {
 		let requestOrigin = try (request.request.url?.origin)
-			.tryUnwrap(DPoPError.requestInvalid(request.request))
+			.tryUnwrap(OAuth.DPoP.Errors.requestInvalid(request.request))
 
 		let nonce = getNonce(origin: requestOrigin)
 
@@ -51,7 +53,8 @@ extension DPoPSigning {
 	func nonceRetryAuthenticated(
 		request: BundledHTTPRequest,
 		token: String?,
-		authFetcher: HTTPFetcher
+		authFetcher: HTTPFetcher,
+		endpointType: OAuth.DPoP.Endpoint
 	) async throws -> HTTPDataResponse {
 		let firstResponse = try await authenticated(
 			request: request,
@@ -60,7 +63,7 @@ extension DPoPSigning {
 		)
 
 		//retry if nonceError
-		if firstResponse.isDPoPNonceError {
+		if endpointType.isDPoPNonceError(bundledResponse: firstResponse) {
 			return try await authenticated(
 				request: request,
 				token: token,
@@ -75,7 +78,7 @@ extension DPoPSigning {
 	func authenticated(
 		request: BundledHTTPRequest,
 		token: String?,
-		fetcher: HTTPFetcher
+		fetcher: HTTPFetcher,
 	) async throws -> HTTPDataResponse {
 		let proofRequest = try addProof(
 			request: request,
