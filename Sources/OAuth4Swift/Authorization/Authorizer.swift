@@ -167,7 +167,8 @@ extension OAuth.Authorizer {
 				parameters: parameters,
 				headers: rawHeaders
 			),
-			retry: true
+			retry: true,
+			endpointType: .auth
 		)
 	}
 

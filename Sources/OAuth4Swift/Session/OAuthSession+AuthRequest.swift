@@ -41,7 +41,9 @@ extension OAuth.SessionCapabilities {
 	) async throws -> HTTPDataResponse {
 		let response = try await protectedResource(for: request)
 		//retry if nonceError
-		if response.isDPoPNonceError {
+		if OAuth.DPoP.Endpoint.resource
+			.isDPoPNonceError(bundledResponse: response)
+		{
 			return try await protectedResource(for: request)
 		}
 		return response
@@ -152,34 +154,5 @@ extension OAuth.SessionCapabilities {
 		try refreshed(tokenState: newTokenState)
 
 		return newTokenState
-	}
-}
-
-extension HTTPDataResponse {
-
-	///is very different from oauth4web that seems to just parse the header
-	var isDPoPNonceError: Bool {
-		switch response.status.code {
-		case 401:
-			//this only works if it is the first challenge in the header error
-			if let wwwAuthHeader = response.headerFields[.wwwAuthenticate] {
-				if wwwAuthHeader.starts(with: "DPoP") {
-					return wwwAuthHeader.contains("error=\"use_dpop_nonce\"")
-				}
-			}
-		// https://datatracker.ietf.org/doc/html/rfc9449#name-authorization-server-provid
-		case 400:
-			do {
-				let err = try JSONDecoder().decode(
-					OAuth.ErrorResponse.self, from: data)
-				return err.error == "use_dpop_nonce"
-			} catch {
-				return false
-			}
-		default:
-			return false
-		}
-
-		return false
 	}
 }
