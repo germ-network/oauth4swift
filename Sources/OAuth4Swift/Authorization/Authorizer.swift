@@ -229,7 +229,7 @@ extension OAuth.Authorizer {
 			throw OAuth.Errors.tokenInvalid
 		}
 
-		let additionalParams = tokenResponse.additionalFields?
+		let additionalParams = tokenResponse.additionalTokenFields?
 			.compactMapValues {
 				if let string = $0 as? String {
 					return string

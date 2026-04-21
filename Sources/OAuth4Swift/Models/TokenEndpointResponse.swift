@@ -20,7 +20,7 @@ public struct TokenEndpointResponse {
 	public let authorizationExpiresIn: Int?
 
 	//capture additional fields
-	public let additionalFields: [String: Any]?
+	public let additionalTokenFields: [String: Any]?
 
 	//TODO: allow extension for unknown types
 	//example in oauth4web: RecognizedTokenTypes
