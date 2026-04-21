@@ -53,7 +53,8 @@ extension OAuth.DPoP.Signing {
 	func nonceRetryAuthenticated(
 		request: BundledHTTPRequest,
 		token: String?,
-		authFetcher: HTTPFetcher
+		authFetcher: HTTPFetcher,
+		endpointType: OAuth.DPoP.Endpoint
 	) async throws -> HTTPDataResponse {
 		let firstResponse = try await authenticated(
 			request: request,
@@ -62,7 +63,7 @@ extension OAuth.DPoP.Signing {
 		)
 
 		//retry if nonceError
-		if firstResponse.isDPoPNonceError {
+		if endpointType.isDPoPNonceError(bundledResponse: firstResponse) {
 			return try await authenticated(
 				request: request,
 				token: token,
