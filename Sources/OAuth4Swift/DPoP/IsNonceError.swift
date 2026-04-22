@@ -15,7 +15,22 @@ extension OAuth.DPoP {
 
 		func isDPoPNonceError(bundledResponse: HTTPDataResponse) -> Bool {
 			switch self {
+			// logic matching
+			//https://github.com/bluesky-social/atproto/blob/4e96e2c7/packages/oauth/oauth-client/src/fetch-dpop.ts#L
 			case .auth:
+				guard bundledResponse.response.status == .badRequest else {
+					return false
+				}
+				do {
+					let err = try JSONDecoder().decode(
+						OAuth.ErrorResponse.self, from: bundledResponse.data
+					)
+					return err.error == "use_dpop_nonce"
+				} catch {
+					return false
+				}
+			//https://datatracker.ietf.org/doc/html/rfc9449#name-authorization-server-provid
+			case .resource:
 				guard bundledResponse.response.status == .unauthorized else {
 					return false
 				}
@@ -28,16 +43,7 @@ extension OAuth.DPoP {
 							"error=\"use_dpop_nonce\"")
 					}
 				}
-			//https://datatracker.ietf.org/doc/html/rfc9449#name-authorization-server-provid
-			case .resource:
-				do {
-					let err = try JSONDecoder().decode(
-						OAuth.ErrorResponse.self, from: bundledResponse.data
-					)
-					return err.error == "use_dpop_nonce"
-				} catch {
-					return false
-				}
+
 			}
 			return false
 		}
