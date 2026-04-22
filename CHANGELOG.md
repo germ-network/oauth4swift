@@ -1,5 +1,11 @@
 # @germ-network/oauth4swift
 
+## 0.3.1
+
+### Patch Changes
+
+- [#31](https://github.com/germ-network/oauth4swift/pull/31) [`fe25ea0`](https://github.com/germ-network/oauth4swift/commit/fe25ea03e3fcecfc03491be97aa05a35c25ebaed) Thanks [@germ-mark](https://github.com/germ-mark)! - fix inverted nonce check branch on auth or resource server
+
 ## 0.3.0
 
 ### Minor Changes
@@ -7,7 +13,9 @@
 - [#27](https://github.com/germ-network/oauth4swift/pull/27) [`3e6a1e8`](https://github.com/germ-network/oauth4swift/commit/3e6a1e8b5e294683c4b4492b3224ea72e7cff3de) Thanks [@germ-mark](https://github.com/germ-mark)! - Discovery endpoints should return an optional
 
 - [#30](https://github.com/germ-network/oauth4swift/pull/30) [`546a5ef`](https://github.com/germ-network/oauth4swift/commit/546a5ef4aa1cfa1af6e9a11e549e5f31aaef4728) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm), [@germ-mark](https://github.com/germ-mark)! -
-	## The package product is now named `OAuth4Swift`
+
+  ## The package product is now named `OAuth4Swift`
+
   This frees up `OAuth` to be a type namespace (we don't want a Type and Module with the same name, see: https://forums.swift.org/t/fixing-modules-that-contain-a-type-with-the-same-name/3025)
 
   ## Collecting types under `OAuth` namespace
