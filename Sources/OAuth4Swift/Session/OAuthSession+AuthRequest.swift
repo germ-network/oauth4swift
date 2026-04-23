@@ -82,6 +82,13 @@ extension OAuth.SessionCapabilities {
 			return try await authFetcher.data(for: request)
 		}
 	}
+	
+	//a hook for a client app to manually refresh
+	//doesn't duplicatively return as result as the feedback should come
+	//through the refreshed(: hook
+	public func refresh() async throws {
+		let _ = try await conservingRefresh(state: session)
+	}
 
 	//conserving in that it reuses result if a refresh is alread in flght
 	private func conservingRefresh(state: OAuth.SessionState) async throws
