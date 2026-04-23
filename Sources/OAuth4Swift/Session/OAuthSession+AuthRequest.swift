@@ -82,7 +82,7 @@ extension OAuth.SessionCapabilities {
 			return try await authFetcher.data(for: request)
 		}
 	}
-	
+
 	//a hook for a client app to manually refresh
 	//doesn't duplicatively return as result as the feedback should come
 	//through the refreshed(: hook

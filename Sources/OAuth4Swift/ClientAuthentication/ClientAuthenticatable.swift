@@ -19,7 +19,7 @@ extension OAuth.ClientAuth.Authenticable {
 		url: URL,
 		method: HTTPRequest.Method,
 		inputs: OAuth.ClientAuth.Inputs,
-		retry: Bool,
+		retryNonce: Bool,
 		endpointType: OAuth.DPoP.Endpoint
 	) async throws -> HTTPDataResponse {
 		let (parameters, headers) = try await authenticate(
@@ -36,7 +36,7 @@ extension OAuth.ClientAuth.Authenticable {
 		)
 
 		if let dpopSigner = self as? OAuth.DPoP.Signing {
-			if retry {
+			if retryNonce {
 				return
 					try await dpopSigner
 					.nonceRetryAuthenticated(
@@ -124,7 +124,7 @@ extension OAuth.ClientAuth.Authenticable {
 				parameters: parametersWithGrantType,
 				headers: rawHeaders
 			),
-			retry: false,
+			retryNonce: true,
 			endpointType: .auth
 		)
 	}
