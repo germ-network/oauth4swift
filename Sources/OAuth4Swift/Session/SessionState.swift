@@ -186,6 +186,11 @@ extension OAuth.SessionState {
 				self.tokenState = tokenState
 			}
 		}
+
+		public mutating func merge(mutable: Mutable) {
+			clientAuth = mutable.clientAuth
+			tokenState = mutable.tokenState
+		}
 	}
 
 	public convenience init(
