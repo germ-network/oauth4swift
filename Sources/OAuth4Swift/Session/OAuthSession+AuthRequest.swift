@@ -7,6 +7,7 @@
 
 import Foundation
 import GermConvenience
+import Logging
 
 extension OAuth.SessionCapabilities {
 	public func authResponse(
@@ -83,6 +84,13 @@ extension OAuth.SessionCapabilities {
 		}
 	}
 
+	//a hook for a client app to manually refresh
+	//doesn't duplicatively return as result as the feedback should come
+	//through the refreshed(: hook
+	public func refresh() async throws {
+		let _ = try await conservingRefresh(state: session)
+	}
+
 	//conserving in that it reuses result if a refresh is alread in flght
 	private func conservingRefresh(state: OAuth.SessionState) async throws
 		-> OAuth.SessionState.TokenState
@@ -114,34 +122,46 @@ extension OAuth.SessionCapabilities {
 			try await lazyServerMetadata
 			.lazyValue(isolation: self)
 
-		let httpResponse = try await refreshTokenGrantRequest(
-			authServerMetadata: authServerMetadata,
-			additionalParameters: authServerRequestOptions.additionalParameters,
-			refreshToken: state.tokenState.refreshToken.tryUnwrap.value
-		)
-
-		let tokenResponse = try OAuth.processRefreshTokenResponse(
-			response: httpResponse)
-
-		//check the token response is valid, e.g., asserting the authorization
-		//server can really issue the token for that `sub` parameter in the
-		//tokenResponse; also passes the current session state to allow verifying
-		//that the token sub hasn't changed during refresh:
 		let previousState = OAuth.SessionState.Snapshot(
 			issuingServer: state.issuingServer,
 			additionalParams: state.additionalParams,
 			grantScopes: state.grantScopes
 		)
 
-		if try await authServerRequestOptions.tokenValidator(
-			tokenResponse, authServerMetadata, previousState) == false
-		{
-			throw OAuth.Errors.tokenInvalid
+		let httpResponse = try await refreshTokenGrantRequest(
+			authServerMetadata: authServerMetadata,
+			additionalParameters: authServerRequestOptions.additionalParameters,
+			refreshToken: state.tokenState.refreshToken.tryUnwrap.value
+		)
+
+		//if we get an HTTP response but it isn't successful we nil the session
+		let tokenResponse: TokenEndpointResponse
+		do {
+			tokenResponse = try OAuth.processRefreshTokenResponse(
+				response: httpResponse)
+
+			//check the token response is valid, e.g., asserting the authorization
+			//server can really issue the token for that `sub` parameter in the
+			//tokenResponse; also passes the current session state to allow verifying
+			//that the token sub hasn't changed during refresh:
+
+			guard
+				try await authServerRequestOptions.tokenValidator(
+					tokenResponse, authServerMetadata, previousState)
+			else {
+				throw OAuth.Errors.tokenInvalid
+			}
+		} catch {
+			try refreshed(tokenState: nil)
+			Logger(label: "refresh")
+				.error("error refreshing, terminating session \(error)")
+			throw error
 		}
 
 		let newTokenState = OAuth.SessionState.TokenState(
 			accessToken: .init(
-				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
+				value: tokenResponse.accessToken,
+				expiresIn: tokenResponse.expiresIn
 			),
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,

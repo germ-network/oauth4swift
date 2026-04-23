@@ -17,7 +17,7 @@ extension OAuth {
 		var lazyServerMetadata: LazyResource<AuthServerMetadata> { get }
 
 		var session: SessionState { get throws }
-		func refreshed(tokenState: SessionState.TokenState) throws
+		func refreshed(tokenState: SessionState.TokenState?) throws
 		var refreshTask: Task<SessionState.TokenState, Error>? { get set }
 
 		//auth
