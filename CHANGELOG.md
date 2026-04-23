@@ -1,5 +1,13 @@
 # @germ-network/oauth4swift
 
+## 0.3.2
+
+### Patch Changes
+
+- [#35](https://github.com/germ-network/oauth4swift/pull/35) [`6b47973`](https://github.com/germ-network/oauth4swift/commit/6b479730f871d02b98e04317cb6dd964d7e35e8e) Thanks [@germ-mark](https://github.com/germ-mark)! - expose api to refresh only, catch a bad response and reset the session by saving nil, and add a session archive merge operation
+
+- [#35](https://github.com/germ-network/oauth4swift/pull/35) [`6b47973`](https://github.com/germ-network/oauth4swift/commit/6b479730f871d02b98e04317cb6dd964d7e35e8e) Thanks [@germ-mark](https://github.com/germ-mark)! - Patch authenticatedRequest to retry on a nonce failure
+
 ## 0.3.1
 
 ### Patch Changes
