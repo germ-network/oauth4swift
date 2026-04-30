@@ -1,5 +1,11 @@
 # @germ-network/oauth4swift
 
+## 0.3.3
+
+### Patch Changes
+
+- [#34](https://github.com/germ-network/oauth4swift/pull/34) [`cbe874a`](https://github.com/germ-network/oauth4swift/commit/cbe874a199f3a988e82316b06fcfcfefe52ac8d2) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Move LazyResource to GermConvenience
+
 ## 0.3.2
 
 ### Patch Changes
