@@ -1,6 +1,8 @@
 import Foundation
 import GermConvenience
-import HTTPTypes
+
+import struct HTTPTypes.HTTPFields
+import struct HTTPTypes.HTTPRequest
 
 extension OAuth.ClientAuth {
 	public protocol Authenticable: Sendable {
@@ -27,11 +29,9 @@ extension OAuth.ClientAuth.Authenticable {
 		)
 
 		let request = try BundledHTTPRequest(
-			request: .init(
-				method: method,
-				url: url,
-				headerFields: headers
-			),
+			method: method,
+			url: url,
+			headerFields: headers,
 			body: parameters.data
 		)
 

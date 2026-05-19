@@ -1,6 +1,7 @@
 import Foundation
 import GermConvenience
-import HTTPTypes
+
+import struct HTTPTypes.HTTPFields
 
 ///We provide components that implement these methods, but because they encapsulate mutable state,
 ///Oauth expects to interact with the protocol through an implementation of SessionCapabilities

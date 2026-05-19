@@ -33,7 +33,7 @@ struct ECDSASigner {
 		return .init(
 			header: headerEncoded,
 			payload: payloadEncoded,
-			signature: signatureData.base64URLEncodedString()
+			signature: signatureData.base64Encoded(padded: false)
 		)
 	}
 

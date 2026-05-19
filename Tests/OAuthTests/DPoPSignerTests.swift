@@ -48,7 +48,7 @@ struct Test {
 		}
 
 		let signedRequest = try await dpopSigner.addProof(
-			request: .init(request: .init(url: url)),
+			request: .init(url: url),
 			token: token
 		)
 

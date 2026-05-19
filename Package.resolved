@@ -1,13 +1,13 @@
 {
-  "originHash" : "f52bc9f2cb4b743730f8c2d845178cbbe5852d3a7b91b3e4548bcf3582c1b89e",
+  "originHash" : "0b19896810e479898640392c19a855f01d2271194b0bf567be365b75305cf951",
   "pins" : [
     {
       "identity" : "germconvenience",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/germ-network/GermConvenience.git",
       "state" : {
-        "revision" : "11e006791276ceb8236fae210e4ee521f80a0a41",
-        "version" : "0.1.4"
+        "branch" : "fix/http-scheme-precondition",
+        "revision" : "8e9ce216aadb82b336cfcde655d3bab37a453398"
       }
     },
     {
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "eb50cbd14606a9161cbc5d452f18797c90ef0bab",
         "version" : "1.7.0"
+      }
+    },
+    {
+      "identity" : "swift-bases",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swift-libp2p/swift-bases.git",
+      "state" : {
+        "revision" : "96615d4b582f9f6536d8278304ce2a64c8e5288a",
+        "version" : "0.2.0"
       }
     },
     {

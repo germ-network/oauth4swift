@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import HTTPTypes
+
+import struct HTTPTypes.HTTPField
 
 extension HTTPField.Name {
 	public static var dpop: Self? { .init("DPoP") }
