@@ -1,5 +1,11 @@
 # @germ-network/oauth4swift
 
+## 0.3.4
+
+### Patch Changes
+
+- [#38](https://github.com/germ-network/oauth4swift/pull/38) [`dbffccf`](https://github.com/germ-network/oauth4swift/commit/dbffccfa1fb1d0f02f6b0781bb9fb32ad3e76674) Thanks [@germ-mark](https://github.com/germ-mark)! - adopt 0.2.1 germconvenience without base64urlencoded and with revised bundled http request
+
 ## 0.3.3
 
 ### Patch Changes
