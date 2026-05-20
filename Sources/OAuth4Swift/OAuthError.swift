@@ -1,6 +1,7 @@
 import Foundation
 import GermConvenience
-import HTTPTypes
+
+import struct HTTPTypes.HTTPResponse
 
 //this is growing to the point where it should get broken down into subdomains
 extension OAuth {

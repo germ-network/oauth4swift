@@ -1,6 +1,7 @@
 import Foundation
 import GermConvenience
-import HTTPTypes
+
+import struct HTTPTypes.HTTPFields
 
 // Usage not recommended, use ClientAuthSecretPost
 extension OAuth.ClientAuth {

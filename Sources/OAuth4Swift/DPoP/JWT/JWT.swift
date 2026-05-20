@@ -51,9 +51,9 @@ extension JWT {
 			self.kty = "EC"
 			self.crv = "P-256"
 			self.x = keyBytes.subdata(in: 1..<(componentSize + 1))
-				.base64URLEncodedString()
+				.base64Encoded(padded: false)
 			self.y = keyBytes.subdata(in: (componentSize + 1)..<(componentSize * 2 + 1))
-				.base64URLEncodedString()
+				.base64Encoded(padded: false)
 		}
 	}
 
@@ -85,7 +85,9 @@ extension Encodable {
 		get throws {
 			let encoder = JSONEncoder()
 			encoder.dateEncodingStrategy = .secondsSince1970
-			let encodedHeader = try encoder.encode(self).base64URLEncodedBytes()
+			let encodedHeader = try encoder.encode(self)
+				.base64URLPadEncodedData()
+				.tryUnwrap
 
 			return try String(
 				data: .init(encodedHeader),

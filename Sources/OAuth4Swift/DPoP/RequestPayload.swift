@@ -7,7 +7,6 @@
 
 import Foundation
 import GermConvenience
-import HTTPTypes
 
 extension OAuth.DPoP {
 	struct RequestPayload: Codable, Hashable, Sendable {

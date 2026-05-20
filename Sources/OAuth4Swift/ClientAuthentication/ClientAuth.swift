@@ -7,7 +7,8 @@
 
 import Foundation
 import GermConvenience
-import HTTPTypes
+
+import struct HTTPTypes.HTTPFields
 
 extension OAuth {
 	public enum ClientAuth {

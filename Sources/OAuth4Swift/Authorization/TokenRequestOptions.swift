@@ -7,7 +7,6 @@
 
 import Foundation
 import GermConvenience
-import HTTPTypes
 import Logging
 
 ///Shared code among the initial auth flow and subsequent refresh

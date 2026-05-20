@@ -7,8 +7,9 @@
 
 import Foundation
 import GermConvenience
-import HTTPTypes
 import Logging
+
+import struct HTTPTypes.HTTPFields
 
 extension OAuth {
 	//may conform to DPoP.Signing if capable of it

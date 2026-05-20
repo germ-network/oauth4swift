@@ -5,10 +5,10 @@
 //  Created by Mark @ Germ on 2/26/26.
 //
 
+import Base64
 import Crypto
 import Foundation
 import GermConvenience
-import HTTPTypes
 
 extension OAuth.DPoP {
 	public protocol Signing: Actor {
@@ -33,7 +33,7 @@ extension OAuth.DPoP.Signing {
 		//to specify alg agility
 		let tokenHash = token.map {
 			SHA256.hash(data: $0.utf8Data)
-				.data.base64URLEncodedString()
+				.data.base64Encoded(padded: false)
 		}
 		let jwt = try dpopKey.sign(
 			payload: .init(

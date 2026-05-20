@@ -6,7 +6,8 @@
 //
 
 import Foundation
-import HTTPTypes
+
+import struct HTTPTypes.HTTPRequest
 
 extension OAuth.DPoP {
 	enum Errors: LocalizedError {

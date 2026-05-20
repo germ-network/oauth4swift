@@ -210,11 +210,9 @@ extension HTTPFetcher {
 			path: "/.well-known/oauth-protected-resource"
 		)
 
-		let request = BundledHTTPRequest(
-			request: .init(
-				method: .get,
-				url: url
-			)
+		let request = try BundledHTTPRequest(
+			method: .get,
+			url: url,
 		)
 
 		return try await performDiscovery(request: request)?
@@ -228,12 +226,11 @@ extension HTTPFetcher {
 			path: "/.well-known/oauth-authorization-server"
 		)
 
-		let request = BundledHTTPRequest(
-			request: .init(
-				method: .get,
-				url: url
-			)
+		let request = try BundledHTTPRequest(
+			method: .get,
+			url: url,
 		)
+
 		return try await performDiscovery(request: request)?
 			.expectSuccess()
 			.decode()
