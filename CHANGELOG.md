@@ -1,5 +1,11 @@
 # @germ-network/oauth4swift
 
+## 0.3.5
+
+### Patch Changes
+
+- [#40](https://github.com/germ-network/oauth4swift/pull/40) [`354d3e2`](https://github.com/germ-network/oauth4swift/commit/354d3e2c480b18c1a61881029a340f02f939a424) Thanks [@germ-mark](https://github.com/germ-mark)! - correctly use base64url encoding in dpop
+
 ## 0.3.4
 
 ### Patch Changes
