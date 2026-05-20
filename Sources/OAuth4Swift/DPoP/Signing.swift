@@ -33,7 +33,7 @@ extension OAuth.DPoP.Signing {
 		//to specify alg agility
 		let tokenHash = token.map {
 			SHA256.hash(data: $0.utf8Data)
-				.data.base64Encoded(padded: false)
+				.data.base64URLEncoded(padded: false)
 		}
 		let jwt = try dpopKey.sign(
 			payload: .init(

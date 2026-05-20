@@ -51,9 +51,9 @@ extension JWT {
 			self.kty = "EC"
 			self.crv = "P-256"
 			self.x = keyBytes.subdata(in: 1..<(componentSize + 1))
-				.base64Encoded(padded: false)
+				.base64URLEncoded(padded: false)
 			self.y = keyBytes.subdata(in: (componentSize + 1)..<(componentSize * 2 + 1))
-				.base64Encoded(padded: false)
+				.base64URLEncoded(padded: false)
 		}
 	}
 
