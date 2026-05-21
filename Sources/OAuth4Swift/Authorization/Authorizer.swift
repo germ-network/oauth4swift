@@ -244,11 +244,13 @@ extension OAuth.Authorizer {
 
 		let sessionState = OAuth.SessionState.TokenState(
 			accessToken: .init(
-				value: tokenResponse.accessToken, expiresIn: tokenResponse.expiresIn
+				value: tokenResponse.accessToken,
+				expiresIn: .init(tokenResponse.expiresIn)
 			),
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
-				timeout: tokenResponse.refreshTokenTimeout),
+				timeout: .init(tokenResponse.refreshTokenTimeout)
+			),
 			scopes: OAuth.parseTokenScope(
 				tokenResponse.scope,
 				parent: scopes
