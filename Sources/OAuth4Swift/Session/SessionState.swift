@@ -154,8 +154,7 @@ extension OAuth.SessionState {
 		let clientId: String
 		let dPopKey: OAuth.DPoP.Key?
 		let issuingServer: String
-
-		public let additionalParams: [String: String]?
+		
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
 		public var tokenState: TokenState
@@ -164,14 +163,13 @@ extension OAuth.SessionState {
 			clientId: String,
 			dPopKey: OAuth.DPoP.Key?,
 			issuingServer: String,
-			additionalParams: [String: String]?,
 			grantScopes: [String]?,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
 			self.dPopKey = dPopKey
 			self.issuingServer = issuingServer
-			self.additionalParams = additionalParams
+
 			self.grantScopes = grantScopes
 			self.tokenState = tokenState
 		}
@@ -184,7 +182,6 @@ extension OAuth.SessionState {
 		self.init(
 			clientId: archive.clientId,
 			issuingServer: archive.issuingServer,
-			additionalParams: archive.additionalParams,
 			dPoPState: try .restore(
 				archivedKey: archive.dPopKey,
 				decoder: dpopDecoder
@@ -200,7 +197,6 @@ extension OAuth.SessionState {
 				clientId: clientId,
 				dPopKey: dPoPState?.signingKey,
 				issuingServer: issuingServer,
-				additionalParams: additionalParams,
 				grantScopes: grantScopes,
 				tokenState: tokenState
 			)
@@ -258,8 +254,7 @@ extension OAuth.SessionState.Archive {
 		.init(
 			clientId: "app.example.com",
 			dPopKey: .generateP256(),
-			issuingServer: "ussure.example.com",
-			additionalParams: nil,
+			issuingServer: "issuer.example.com",
 			grantScopes: nil,
 			tokenState: .mock()
 		)

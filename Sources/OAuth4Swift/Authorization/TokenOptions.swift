@@ -1,5 +1,5 @@
 //
-//  AuthServerRequestOptions.swift
+//  TokenOptions.swift
 //  OAuth
 //
 //  Created by Mark @ Germ on 3/8/26.
@@ -14,7 +14,7 @@ import Logging
 ///does not include the issuer so that it can be lazily fetched
 
 extension OAuth {
-	public protocol TokenRequestOptions: Sendable {
+	public protocol TokenRefreshOptions: Sendable {
 		var additionalParameters: [String: String] { get }
 
 		func validate(
@@ -23,4 +23,15 @@ extension OAuth {
 			previousState: SessionState.Snapshot?
 		) async throws -> Bool
 	}
+
+	public protocol TokenAuthorizeOptions: Sendable {
+		associatedtype ValidationOutput: Sendable
+		var additionalParameters: [String: String] { get }
+		
+		func validate(
+			tokenResponse: TokenEndpointResponse,
+			authServerMetadata: AuthServerMetadata,
+		) async throws -> ValidationOutput
+	}
 }
+

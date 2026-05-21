@@ -29,6 +29,6 @@ extension OAuth {
 		) -> Task<AccessToken, Error>?
 
 		//auth
-		var authServerRequestOptions: TokenRequestOptions { get }
+		var authServerRequestOptions: TokenRefreshOptions { get }
 	}
 }
