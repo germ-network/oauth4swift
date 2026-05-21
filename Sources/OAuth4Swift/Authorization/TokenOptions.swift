@@ -36,10 +36,10 @@ extension OAuth {
 }
 
 //default additionalParameters to nil
-extension OAuth.TokenRefreshOptions {
+public extension OAuth.TokenRefreshOptions {
 	var additionalParameters: [String: String] { [:] }
 }
 
-extension OAuth.TokenAuthorizeOptions {
+public extension OAuth.TokenAuthorizeOptions {
 	var additionalParameters: [String: String] { [:] }
 }
