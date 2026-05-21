@@ -7,6 +7,7 @@
 
 import Foundation
 import GermConvenience
+import Logging
 
 #if canImport(FoundationNetworking)
 	import FoundationNetworking
@@ -180,6 +181,7 @@ extension OAuth {
 		}
 	}
 
+	//if no scopes are passed back, then we get the parent (requested or granted)
 	static func parseTokenScope(_ scope: String?, parent: [String]?) -> [String] {
 		var scopes: [String] = []
 		guard let scope else {
@@ -194,6 +196,12 @@ extension OAuth {
 		// Filter to remove any empty scope values:
 		scopes = scope.components(separatedBy: " ").filter {
 			$0 != ""
+		}
+		
+		if let parent, !parent.isEmpty {
+			if !Set(parent).contains(scopes) {
+				Logger(label: "parseTokenScope").error("Received scopes \(scopes) in excess of requested scopes \(parent)")
+			}
 		}
 
 		return scopes

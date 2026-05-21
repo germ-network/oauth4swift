@@ -115,7 +115,7 @@ extension OAuth {
 			public var accessToken: AccessToken
 			public var refreshToken: RefreshToken?
 
-			// User authorized scopes
+			//what is currently authorized on the last refresh
 			var scopes: [String]
 
 			init(
