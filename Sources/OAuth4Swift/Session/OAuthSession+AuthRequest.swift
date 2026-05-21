@@ -135,8 +135,12 @@ extension OAuth.SessionCapabilities {
 			//that the token sub hasn't changed during refresh:
 
 			guard
-				try await authServerRequestOptions.tokenValidator(
-					tokenResponse, authServerMetadata, stateSnapshot)
+				try await authServerRequestOptions
+					.validate(
+						tokenResponse: tokenResponse,
+						authServerMetadata: authServerMetadata,
+						previousState: stateSnapshot
+					)
 			else {
 				throw OAuth.Errors.tokenInvalid
 			}

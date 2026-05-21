@@ -196,7 +196,7 @@ extension OAuth.Authorizer {
 				authServerMetadata: authServerMetadata,
 				scopes: authorizeInputs.clientInfo.scopes,
 				response: httpResponse,
-				tokenValidator: tokenRequestOptions.tokenValidator
+				tokenRequestOptions: tokenRequestOptions
 			)
 
 		return .init(
@@ -216,7 +216,7 @@ extension OAuth.Authorizer {
 		authServerMetadata: AuthServerMetadata,
 		scopes: [String],
 		response: HTTPDataResponse,
-		tokenValidator: OAuth.TokenRequestOptions.TokenValidator
+		tokenRequestOptions: OAuth.TokenRequestOptions
 	) async throws -> (OAuth.SessionState.TokenState, [String: String]?) {
 		let tokenResponse = try OAuth.processGenericAccessToken(
 			response: response)
@@ -224,7 +224,11 @@ extension OAuth.Authorizer {
 		//check the token response is valid, e.g., asserting the authorization
 		//server can really issue the token for that `sub` parameter in the
 		//tokenResponse
-		if try await tokenValidator(tokenResponse, authServerMetadata, nil) == false {
+		if try await tokenRequestOptions.validate(
+			tokenResponse: tokenResponse,
+			authServerMetadata: authServerMetadata,
+			previousState: nil
+		) == false {
 			throw OAuth.Errors.tokenInvalid
 		}
 

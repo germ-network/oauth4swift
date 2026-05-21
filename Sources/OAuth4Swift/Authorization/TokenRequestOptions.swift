@@ -14,23 +14,13 @@ import Logging
 ///does not include the issuer so that it can be lazily fetched
 
 extension OAuth {
-	public struct TokenRequestOptions: Sendable {
-		public typealias TokenValidator =
-			@Sendable (
-				TokenEndpointResponse,
-				AuthServerMetadata,
-				SessionState.Snapshot?
-			) async throws -> Bool
+	public protocol TokenRequestOptions: Sendable {
+		var additionalParameters: [String: String] { get }
 
-		let additionalParameters: [String: String]
-		let tokenValidator: TokenValidator
-
-		public init(
-			additionalParameters: [String: String],
-			tokenValidator: @escaping TokenValidator,
-		) {
-			self.additionalParameters = additionalParameters
-			self.tokenValidator = tokenValidator
-		}
+		func validate(
+			tokenResponse: TokenEndpointResponse,
+			authServerMetadata: AuthServerMetadata,
+			previousState: SessionState.Snapshot?
+		) async throws -> Bool
 	}
 }
