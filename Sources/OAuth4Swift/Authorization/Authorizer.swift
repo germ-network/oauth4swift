@@ -255,7 +255,7 @@ extension OAuth.Authorizer {
 				tokenResponse.scope,
 				parent: scopes
 			),
-			grantExpiresIn: tokenResponse.authorizationExpiresIn
+			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
 		)
 
 		return (sessionState, additionalParams)

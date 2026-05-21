@@ -169,7 +169,7 @@ extension OAuth.SessionCapabilities {
 			),
 			scopes: OAuth.parseTokenScope(
 				tokenResponse.scope, parent: previousState.grantScopes),
-			grantExpiresIn: tokenResponse.authorizationExpiresIn
+			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
 		)
 
 		try refreshed(tokenState: newTokenState)
