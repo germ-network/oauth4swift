@@ -35,3 +35,11 @@ extension OAuth {
 	}
 }
 
+//default additionalParameters to nil
+extension OAuth.TokenRefreshOptions {
+	var additionalParameters: [String: String] { [:] }
+}
+
+extension OAuth.TokenAuthorizeOptions {
+	var additionalParameters: [String: String] { [:] }
+}
