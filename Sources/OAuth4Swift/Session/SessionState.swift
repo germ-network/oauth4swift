@@ -9,51 +9,73 @@ import Foundation
 import GermConvenience
 
 extension OAuth {
-	public protocol Token: Codable, Hashable, Sendable {
+	protocol Token {
 		var expiry: Date? { get }
+		//optional for both backward compatibility in decoding,
+		//and to allow the adopter to efface it when rtoring
+		var fetchedOn: Date? { get }
+
+		init(value: String, expiry: Date?, fetchedOn: Date?)
 	}
 }
 
 extension OAuth.Token {
-	public var valid: Bool {
+	var valid: Bool {
 		guard let date = expiry else { return true }
 
 		return date.timeIntervalSinceNow > 0
 	}
+
+	init(value: String, expiresIn: TimeInterval?) {
+		self.init(
+			value: value,
+			expiry: expiresIn?.expiryDateFromNow,
+			fetchedOn: .now
+		)
+	}
 }
 
 extension OAuth {
-	public struct AccessToken: Token {
+	//while the types are structually identical, defining as separate types
+	//to prevent use confusion
+	public struct AccessToken: Codable, Hashable, Sendable {
 		public let value: String
 		public let expiry: Date?
-
-		public init(value: String, expiresIn seconds: Int?) {
-			self.value = value
-			if let seconds {
-				self.expiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
-			} else {
-				self.expiry = nil
-			}
-		}
+		public var fetchedOn: Date?
 	}
 
 	/// Holds a refresh token value and optionally it's expiry
-	public struct RefreshToken: Token {
+	public struct RefreshToken: Codable, Hashable, Sendable {
 		public let value: String
 		public let expiry: Date?
+		public var fetchedOn: Date?
+	}
+}
 
-		public init?(value: String?, timeout seconds: Int?) {
-			guard let value else {
-				return nil
-			}
+extension OAuth.AccessToken: OAuth.Token {}
 
-			self.value = value
-			if let seconds {
-				self.expiry = Date(timeIntervalSinceNow: TimeInterval(seconds))
-			} else {
-				self.expiry = nil
-			}
+extension OAuth.RefreshToken: OAuth.Token {}
+
+//defining in an extension to preserve the memberwise intializer
+extension OAuth.RefreshToken {
+	init?(value: String?, timeout: TimeInterval?) {
+		guard let value else {
+			return nil
 		}
+		self.init(value: value, expiresIn: timeout)
+	}
+}
+
+extension TimeInterval {
+	init?(_ seconds: Int?) {
+		guard let seconds else {
+			return nil
+		}
+		self.init(seconds)
+	}
+
+	var expiryDateFromNow: Date {
+		Date(timeIntervalSinceNow: self)
 	}
 }
 
@@ -99,11 +121,11 @@ extension OAuth {
 			// User authorized scopes
 			var scopes: [String]
 
-			public init(
+			init(
 				accessToken: AccessToken,
 				refreshToken: RefreshToken? = nil,
 				scopes: [String] = [],
-				grantExpiresIn seconds: Int? = nil
+				grantExpiresIn: TimeInterval? = nil
 			) {
 				self.accessToken = accessToken
 				self.refreshToken = refreshToken
@@ -111,12 +133,7 @@ extension OAuth {
 
 				// Support for Authorization Grants with expiry:
 				// https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html
-				if let seconds {
-					self.grantExpiry = Date(
-						timeIntervalSinceNow: TimeInterval(seconds))
-				} else {
-					self.grantExpiry = nil
-				}
+				self.grantExpiry = grantExpiresIn?.expiryDateFromNow
 			}
 
 			/// Determines if the token object is valid.
@@ -285,7 +302,36 @@ extension OAuth.SessionState.Archive {
 }
 
 extension OAuth.SessionState.TokenState {
-	static public func mock() -> Self {
-		.init(accessToken: .init(value: UUID().uuidString, expiresIn: nil))
+	//takes the place of a public memberwise intializer
+	static public func mock(
+		accessToken: OAuth.AccessToken = .mock(),
+		refreshToken: OAuth.RefreshToken? = nil,
+		scopes: [String] = [],
+		grantExpiresIn: TimeInterval? = nil
+	) -> Self {
+		.init(
+			accessToken: accessToken,
+			refreshToken: refreshToken,
+			scopes: scopes,
+			grantExpiresIn: grantExpiresIn
+		)
+	}
+}
+
+extension OAuth.AccessToken {
+	static public func mock(
+		value: String = UUID().uuidString,
+		expiresIn: TimeInterval? = nil
+	) -> Self {
+		.init(value: value, expiresIn: expiresIn)
+	}
+}
+
+extension OAuth.RefreshToken {
+	static public func mock(
+		value: String = UUID().uuidString,
+		expiresIn: TimeInterval? = nil
+	) -> Self {
+		.init(value: value, expiresIn: expiresIn)
 	}
 }

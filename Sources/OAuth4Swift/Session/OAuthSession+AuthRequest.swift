@@ -161,14 +161,15 @@ extension OAuth.SessionCapabilities {
 		let newTokenState = OAuth.SessionState.TokenState(
 			accessToken: .init(
 				value: tokenResponse.accessToken,
-				expiresIn: tokenResponse.expiresIn
+				expiresIn: .init(tokenResponse.expiresIn)
 			),
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
-				timeout: tokenResponse.refreshTokenTimeout),
+				timeout: .init(tokenResponse.refreshTokenTimeout)
+			),
 			scopes: OAuth.parseTokenScope(
 				tokenResponse.scope, parent: previousState.grantScopes),
-			grantExpiresIn: tokenResponse.authorizationExpiresIn
+			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
 		)
 
 		try refreshed(tokenState: newTokenState)
