@@ -87,16 +87,33 @@ extension OAuth.SessionCapabilities {
 	//a hook for a client app to manually refresh
 	//doesn't duplicatively return as result as the feedback should come
 	//through the refreshed(: hook
-	public func refresh() async throws {
+	public func refresh(debounce: TimeInterval? = nil) async throws {
 		let _ = try await conservingRefresh(state: session)
 	}
 
 	//conserving in that it reuses result if a refresh is alread in flght
-	private func conservingRefresh(state: OAuth.SessionState) async throws
-		-> OAuth.SessionState.TokenState
+	private func conservingRefresh(
+		state: OAuth.SessionState,
+		debounce: TimeInterval? = nil
+	) async throws
+		-> OAuth.SessionState.TokenState?
 	{
 		if let refreshTask {
 			return try await refreshTask.value
+		}
+
+		//if we have a debounce parameter, don't fetch again if recently fetched
+		if let debounce,
+			let lastRefreshed = state.tokenState.refreshToken?.fetchedOn
+		{
+			let lastRefreshInterval = Date().timeIntervalSince(lastRefreshed)
+			if lastRefreshInterval < debounce {
+				Logger(label: "OAuth.SessionCapabilities")
+					.notice(
+						"skipping refresh, last fetched \(lastRefreshInterval / (3600 * 24)) days ago, debounce: \(debounce))"
+					)
+				return nil
+			}
 		}
 
 		let newRefreshTask = Task {
