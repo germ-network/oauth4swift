@@ -1,5 +1,5 @@
 //
-//  TokenEndpointRequest.swift
+//  GrantType.swift
 //  OAuth
 //
 //  Created by Mark @ Germ on 3/4/26.
