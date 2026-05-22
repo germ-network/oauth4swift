@@ -20,7 +20,7 @@ extension OAuth {
 		func validate(
 			tokenResponse: TokenEndpointResponse,
 			authServerMetadata: AuthServerMetadata,
-			previousState: SessionState.Snapshot?
+			previousState: SessionState.Snapshot
 		) async throws -> Bool
 	}
 
