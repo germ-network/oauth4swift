@@ -7,7 +7,7 @@ import struct HTTPTypes.HTTPFields
 ///Oauth expects to interact with the protocol through an implementation of SessionCapabilities
 ///which inherits from ClientAuthenticatable
 extension OAuth.ClientAuth {
-	public struct None: Component {
+	public struct None {
 		public var tokenEndpointAuthMethod: TokenEndpointMethods = .none
 
 		public init() {}

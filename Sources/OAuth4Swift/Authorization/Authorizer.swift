@@ -202,7 +202,6 @@ extension OAuth.Authorizer {
 
 		return .init(
 			clientId: authorizeInputs.clientInfo.clientId,
-			clientAuthMethod: tokenEndpointAuthMethod,
 			dPopKey: await (self as? OAuth.DPoP.Signing)?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
 			additionalParams: additionalParams,
@@ -210,7 +209,6 @@ extension OAuth.Authorizer {
 			// Grant's scopes, in future token refresh calls, we can change scopes up
 			// and down within the bounds of grantScopes.
 			grantScopes: tokenState.scopes,
-			clientAuth: await clientAuthArchive,
 			tokenState: tokenState
 		)
 	}

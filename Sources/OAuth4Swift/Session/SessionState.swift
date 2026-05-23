@@ -92,7 +92,6 @@ extension OAuth {
 		public let grantScopes: [String]?
 
 		//mutable state
-		let authComponent: any ClientAuth.Component
 		var tokenState: TokenState
 
 		public init(
@@ -101,7 +100,6 @@ extension OAuth {
 			additionalParams: [String: String]? = nil,
 			dPoPState: DPoP.State?,
 			grantScopes: [String]?,
-			authComponent: some ClientAuth.Component,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
@@ -109,7 +107,6 @@ extension OAuth {
 			self.additionalParams = additionalParams
 			self.dPoPState = dPoPState
 			self.grantScopes = grantScopes
-			self.authComponent = authComponent
 			self.tokenState = tokenState
 		}
 
@@ -149,19 +146,12 @@ extension OAuth {
 		public func updated(tokenState: TokenState) {
 			self.tokenState = tokenState
 		}
-
-		public var authArchive: Data? {
-			get throws {
-				try authComponent.archive
-			}
-		}
 	}
 }
 
 extension OAuth.SessionState {
 	public struct Archive: Sendable, Codable {
 		let clientId: String
-		let clientAuthMethod: OAuth.ClientAuth.TokenEndpointMethods
 		let dPopKey: OAuth.DPoP.Key?
 		let issuingServer: String
 
@@ -173,21 +163,17 @@ extension OAuth.SessionState {
 
 		public init(
 			clientId: String,
-			clientAuthMethod: OAuth.ClientAuth.TokenEndpointMethods,
 			dPopKey: OAuth.DPoP.Key?,
 			issuingServer: String,
 			additionalParams: [String: String]?,
 			grantScopes: [String]?,
-			clientAuth: Data?,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
-			self.clientAuthMethod = clientAuthMethod
 			self.dPopKey = dPopKey
 			self.issuingServer = issuingServer
 			self.additionalParams = additionalParams
 			self.grantScopes = grantScopes
-			self.clientAuth = clientAuth
 			self.tokenState = tokenState
 		}
 
@@ -212,8 +198,6 @@ extension OAuth.SessionState {
 
 	public convenience init(
 		archive: Archive,
-		clientAuthFactory: OAuth.ClientAuth.ComponentFactory = OAuth
-			.ClientAuth.defaultFactory,
 		dpopDecoder: OAuth.DPoP.NonceDecoder?
 	) throws {
 		self.init(
@@ -225,10 +209,6 @@ extension OAuth.SessionState {
 				decoder: dpopDecoder
 			),
 			grantScopes: archive.grantScopes,
-			authComponent: try clientAuthFactory(
-				archive.clientAuthMethod,
-				archive
-					.clientAuth),
 			tokenState: archive.tokenState
 		)
 	}
@@ -237,12 +217,10 @@ extension OAuth.SessionState {
 		get throws {
 			.init(
 				clientId: clientId,
-				clientAuthMethod: authComponent.tokenEndpointAuthMethod,
 				dPopKey: dPoPState?.signingKey,
 				issuingServer: issuingServer,
 				additionalParams: additionalParams,
 				grantScopes: grantScopes,
-				clientAuth: try authComponent.archive,
 				tokenState: tokenState
 			)
 		}
@@ -290,12 +268,10 @@ extension OAuth.SessionState.Archive {
 	static public func mock() -> Self {
 		.init(
 			clientId: "app.example.com",
-			clientAuthMethod: .none,
 			dPopKey: .generateP256(),
 			issuingServer: "ussure.example.com",
 			additionalParams: nil,
 			grantScopes: nil,
-			clientAuth: nil,
 			tokenState: .mock()
 		)
 	}
