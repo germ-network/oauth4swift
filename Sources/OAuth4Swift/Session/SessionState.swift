@@ -95,14 +95,12 @@ extension OAuth {
 		public init(
 			clientId: String,
 			issuingServer: String,
-			additionalParams: [String: String]? = nil,
 			dPoPState: DPoP.State?,
 			grantScopes: [String]?,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
 			self.issuingServer = issuingServer
-			self.additionalParams = additionalParams
 			self.dPoPState = dPoPState
 			self.grantScopes = grantScopes
 			self.tokenState = tokenState
