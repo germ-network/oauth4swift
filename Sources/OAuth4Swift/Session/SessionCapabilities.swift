@@ -22,7 +22,7 @@ extension OAuth {
 		func startRefresh(
 			continueCondition: (OAuth.RefreshToken) -> Bool,
 			closure: (SessionState) async throws -> SessionState.TokenState?
-		) -> Task<Void, Never>?
+		) -> Task<AccessToken, Error>?
 
 		//auth
 		var authServerRequestOptions: TokenRequestOptions { get }

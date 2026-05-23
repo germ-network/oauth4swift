@@ -25,7 +25,7 @@ extension OAuth.SessionCapabilities {
 		}
 
 		//try to refresh the token
-		try await refresh()?.value
+		let _ = try await refresh()?.value
 
 		return try await retryNonceRequest(request: request)
 	}
@@ -33,25 +33,20 @@ extension OAuth.SessionCapabilities {
 	func retryNonceRequest(
 		request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
-		let response = try await protectedResource(for: request)
+		let response = try await resource(
+			for: request,
+			accessToken: authToken
+		)
 		//retry if nonceError
 		if OAuth.DPoP.Endpoint.resource
 			.isDPoPNonceError(bundledResponse: response)
 		{
-			return try await protectedResource(for: request)
+			return try await resource(
+				for: request,
+				accessToken: authToken
+			)
 		}
 		return response
-	}
-
-	//needs to have optional access to a dpopSigner, so it is a method
-	//on a OAutSessionCapabilities and not a static method
-	func protectedResource(
-		for request: BundledHTTPRequest,
-	) async throws -> HTTPDataResponse {
-		try await resource(
-			for: request,
-			accessToken: authToken
-		)
 	}
 
 	func resource(
@@ -80,7 +75,7 @@ extension OAuth.SessionCapabilities {
 	@discardableResult
 	public func refresh(
 		debounce: TimeInterval? = nil
-	) throws -> Task<Void, Never>? {
+	) throws -> Task<OAuth.AccessToken, Error>? {
 		startRefresh(
 			continueCondition: Self.refreshClosure(debounce: debounce),
 			closure: refresh(state:)
