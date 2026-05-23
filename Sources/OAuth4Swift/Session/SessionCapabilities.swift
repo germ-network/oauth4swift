@@ -20,8 +20,12 @@ extension OAuth {
 		//lean on the implementation to track state
 		//not start multiple refreshes, and save the result
 		func startRefresh(
-			continueCondition: (SessionState) -> Bool,
-			closure: (SessionState) async throws -> SessionState.TokenState?
+			continueCondition: (OAuth.RefreshToken?) -> Bool,
+			refreshClosure:
+				@escaping (
+					SessionState.Snapshot,
+					OAuth.RefreshToken
+				) async throws -> SessionState.TokenState?
 		) -> Task<AccessToken, Error>?
 
 		//auth

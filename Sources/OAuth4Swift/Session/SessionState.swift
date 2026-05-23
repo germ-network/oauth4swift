@@ -92,10 +92,7 @@ extension OAuth {
 		public let grantScopes: [String]?
 
 		//mutable state
-		var tokenState: TokenState
-		public var accessToken: AccessToken {
-			tokenState.accessToken
-		}
+		public var tokenState: TokenState
 
 		public init(
 			clientId: String,
@@ -115,8 +112,8 @@ extension OAuth {
 
 		public struct TokenState: Codable, Sendable {
 			var grantExpiry: Date?
-			var accessToken: AccessToken
-			var refreshToken: RefreshToken?
+			public var accessToken: AccessToken
+			public var refreshToken: RefreshToken?
 
 			// User authorized scopes
 			var scopes: [String]
@@ -264,6 +261,14 @@ extension OAuth.SessionState {
 			self.additionalParams = additionalParams
 			self.grantScopes = grantScopes
 		}
+	}
+
+	public var snapshot: Snapshot {
+		.init(
+			issuingServer: issuingServer,
+			additionalParams: additionalParams,
+			grantScopes: grantScopes
+		)
 	}
 }
 

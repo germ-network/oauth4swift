@@ -78,19 +78,19 @@ extension OAuth.SessionCapabilities {
 	) throws -> Task<OAuth.AccessToken, Error>? {
 		startRefresh(
 			continueCondition: Self.refreshClosure(debounce: debounce),
-			closure: refresh(state:)
+			refreshClosure: refresh(stateSnapshot:refreshToken:)
 		)
 	}
 
 	//returns if should refresh
 	static private func refreshClosure(
 		debounce: TimeInterval?
-	) -> (OAuth.SessionState) -> Bool {
-		{ sessionState in
+	) -> (OAuth.RefreshToken?) -> Bool {
+		{ refreshToken in
 			guard let debounce else {
 				return true
 			}
-			guard let lastRefreshed = sessionState.tokenState.refreshToken?.fetchedOn
+			guard let lastRefreshed = refreshToken?.fetchedOn
 			else {
 				return true
 			}
@@ -109,19 +109,15 @@ extension OAuth.SessionCapabilities {
 
 	//compare to refreshTokenGrantRequest
 	//and processRefreshTokenResponse in oauth4web
-	private func refresh(
-		state: OAuth.SessionState,
+	public func refresh(
+		stateSnapshot: OAuth.SessionState.Snapshot,
+		refreshToken: OAuth.RefreshToken
 	) async throws -> OAuth.SessionState.TokenState? {
-		let previousState = OAuth.SessionState.Snapshot(
-			issuingServer: state.issuingServer,
-			additionalParams: state.additionalParams,
-			grantScopes: state.grantScopes
-		)
 
 		let httpResponse = try await refreshTokenGrantRequest(
 			authServerMetadata: try await authServerMetadata,
 			additionalParameters: authServerRequestOptions.additionalParameters,
-			refreshToken: state.tokenState.refreshToken.tryUnwrap.value
+			refreshToken: refreshToken
 		)
 
 		//if we get an HTTP response but it isn't successful we nil the session
@@ -137,7 +133,7 @@ extension OAuth.SessionCapabilities {
 
 			guard
 				try await authServerRequestOptions.tokenValidator(
-					tokenResponse, authServerMetadata, previousState)
+					tokenResponse, authServerMetadata, stateSnapshot)
 			else {
 				throw OAuth.Errors.tokenInvalid
 			}
@@ -157,7 +153,7 @@ extension OAuth.SessionCapabilities {
 				timeout: .init(tokenResponse.refreshTokenTimeout)
 			),
 			scopes: OAuth.parseTokenScope(
-				tokenResponse.scope, parent: previousState.grantScopes),
+				tokenResponse.scope, parent: stateSnapshot.grantScopes),
 			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
 		)
 
