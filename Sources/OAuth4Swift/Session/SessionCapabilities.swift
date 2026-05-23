@@ -14,11 +14,15 @@ extension OAuth {
 	public protocol SessionCapabilities: Actor, ClientAuth.Authenticable {
 		nonisolated var clientId: String { get }
 
-		var lazyServerMetadata: LazyResource<AuthServerMetadata> { get }
+		var authServerMetadata: AuthServerMetadata { get async throws }
+		var authToken: OAuth.AccessToken { get throws }
 
-		var session: SessionState { get throws }
-		func refreshed(tokenState: SessionState.TokenState?) throws
-		var refreshTask: Task<SessionState.TokenState, Error>? { get set }
+		//lean on the implementation to track state
+		//not start multiple refreshes, and save the result
+		func startRefresh(
+			continueCondition: (OAuth.RefreshToken) -> Bool,
+			closure: (SessionState) async throws -> SessionState.TokenState?
+		) -> Task<Void, Never>?
 
 		//auth
 		var authServerRequestOptions: TokenRequestOptions { get }

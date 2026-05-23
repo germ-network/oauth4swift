@@ -13,13 +13,6 @@ extension OAuth.SessionCapabilities {
 	public func authResponse(
 		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
-		let sessionState = try session
-		let serverMetadata = try await lazyServerMetadata.lazyValue(
-			isolation: self
-		)
-
-		let _ = try URL(string: serverMetadata.issuer).tryUnwrap.origin
-
 		let result = try await retryNonceRequest(request: request)
 
 		if result.response.status.kind == .successful {
@@ -32,7 +25,7 @@ extension OAuth.SessionCapabilities {
 		}
 
 		//try to refresh the token
-		let _ = try await conservingRefresh(state: sessionState)
+		try await refresh()?.value
 
 		return try await retryNonceRequest(request: request)
 	}
@@ -55,17 +48,15 @@ extension OAuth.SessionCapabilities {
 	func protectedResource(
 		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
-		let session = try session
-
-		return try await resource(
+		try await resource(
 			for: request,
-			accessToken: session.tokenState.accessToken.value,
+			accessToken: authToken
 		)
 	}
 
 	func resource(
 		for request: BundledHTTPRequest,
-		accessToken: String,
+		accessToken: OAuth.AccessToken,
 	) async throws -> HTTPDataResponse {
 		if let dpopSigner = self as? OAuth.DPoP.Signing {
 			var request = request
@@ -85,60 +76,45 @@ extension OAuth.SessionCapabilities {
 	}
 
 	//a hook for a client app to manually refresh
-	//doesn't duplicatively return as result as the feedback should come
-	//through the refreshed(: hook
-	public func refresh(debounce: TimeInterval? = nil) async throws {
-		let _ = try await conservingRefresh(state: session)
+	//returns a task to optionally await
+	@discardableResult
+	public func refresh(
+		debounce: TimeInterval? = nil
+	) throws -> Task<Void, Never>? {
+		startRefresh(
+			continueCondition: Self.refreshClosure(debounce: debounce),
+			closure: refresh(state:)
+		)
 	}
 
-	//conserving in that it reuses result if a refresh is alread in flght
-	private func conservingRefresh(
-		state: OAuth.SessionState,
-		debounce: TimeInterval? = nil
-	) async throws
-		-> OAuth.SessionState.TokenState?
+	//returns if should refresh
+	static private func refreshClosure(debounce: TimeInterval?) -> (OAuth.RefreshToken) -> Bool
 	{
-		if let refreshTask {
-			return try await refreshTask.value
-		}
-
-		//if we have a debounce parameter, don't fetch again if recently fetched
-		if let debounce,
-			let lastRefreshed = state.tokenState.refreshToken?.fetchedOn
-		{
+		{ refreshToken in
+			guard let debounce else {
+				return true
+			}
+			guard let lastRefreshed = refreshToken.fetchedOn else {
+				return true
+			}
 			let lastRefreshInterval = Date().timeIntervalSince(lastRefreshed)
+
 			if lastRefreshInterval < debounce {
 				Logger(label: "OAuth.SessionCapabilities")
 					.notice(
 						"skipping refresh, last fetched \(lastRefreshInterval / (3600 * 24)) days ago, debounce: \(debounce))"
 					)
-				return nil
 			}
+
+			return lastRefreshInterval < debounce
 		}
-
-		let newRefreshTask = Task {
-			try await refresh(state: state)
-		}
-
-		refreshTask = newRefreshTask
-
-		defer {
-			refreshTask = nil
-		}
-
-		//handle successful refresh
-		return try await newRefreshTask.value
 	}
 
 	//compare to refreshTokenGrantRequest
 	//and processRefreshTokenResponse in oauth4web
 	private func refresh(
 		state: OAuth.SessionState,
-	) async throws -> OAuth.SessionState.TokenState {
-		let authServerMetadata =
-			try await lazyServerMetadata
-			.lazyValue(isolation: self)
-
+	) async throws -> OAuth.SessionState.TokenState? {
 		let previousState = OAuth.SessionState.Snapshot(
 			issuingServer: state.issuingServer,
 			additionalParams: state.additionalParams,
@@ -146,7 +122,7 @@ extension OAuth.SessionCapabilities {
 		)
 
 		let httpResponse = try await refreshTokenGrantRequest(
-			authServerMetadata: authServerMetadata,
+			authServerMetadata: try await authServerMetadata,
 			additionalParameters: authServerRequestOptions.additionalParameters,
 			refreshToken: state.tokenState.refreshToken.tryUnwrap.value
 		)
@@ -169,10 +145,9 @@ extension OAuth.SessionCapabilities {
 				throw OAuth.Errors.tokenInvalid
 			}
 		} catch {
-			try refreshed(tokenState: nil)
 			Logger(label: "refresh")
 				.error("error refreshing, terminating session \(error)")
-			throw error
+			return nil
 		}
 
 		let newTokenState = OAuth.SessionState.TokenState(
@@ -188,8 +163,6 @@ extension OAuth.SessionCapabilities {
 				tokenResponse.scope, parent: previousState.grantScopes),
 			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
 		)
-
-		try refreshed(tokenState: newTokenState)
 
 		return newTokenState
 	}
