@@ -55,7 +55,8 @@ extension OAuth.SessionCapabilities {
 	) async throws -> HTTPDataResponse {
 		if let dpopSigner = self as? OAuth.DPoP.Signing {
 			var request = request
-			request.request.headerFields[.authorization] = "DPoP \(accessToken)"
+			request.request
+				.headerFields[.authorization] = "DPoP " + accessToken.value
 
 			return try await dpopSigner.authenticated(
 				request: request,
@@ -64,7 +65,8 @@ extension OAuth.SessionCapabilities {
 			)
 		} else {
 			var request = request
-			request.request.headerFields[.authorization] = "Bearer \(accessToken)"
+			request.request
+				.headerFields[.authorization] = "Bearer " + accessToken.value
 
 			return try await authFetcher.data(for: request)
 		}
