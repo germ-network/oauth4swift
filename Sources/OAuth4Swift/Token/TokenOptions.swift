@@ -27,7 +27,7 @@ extension OAuth {
 	public protocol TokenAuthorizeOptions: Sendable {
 		associatedtype ValidationOutput: Sendable
 		var additionalParameters: [String: String] { get }
-		
+
 		func validate(
 			tokenResponse: TokenEndpointResponse,
 			authServerMetadata: AuthServerMetadata,
@@ -35,11 +35,11 @@ extension OAuth {
 	}
 }
 
-//default additionalParameters to nil
-public extension OAuth.TokenRefreshOptions {
-	var additionalParameters: [String: String] { [:] }
+//default additionalParameters to empty
+extension OAuth.TokenRefreshOptions {
+	public var additionalParameters: [String: String] { [:] }
 }
 
-public extension OAuth.TokenAuthorizeOptions {
-	var additionalParameters: [String: String] { [:] }
+extension OAuth.TokenAuthorizeOptions {
+	public var additionalParameters: [String: String] { [:] }
 }

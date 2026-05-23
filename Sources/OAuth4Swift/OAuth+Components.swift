@@ -197,10 +197,12 @@ extension OAuth {
 		scopes = scope.components(separatedBy: " ").filter {
 			$0 != ""
 		}
-		
+
 		if let parent, !parent.isEmpty {
-			if !Set(parent).contains(scopes) {
-				Logger(label: "parseTokenScope").error("Received scopes \(scopes) in excess of requested scopes \(parent)")
+			if !Set(parent).isSuperset(of: scopes) {
+				Logger(label: "parseTokenScope").error(
+					"Received scopes \(scopes) in excess of requested scopes \(parent)"
+				)
 			}
 		}
 

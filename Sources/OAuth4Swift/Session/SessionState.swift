@@ -84,8 +84,6 @@ extension OAuth {
 	public class SessionState {
 		public let clientId: String
 		public let issuingServer: String
-		//stores the additional parameters from the TokenResponse
-		public let additionalParams: [String: String]?
 		//not mandatory in OAuth 2.1
 		public let dPoPState: DPoP.State?
 		//stores the authorization grant scope:
@@ -154,7 +152,7 @@ extension OAuth.SessionState {
 		let clientId: String
 		let dPopKey: OAuth.DPoP.Key?
 		let issuingServer: String
-		
+
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
 		public var tokenState: TokenState
@@ -223,19 +221,15 @@ extension OAuth.DPoP.State {
 //for tokenValidator
 extension OAuth.SessionState {
 	public struct Snapshot: Sendable {
-		public let issuingServer: String?
-		//stores the additional parameters from the TokenResponse
-		public let additionalParams: [String: String]?
+		public let issuingServer: String
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
 
 		public init(
-			issuingServer: String? = nil,
-			additionalParams: [String: String]? = nil,
+			issuingServer: String,
 			grantScopes: [String]?
 		) {
 			self.issuingServer = issuingServer
-			self.additionalParams = additionalParams
 			self.grantScopes = grantScopes
 		}
 	}
@@ -243,7 +237,6 @@ extension OAuth.SessionState {
 	public var snapshot: Snapshot {
 		.init(
 			issuingServer: issuingServer,
-			additionalParams: additionalParams,
 			grantScopes: grantScopes
 		)
 	}

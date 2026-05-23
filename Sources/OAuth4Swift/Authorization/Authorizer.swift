@@ -218,7 +218,7 @@ extension OAuth.Authorizer {
 			grantScopes: tokenState.scopes,
 			tokenState: tokenState
 		)
-		
+
 		return (sessionState, tokenValidationOutput)
 	}
 
