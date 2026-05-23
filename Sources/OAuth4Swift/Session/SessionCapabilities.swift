@@ -15,7 +15,7 @@ extension OAuth {
 		nonisolated var clientId: String { get }
 
 		var authServerMetadata: AuthServerMetadata { get async throws }
-		var authToken: OAuth.AccessToken { get throws }
+		var authToken: OAuth.AccessToken { get async throws }
 
 		//lean on the implementation to track state
 		//not start multiple refreshes, and save the result
