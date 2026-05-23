@@ -93,6 +93,9 @@ extension OAuth {
 
 		//mutable state
 		var tokenState: TokenState
+		public var accessToken: AccessToken {
+			tokenState.accessToken
+		}
 
 		public init(
 			clientId: String,
