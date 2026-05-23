@@ -4,7 +4,7 @@ import GermConvenience
 import struct HTTPTypes.HTTPFields
 
 extension OAuth.ClientAuth {
-	public struct SecretPost {
+	public struct SecretPost: Sendable {
 		private let clientSecret: String
 		public var tokenEndpointAuthMethod: TokenEndpointMethods = .clientSecretPost
 
