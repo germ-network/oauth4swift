@@ -1,5 +1,18 @@
 # @germ-network/oauth4swift
 
+## 0.4.0
+
+### Minor Changes
+
+- [#45](https://github.com/germ-network/oauth4swift/pull/45) [`9810721`](https://github.com/germ-network/oauth4swift/commit/981072154d7ccf5310cd3d153ad8be2c127baa32) Thanks [@germ-mark](https://github.com/germ-mark)! - \* adjust sessioncapabilities to push state management to the implementer
+  - adjust the refresh api to debounce for recently refreshed token
+
+### Patch Changes
+
+- [#42](https://github.com/germ-network/oauth4swift/pull/42) [`318c672`](https://github.com/germ-network/oauth4swift/commit/318c6729cfe4bd32689010e2cc6dbe2213c773cf) Thanks [@germ-mark](https://github.com/germ-mark)! - \* add a optional created date on Token, make the codesharing protocol internal
+  - adjust the mocks to be more configurable
+  - use TimeInterval consistently instead of Int
+
 ## 0.3.5
 
 ### Patch Changes
