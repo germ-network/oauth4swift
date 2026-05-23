@@ -111,11 +111,12 @@ extension OAuth.SessionCapabilities {
 
 	//compare to refreshTokenGrantRequest
 	//and processRefreshTokenResponse in oauth4web
-	public func refresh(
+	private func refresh(
 		stateSnapshot: OAuth.SessionState.Snapshot,
 		refreshToken: OAuth.RefreshToken
 	) async throws -> OAuth.SessionState.TokenState? {
-
+		Logger(label: "OAuthSessionCapabilities")
+			.notice("started token refresh")
 		let httpResponse = try await refreshTokenGrantRequest(
 			authServerMetadata: try await authServerMetadata,
 			additionalParameters: authServerRequestOptions.additionalParameters,
@@ -140,7 +141,7 @@ extension OAuth.SessionCapabilities {
 				throw OAuth.Errors.tokenInvalid
 			}
 		} catch {
-			Logger(label: "refresh")
+			Logger(label: "OAuthSessionCapabilities")
 				.error("error refreshing, terminating session \(error)")
 			return nil
 		}
@@ -159,6 +160,8 @@ extension OAuth.SessionCapabilities {
 			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
 		)
 
+		Logger(label: "OAuthSessionCapabilities")
+			.notice("succeeded token refresh")
 		return newTokenState
 	}
 }
