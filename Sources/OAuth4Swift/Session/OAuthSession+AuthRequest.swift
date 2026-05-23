@@ -83,13 +83,15 @@ extension OAuth.SessionCapabilities {
 	}
 
 	//returns if should refresh
-	static private func refreshClosure(debounce: TimeInterval?) -> (OAuth.RefreshToken) -> Bool
-	{
-		{ refreshToken in
+	static private func refreshClosure(
+		debounce: TimeInterval?
+	) -> (OAuth.SessionState) -> Bool {
+		{ sessionState in
 			guard let debounce else {
 				return true
 			}
-			guard let lastRefreshed = refreshToken.fetchedOn else {
+			guard let lastRefreshed = sessionState.tokenState.refreshToken?.fetchedOn
+			else {
 				return true
 			}
 			let lastRefreshInterval = Date().timeIntervalSince(lastRefreshed)
