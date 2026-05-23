@@ -92,8 +92,7 @@ extension OAuth {
 		public let grantScopes: [String]?
 
 		//mutable state
-		let authComponent: any ClientAuth.Component
-		var tokenState: TokenState
+		public var tokenState: TokenState
 
 		public init(
 			clientId: String,
@@ -101,7 +100,6 @@ extension OAuth {
 			additionalParams: [String: String]? = nil,
 			dPoPState: DPoP.State?,
 			grantScopes: [String]?,
-			authComponent: some ClientAuth.Component,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
@@ -109,14 +107,13 @@ extension OAuth {
 			self.additionalParams = additionalParams
 			self.dPoPState = dPoPState
 			self.grantScopes = grantScopes
-			self.authComponent = authComponent
 			self.tokenState = tokenState
 		}
 
 		public struct TokenState: Codable, Sendable {
 			var grantExpiry: Date?
-			var accessToken: AccessToken
-			var refreshToken: RefreshToken?
+			public var accessToken: AccessToken
+			public var refreshToken: RefreshToken?
 
 			// User authorized scopes
 			var scopes: [String]
@@ -149,71 +146,39 @@ extension OAuth {
 		public func updated(tokenState: TokenState) {
 			self.tokenState = tokenState
 		}
-
-		public var authArchive: Data? {
-			get throws {
-				try authComponent.archive
-			}
-		}
 	}
 }
 
 extension OAuth.SessionState {
 	public struct Archive: Sendable, Codable {
 		let clientId: String
-		let clientAuthMethod: OAuth.ClientAuth.TokenEndpointMethods
 		let dPopKey: OAuth.DPoP.Key?
 		let issuingServer: String
 
 		public let additionalParams: [String: String]?
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
-		public var clientAuth: Data?
 		public var tokenState: TokenState
 
 		public init(
 			clientId: String,
-			clientAuthMethod: OAuth.ClientAuth.TokenEndpointMethods,
 			dPopKey: OAuth.DPoP.Key?,
 			issuingServer: String,
 			additionalParams: [String: String]?,
 			grantScopes: [String]?,
-			clientAuth: Data?,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
-			self.clientAuthMethod = clientAuthMethod
 			self.dPopKey = dPopKey
 			self.issuingServer = issuingServer
 			self.additionalParams = additionalParams
 			self.grantScopes = grantScopes
-			self.clientAuth = clientAuth
 			self.tokenState = tokenState
-		}
-
-		public struct Mutable: Codable, Sendable {
-			public let clientAuth: Data?
-			public let tokenState: TokenState
-
-			public init(
-				clientAuth: Data?,
-				tokenState: TokenState
-			) {
-				self.clientAuth = clientAuth
-				self.tokenState = tokenState
-			}
-		}
-
-		public mutating func merge(mutable: Mutable) {
-			clientAuth = mutable.clientAuth
-			tokenState = mutable.tokenState
 		}
 	}
 
 	public convenience init(
 		archive: Archive,
-		clientAuthFactory: OAuth.ClientAuth.ComponentFactory = OAuth
-			.ClientAuth.defaultFactory,
 		dpopDecoder: OAuth.DPoP.NonceDecoder?
 	) throws {
 		self.init(
@@ -225,10 +190,6 @@ extension OAuth.SessionState {
 				decoder: dpopDecoder
 			),
 			grantScopes: archive.grantScopes,
-			authComponent: try clientAuthFactory(
-				archive.clientAuthMethod,
-				archive
-					.clientAuth),
 			tokenState: archive.tokenState
 		)
 	}
@@ -237,12 +198,10 @@ extension OAuth.SessionState {
 		get throws {
 			.init(
 				clientId: clientId,
-				clientAuthMethod: authComponent.tokenEndpointAuthMethod,
 				dPopKey: dPoPState?.signingKey,
 				issuingServer: issuingServer,
 				additionalParams: additionalParams,
 				grantScopes: grantScopes,
-				clientAuth: try authComponent.archive,
 				tokenState: tokenState
 			)
 		}
@@ -284,18 +243,24 @@ extension OAuth.SessionState {
 			self.grantScopes = grantScopes
 		}
 	}
+
+	public var snapshot: Snapshot {
+		.init(
+			issuingServer: issuingServer,
+			additionalParams: additionalParams,
+			grantScopes: grantScopes
+		)
+	}
 }
 
 extension OAuth.SessionState.Archive {
 	static public func mock() -> Self {
 		.init(
 			clientId: "app.example.com",
-			clientAuthMethod: .none,
 			dPopKey: .generateP256(),
 			issuingServer: "ussure.example.com",
 			additionalParams: nil,
 			grantScopes: nil,
-			clientAuth: nil,
 			tokenState: .mock()
 		)
 	}

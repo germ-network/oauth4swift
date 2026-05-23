@@ -47,6 +47,13 @@ struct Test {
 			)
 		}
 
+		let token: OAuth.AccessToken? =
+			if let token {
+				.mock(value: token)
+			} else {
+				nil
+			}
+
 		let signedRequest = try await dpopSigner.addProof(
 			request: .init(url: url),
 			token: token

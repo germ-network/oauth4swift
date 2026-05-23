@@ -13,13 +13,6 @@ extension OAuth.SessionCapabilities {
 	public func authResponse(
 		for request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
-		let sessionState = try session
-		let serverMetadata = try await lazyServerMetadata.lazyValue(
-			isolation: self
-		)
-
-		let _ = try URL(string: serverMetadata.issuer).tryUnwrap.origin
-
 		let result = try await retryNonceRequest(request: request)
 
 		if result.response.status.kind == .successful {
@@ -27,12 +20,12 @@ extension OAuth.SessionCapabilities {
 		}
 
 		// FIXME: This isn't really to spec: 401 doesn't mean "refresh", it just means unauthorized.
-		guard case result.response.status.code = 401 else {
+		guard result.response.status.code == 401 else {
 			throw OAuth.Errors.httpResponse(response: result)
 		}
 
 		//try to refresh the token
-		let _ = try await conservingRefresh(state: sessionState)
+		let _ = try await refresh()?.value
 
 		return try await retryNonceRequest(request: request)
 	}
@@ -40,36 +33,30 @@ extension OAuth.SessionCapabilities {
 	func retryNonceRequest(
 		request: BundledHTTPRequest,
 	) async throws -> HTTPDataResponse {
-		let response = try await protectedResource(for: request)
+		let response = try await resource(
+			for: request,
+			accessToken: authToken
+		)
 		//retry if nonceError
 		if OAuth.DPoP.Endpoint.resource
 			.isDPoPNonceError(bundledResponse: response)
 		{
-			return try await protectedResource(for: request)
+			return try await resource(
+				for: request,
+				accessToken: authToken
+			)
 		}
 		return response
 	}
 
-	//needs to have optional access to a dpopSigner, so it is a method
-	//on a OAutSessionCapabilities and not a static method
-	func protectedResource(
-		for request: BundledHTTPRequest,
-	) async throws -> HTTPDataResponse {
-		let session = try session
-
-		return try await resource(
-			for: request,
-			accessToken: session.tokenState.accessToken.value,
-		)
-	}
-
 	func resource(
 		for request: BundledHTTPRequest,
-		accessToken: String,
+		accessToken: OAuth.AccessToken,
 	) async throws -> HTTPDataResponse {
 		if let dpopSigner = self as? OAuth.DPoP.Signing {
 			var request = request
-			request.request.headerFields[.authorization] = "DPoP \(accessToken)"
+			request.request
+				.headerFields[.authorization] = "DPoP " + accessToken.value
 
 			return try await dpopSigner.authenticated(
 				request: request,
@@ -78,60 +65,62 @@ extension OAuth.SessionCapabilities {
 			)
 		} else {
 			var request = request
-			request.request.headerFields[.authorization] = "Bearer \(accessToken)"
+			request.request
+				.headerFields[.authorization] = "Bearer " + accessToken.value
 
 			return try await authFetcher.data(for: request)
 		}
 	}
 
 	//a hook for a client app to manually refresh
-	//doesn't duplicatively return as result as the feedback should come
-	//through the refreshed(: hook
-	public func refresh() async throws {
-		let _ = try await conservingRefresh(state: session)
+	//returns a task to optionally await
+	@discardableResult
+	public func refresh(
+		debounce: TimeInterval? = nil
+	) throws -> Task<OAuth.AccessToken, Error>? {
+		startRefresh(
+			continueCondition: Self.refreshClosure(debounce: debounce),
+			refreshClosure: refresh(stateSnapshot:refreshToken:)
+		)
 	}
 
-	//conserving in that it reuses result if a refresh is alread in flght
-	private func conservingRefresh(state: OAuth.SessionState) async throws
-		-> OAuth.SessionState.TokenState
-	{
-		if let refreshTask {
-			return try await refreshTask.value
+	//returns if should refresh
+	static private func refreshClosure(
+		debounce: TimeInterval?
+	) -> (OAuth.RefreshToken?) -> Bool {
+		{ refreshToken in
+			guard let debounce else {
+				return true
+			}
+			guard let lastRefreshed = refreshToken?.fetchedOn
+			else {
+				return true
+			}
+			let lastRefreshInterval = Date().timeIntervalSince(lastRefreshed)
+
+			if lastRefreshInterval < debounce {
+				Logger(label: "OAuth.SessionCapabilities")
+					.notice(
+						"skipping refresh, last fetched \(lastRefreshInterval / (3600 * 24)) days ago, debounce: \(debounce))"
+					)
+			}
+
+			return lastRefreshInterval > debounce
 		}
-
-		let newRefreshTask = Task {
-			try await refresh(state: state)
-		}
-
-		refreshTask = newRefreshTask
-
-		defer {
-			refreshTask = nil
-		}
-
-		//handle successful refresh
-		return try await newRefreshTask.value
 	}
 
 	//compare to refreshTokenGrantRequest
 	//and processRefreshTokenResponse in oauth4web
 	private func refresh(
-		state: OAuth.SessionState,
-	) async throws -> OAuth.SessionState.TokenState {
-		let authServerMetadata =
-			try await lazyServerMetadata
-			.lazyValue(isolation: self)
-
-		let previousState = OAuth.SessionState.Snapshot(
-			issuingServer: state.issuingServer,
-			additionalParams: state.additionalParams,
-			grantScopes: state.grantScopes
-		)
-
+		stateSnapshot: OAuth.SessionState.Snapshot,
+		refreshToken: OAuth.RefreshToken
+	) async throws -> OAuth.SessionState.TokenState? {
+		Logger(label: "OAuthSessionCapabilities")
+			.notice("started token refresh")
 		let httpResponse = try await refreshTokenGrantRequest(
-			authServerMetadata: authServerMetadata,
+			authServerMetadata: try await authServerMetadata,
 			additionalParameters: authServerRequestOptions.additionalParameters,
-			refreshToken: state.tokenState.refreshToken.tryUnwrap.value
+			refreshToken: refreshToken
 		)
 
 		//if we get an HTTP response but it isn't successful we nil the session
@@ -147,15 +136,14 @@ extension OAuth.SessionCapabilities {
 
 			guard
 				try await authServerRequestOptions.tokenValidator(
-					tokenResponse, authServerMetadata, previousState)
+					tokenResponse, authServerMetadata, stateSnapshot)
 			else {
 				throw OAuth.Errors.tokenInvalid
 			}
 		} catch {
-			try refreshed(tokenState: nil)
-			Logger(label: "refresh")
+			Logger(label: "OAuth.SessionCapabilities")
 				.error("error refreshing, terminating session \(error)")
-			throw error
+			return nil
 		}
 
 		let newTokenState = OAuth.SessionState.TokenState(
@@ -168,12 +156,12 @@ extension OAuth.SessionCapabilities {
 				timeout: .init(tokenResponse.refreshTokenTimeout)
 			),
 			scopes: OAuth.parseTokenScope(
-				tokenResponse.scope, parent: previousState.grantScopes),
+				tokenResponse.scope, parent: stateSnapshot.grantScopes),
 			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
 		)
 
-		try refreshed(tokenState: newTokenState)
-
+		Logger(label: "OAuthSessionCapabilities")
+			.notice("succeeded token refresh")
 		return newTokenState
 	}
 }

@@ -22,7 +22,7 @@ extension OAuth.DPoP {
 extension OAuth.DPoP.Signing {
 	func addProof(
 		request: BundledHTTPRequest,
-		token: String?
+		token: OAuth.AccessToken?
 	) throws -> BundledHTTPRequest {
 		let requestOrigin = try (request.request.url?.origin)
 			.tryUnwrap(OAuth.DPoP.Errors.requestInvalid(request.request))
@@ -32,7 +32,7 @@ extension OAuth.DPoP.Signing {
 		//right now the RFC has SHA256 baked into the RFC and a new draft needed
 		//to specify alg agility
 		let tokenHash = token.map {
-			SHA256.hash(data: $0.utf8Data)
+			SHA256.hash(data: $0.value.utf8Data)
 				.data.base64URLEncoded(padded: false)
 		}
 		let jwt = try dpopKey.sign(
@@ -52,7 +52,7 @@ extension OAuth.DPoP.Signing {
 
 	func nonceRetryAuthenticated(
 		request: BundledHTTPRequest,
-		token: String?,
+		token: OAuth.AccessToken?,
 		authFetcher: HTTPFetcher,
 		endpointType: OAuth.DPoP.Endpoint
 	) async throws -> HTTPDataResponse {
@@ -77,7 +77,7 @@ extension OAuth.DPoP.Signing {
 	//tries just once
 	func authenticated(
 		request: BundledHTTPRequest,
-		token: String?,
+		token: OAuth.AccessToken?,
 		fetcher: HTTPFetcher,
 	) async throws -> HTTPDataResponse {
 		let proofRequest = try addProof(

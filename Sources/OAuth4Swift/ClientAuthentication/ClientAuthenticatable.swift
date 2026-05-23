@@ -89,10 +89,10 @@ extension OAuth.ClientAuth.Authenticable {
 	func refreshTokenGrantRequest(
 		authServerMetadata: AuthServerMetadata,
 		additionalParameters: [String: String],
-		refreshToken: String,
+		refreshToken: OAuth.RefreshToken,
 	) async throws -> HTTPDataResponse {
 		var parameters = FormParameters(additionalParameters)
-		parameters["refresh_token"] = [refreshToken]
+		parameters["refresh_token"] = [refreshToken.value]
 
 		return try await tokenEndpointRequest(
 			authServerMetadata: authServerMetadata,
