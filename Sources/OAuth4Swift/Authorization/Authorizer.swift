@@ -17,7 +17,6 @@ extension OAuth {
 		var authorizeInputs: AuthorizeInputs { get }
 		var tokenRequestOptions: TokenRequestOptions { get }
 		var authFetcher: HTTPFetcher { get }
-		var clientAuthArchive: Data? { get async }
 	}
 }
 

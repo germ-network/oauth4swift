@@ -158,7 +158,6 @@ extension OAuth.SessionState {
 		public let additionalParams: [String: String]?
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
-		public var clientAuth: Data?
 		public var tokenState: TokenState
 
 		public init(
@@ -175,24 +174,6 @@ extension OAuth.SessionState {
 			self.additionalParams = additionalParams
 			self.grantScopes = grantScopes
 			self.tokenState = tokenState
-		}
-
-		public struct Mutable: Codable, Sendable {
-			public let clientAuth: Data?
-			public let tokenState: TokenState
-
-			public init(
-				clientAuth: Data?,
-				tokenState: TokenState
-			) {
-				self.clientAuth = clientAuth
-				self.tokenState = tokenState
-			}
-		}
-
-		public mutating func merge(mutable: Mutable) {
-			clientAuth = mutable.clientAuth
-			tokenState = mutable.tokenState
 		}
 	}
 

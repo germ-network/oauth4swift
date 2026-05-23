@@ -20,7 +20,7 @@ extension OAuth.SessionCapabilities {
 		}
 
 		// FIXME: This isn't really to spec: 401 doesn't mean "refresh", it just means unauthorized.
-		guard case result.response.status.code = 401 else {
+		guard result.response.status.code == 401 else {
 			throw OAuth.Errors.httpResponse(response: result)
 		}
 
@@ -105,7 +105,7 @@ extension OAuth.SessionCapabilities {
 					)
 			}
 
-			return lastRefreshInterval < debounce
+			return lastRefreshInterval > debounce
 		}
 	}
 
@@ -141,7 +141,7 @@ extension OAuth.SessionCapabilities {
 				throw OAuth.Errors.tokenInvalid
 			}
 		} catch {
-			Logger(label: "OAuthSessionCapabilities")
+			Logger(label: "OAuth.SessionCapabilities")
 				.error("error refreshing, terminating session \(error)")
 			return nil
 		}
