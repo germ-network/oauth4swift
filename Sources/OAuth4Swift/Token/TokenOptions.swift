@@ -17,6 +17,8 @@ extension OAuth {
 	public protocol TokenRefreshOptions: Sendable {
 		var additionalParameters: [String: String] { get }
 
+		///Should return false if the tokenResponse is invalid, and throw if it is unable to
+		///resolve the validity - e.g. if an onlne check is required and the client is currently offline
 		func validate(
 			tokenResponse: TokenEndpointResponse,
 			authServerMetadata: AuthServerMetadata,
@@ -28,6 +30,8 @@ extension OAuth {
 		associatedtype ValidationOutput: Sendable
 		var additionalParameters: [String: String] { get }
 
+		///In contrast to the above, if the TokenEndpointResponse is invalid, this method should throw
+		///OAuth.Errors.tokenInvalid
 		func validate(
 			tokenResponse: TokenEndpointResponse,
 			authServerMetadata: AuthServerMetadata,
