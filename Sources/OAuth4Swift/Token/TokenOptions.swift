@@ -10,7 +10,7 @@ import GermConvenience
 import Logging
 
 ///Shared code among the initial auth flow and subsequent refresh
-///Client defined paramenters for requests to the Auth server, for refresh and user auth requests.
+///Client defined parameters for requests to the Auth server for authorization requests, token exchanges and for refresh requests.
 ///does not include the issuer so that it can be lazily fetched
 
 extension OAuth {
