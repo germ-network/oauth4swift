@@ -50,6 +50,33 @@ extension OAuth {
 		public let expiry: Date?
 		public var fetchedOn: Date?
 	}
+
+	public enum RevocableToken {
+		case access(OAuth.AccessToken)
+		case refresh(OAuth.RefreshToken)
+
+		init(_ token: OAuth.AccessToken) {
+			self = .access(token)
+		}
+
+		init(_ token: OAuth.RefreshToken) {
+			self = .refresh(token)
+		}
+
+		var value: String {
+			switch self {
+			case .access(let t): t.value
+			case .refresh(let t): t.value
+			}
+		}
+
+		var hint: String {
+			switch self {
+			case .access: "access_token"
+			case .refresh: "refresh_token"
+			}
+		}
+	}
 }
 
 extension OAuth.AccessToken: OAuth.Token {}

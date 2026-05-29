@@ -1,5 +1,6 @@
 import Foundation
 import GermConvenience
+import Logging
 
 import struct HTTPTypes.HTTPFields
 import struct HTTPTypes.HTTPRequest
@@ -127,5 +128,67 @@ extension OAuth.ClientAuth.Authenticable {
 			retryNonce: true,
 			endpointType: .auth
 		)
+	}
+
+	public func revocationRequest(
+		authServerMetadata: AuthServerMetadata,
+		token: OAuth.AccessToken
+	) async throws {
+		try await revoke(
+			authServerMetadata: authServerMetadata,
+			token: OAuth.RevocableToken(token)
+		)
+	}
+
+	public func revocationRequest(
+		authServerMetadata: AuthServerMetadata,
+		token: OAuth.RefreshToken
+	) async throws {
+		try await revoke(
+			authServerMetadata: authServerMetadata,
+			token: OAuth.RevocableToken(token)
+		)
+	}
+
+	private func revoke(
+		authServerMetadata: AuthServerMetadata,
+		token: OAuth.RevocableToken
+	) async throws {
+		guard let url = try authServerMetadata.resolveMaybe(endpoint: .revocation) else {
+			return
+		}
+
+		let (parameters, headers) = try await authenticate(
+			inputs: .init(
+				authServerMetadata: authServerMetadata,
+				parameters: FormParameters([
+					"token": token.value,
+					"token_type_hint": token.hint,
+				]),
+				headers: HTTPFields(
+					dictionaryLiteral: (
+						.contentType,
+						HTTPContentType.formUrlEncoded.rawValue
+					)
+				)
+			)
+		)
+
+		let request = try BundledHTTPRequest(
+			method: .post,
+			url: url,
+			headerFields: headers,
+			body: parameters.data
+		)
+
+		// Explicitly not DPoP, as we're sending client authentication + token:
+		let response = try await authFetcher.data(for: request)
+
+		// There is no response body, only 200 or an error response:
+		try response.successOrThrow(decoding: OAuth.ErrorResponse.self) { error, status in
+			Logger(label: "revocationRequest").error(
+				"Revocation error \(status): \(error)")
+			return OAuth.Errors.oauthError(error, status)
+		}
 	}
 }
