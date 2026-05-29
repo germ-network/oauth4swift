@@ -111,10 +111,18 @@ extension OAuth.SessionCapabilities {
 		stateSnapshot: OAuth.SessionState.Snapshot,
 		refreshToken: OAuth.RefreshToken
 	) async throws -> OAuth.SessionState.TokenState? {
+		let metadata = try await authServerMetadata
+		guard
+			metadata.grantTypesSupported?.contains(
+				OAuth.GrantType.refreshToken.rawValue) != false
+		else {
+			return nil
+		}
+
 		Logger(label: "OAuthSessionCapabilities")
 			.notice("started token refresh")
 		let httpResponse = try await refreshTokenGrantRequest(
-			authServerMetadata: try await authServerMetadata,
+			authServerMetadata: metadata,
 			additionalParameters: tokenRefreshOptions.additionalTokenRequestParameters,
 			refreshToken: refreshToken
 		)
@@ -150,7 +158,7 @@ extension OAuth.SessionCapabilities {
 				try await tokenRefreshOptions
 					.validate(
 						tokenResponse: tokenResponse,
-						authServerMetadata: authServerMetadata,
+						authServerMetadata: metadata,
 						previousState: stateSnapshot
 					)
 			else {
