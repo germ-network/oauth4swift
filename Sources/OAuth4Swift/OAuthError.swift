@@ -7,13 +7,9 @@ import struct HTTPTypes.HTTPResponse
 extension OAuth {
 	public enum Errors: LocalizedError {
 		case missingScheme
-		case missingHTTPMethod
-		case missingUrl
-		case missingDPoPKey
 		case missingIssuer
 		case insecureScheme
 		case unrecognizedTokenType
-		case redirectMissingComponents
 		case missingAuthCode
 		case tokenInvalid
 		case invalidRequest
@@ -25,19 +21,16 @@ extension OAuth {
 		case invalidScope
 		case httpResponse(response: HTTPDataResponse)
 		case oauthError(OAuth.ErrorResponse, HTTPResponse.Status)
+		case subjectMismatch(actual: String?, expected: String)
 		case notImplemented
 
 		public var errorDescription: String? {
 			switch self {
 			case .missingScheme: "Missing scheme"
-			case .missingHTTPMethod: "Missing HTTP method"
-			case .missingUrl: "Missing URL"
-			case .missingDPoPKey: "Missing dPoP key"
 			case .missingIssuer:
 				"Missing iss parameter when authorization server supports issuer identification"
 			case .insecureScheme: "Insecure scheme"
 			case .unrecognizedTokenType: "Unrecognized Token Type"
-			case .redirectMissingComponents: "Redirect missing components"
 			case .missingAuthCode: "Missing authorization code"
 			case .tokenInvalid: "Token response failed to validate with tokenValidator"
 			case .invalidRequest: "Invalid request"
@@ -62,6 +55,11 @@ extension OAuth {
 				"HTTP error with status code: \(response.response.status.code), response: \(response)"
 			case .oauthError(let errorBody, let statusCode):
 				"OAuth error with status code: \(statusCode),  body: \(errorBody)"
+			case .subjectMismatch(
+				let actual,
+				let expected
+			):
+				"Subject mismatch, expected \(expected), actual: \(String(describing: actual))"
 			case .notImplemented: "Not implemented"
 			}
 		}

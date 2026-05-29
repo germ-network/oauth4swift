@@ -119,7 +119,7 @@ extension OAuth.SessionCapabilities {
 			.notice("started token refresh")
 		let httpResponse = try await refreshTokenGrantRequest(
 			authServerMetadata: try await authServerMetadata,
-			additionalParameters: authServerRequestOptions.additionalParameters,
+			additionalParameters: tokenRefreshOptions.additionalTokenRequestParameters,
 			refreshToken: refreshToken
 		)
 
@@ -135,8 +135,12 @@ extension OAuth.SessionCapabilities {
 			//that the token sub hasn't changed during refresh:
 
 			guard
-				try await authServerRequestOptions.tokenValidator(
-					tokenResponse, authServerMetadata, stateSnapshot)
+				try await tokenRefreshOptions
+					.validate(
+						tokenResponse: tokenResponse,
+						authServerMetadata: authServerMetadata,
+						previousState: stateSnapshot
+					)
 			else {
 				throw OAuth.Errors.tokenInvalid
 			}

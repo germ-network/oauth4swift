@@ -14,22 +14,23 @@ import struct HTTPTypes.HTTPFields
 extension OAuth {
 	//may conform to DPoP.Signing if capable of it
 	public protocol Authorizer: ClientAuth.Authenticable {
-		var authorizeInputs: AuthorizeInputs { get }
-		var tokenRequestOptions: TokenRequestOptions { get }
+		associatedtype TokenOptions: TokenAuthorizeOptions
+		var authorizeInputs: AuthorizeInputs<TokenOptions> { get }
 		var authFetcher: HTTPFetcher { get }
 	}
 }
 
 extension OAuth {
-	public struct AuthorizeInputs: Sendable {
+	public struct AuthorizeInputs<TokenOptions: TokenAuthorizeOptions>: Sendable {
 		public let clientInfo: ClientInfo
 		let pkceVerifier: PKCEVerifier
 		let authServerMetadata: AuthServerMetadata
 		//the client should resolve authEndpoint from authServerMetadata
 		let authEndpoint: URL
 		let inputToken: String?
-		let additionalParameters: FormParameters?
+		let additionalAuthCodeRequestParameters: FormParameters?
 		let userAuthenticator: UserAuthenticator
+		let tokenAuthOptions: TokenOptions
 
 		public init(
 			clientInfo: ClientInfo,
@@ -39,20 +40,25 @@ extension OAuth {
 			inputToken: String?,
 			additionalParameters: FormParameters?,
 			userAuthenticator: @escaping UserAuthenticator,
+			tokenAuthOptions: TokenOptions
 		) {
 			self.clientInfo = clientInfo
 			self.pkceVerifier = pkceVerifier
 			self.authServerMetadata = authServerMetadata
 			self.authEndpoint = authEndpoint
 			self.inputToken = inputToken
-			self.additionalParameters = additionalParameters
+			self.additionalAuthCodeRequestParameters = additionalParameters
 			self.userAuthenticator = userAuthenticator
+			self.tokenAuthOptions = tokenAuthOptions
 		}
 	}
 }
 
 extension OAuth.Authorizer {
-	public func performUserAuthentication() async throws -> OAuth.SessionState.Archive {
+	public func performUserAuthentication() async throws -> (
+		OAuth.SessionState.Archive,
+		TokenOptions.ValidationOutput
+	) {
 
 		// If PKCE is not supported, and we don't have a state parameter, generate a
 		// state parameter using a UUID:
@@ -76,7 +82,7 @@ extension OAuth.Authorizer {
 
 		//any parameters we set in OAuth override conflicting parameters
 		//from the client app
-		var parameters = authorizeInputs.additionalParameters ?? .init()
+		var parameters = authorizeInputs.additionalAuthCodeRequestParameters ?? .init()
 
 		parameters.mergeReplacingValues(
 			with: .init(
@@ -176,7 +182,10 @@ extension OAuth.Authorizer {
 		callbackURL: URL,
 		expectedState: String?,
 		authServerMetadata: AuthServerMetadata,
-	) async throws -> OAuth.SessionState.Archive {
+	) async throws -> (
+		OAuth.SessionState.Archive,
+		TokenOptions.ValidationOutput
+	) {
 		let callbackParameters = try OAuth.validateAuthResponse(
 			authServerMetadata: authServerMetadata,
 			callbackURL: callbackURL,
@@ -188,56 +197,51 @@ extension OAuth.Authorizer {
 			callbackParameters: callbackParameters,
 			redirectURI: authorizeInputs.clientInfo.redirectURI,
 			pkceVerifier: authorizeInputs.pkceVerifier.verifier,
-			additionalParameters: tokenRequestOptions.additionalParameters,
+			additionalParameters: authorizeInputs.tokenAuthOptions
+				.additionalTokenRequestParameters,
 		)
 
-		let (tokenState, additionalParams) =
+		let (tokenState, tokenValidationOutput) =
 			try await processAuthorizationCodeOAuth2Response(
 				authServerMetadata: authServerMetadata,
 				scopes: authorizeInputs.clientInfo.scopes,
 				response: httpResponse,
-				tokenValidator: tokenRequestOptions.tokenValidator
+				tokenRequestOptions: authorizeInputs.tokenAuthOptions
 			)
 
-		return .init(
+		let sessionState = OAuth.SessionState.Archive(
 			clientId: authorizeInputs.clientInfo.clientId,
 			dPopKey: await (self as? OAuth.DPoP.Signing)?.dpopKey,
 			issuingServer: authServerMetadata.issuer,
-			additionalParams: additionalParams,
 			// We save the first authorization response's scopes as the Authorization
 			// Grant's scopes, in future token refresh calls, we can change scopes up
 			// and down within the bounds of grantScopes.
 			grantScopes: tokenState.scopes,
 			tokenState: tokenState
 		)
+
+		return (sessionState, tokenValidationOutput)
 	}
 
 	func processAuthorizationCodeOAuth2Response(
 		authServerMetadata: AuthServerMetadata,
 		scopes: [String],
 		response: HTTPDataResponse,
-		tokenValidator: OAuth.TokenRequestOptions.TokenValidator
-	) async throws -> (OAuth.SessionState.TokenState, [String: String]?) {
+		tokenRequestOptions: TokenOptions
+	) async throws -> (
+		OAuth.SessionState.TokenState,
+		TokenOptions.ValidationOutput
+	) {
 		let tokenResponse = try OAuth.processGenericAccessToken(
 			response: response)
 
 		//check the token response is valid, e.g., asserting the authorization
 		//server can really issue the token for that `sub` parameter in the
 		//tokenResponse
-		if try await tokenValidator(tokenResponse, authServerMetadata, nil) == false {
-			throw OAuth.Errors.tokenInvalid
-		}
-
-		let additionalParams = tokenResponse.additionalTokenFields?
-			.compactMapValues {
-				if let string = $0 as? String {
-					return string
-				} else {
-					Logger(label: "processAuthorizationCodeOAuth2Response")
-						.error("received param value \($0)")
-					return nil
-				}
-			}
+		let tokenValidationOutput = try await tokenRequestOptions.validate(
+			tokenResponse: tokenResponse,
+			authServerMetadata: authServerMetadata,
+		)
 
 		let sessionState = OAuth.SessionState.TokenState(
 			accessToken: .init(
@@ -255,6 +259,6 @@ extension OAuth.Authorizer {
 			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
 		)
 
-		return (sessionState, additionalParams)
+		return (sessionState, tokenValidationOutput)
 	}
 }

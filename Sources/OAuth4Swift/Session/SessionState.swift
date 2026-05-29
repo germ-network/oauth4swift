@@ -84,8 +84,6 @@ extension OAuth {
 	public class SessionState {
 		public let clientId: String
 		public let issuingServer: String
-		//stores the additional parameters from the TokenResponse
-		public let additionalParams: [String: String]?
 		//not mandatory in OAuth 2.1
 		public let dPoPState: DPoP.State?
 		//stores the authorization grant scope:
@@ -97,14 +95,12 @@ extension OAuth {
 		public init(
 			clientId: String,
 			issuingServer: String,
-			additionalParams: [String: String]? = nil,
 			dPoPState: DPoP.State?,
 			grantScopes: [String]?,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
 			self.issuingServer = issuingServer
-			self.additionalParams = additionalParams
 			self.dPoPState = dPoPState
 			self.grantScopes = grantScopes
 			self.tokenState = tokenState
@@ -115,7 +111,7 @@ extension OAuth {
 			public var accessToken: AccessToken
 			public var refreshToken: RefreshToken?
 
-			// User authorized scopes
+			//what is currently authorized on the last refresh
 			var scopes: [String]
 
 			init(
@@ -155,7 +151,6 @@ extension OAuth.SessionState {
 		let dPopKey: OAuth.DPoP.Key?
 		let issuingServer: String
 
-		public let additionalParams: [String: String]?
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
 		public var tokenState: TokenState
@@ -164,14 +159,13 @@ extension OAuth.SessionState {
 			clientId: String,
 			dPopKey: OAuth.DPoP.Key?,
 			issuingServer: String,
-			additionalParams: [String: String]?,
 			grantScopes: [String]?,
 			tokenState: TokenState
 		) {
 			self.clientId = clientId
 			self.dPopKey = dPopKey
 			self.issuingServer = issuingServer
-			self.additionalParams = additionalParams
+
 			self.grantScopes = grantScopes
 			self.tokenState = tokenState
 		}
@@ -184,7 +178,6 @@ extension OAuth.SessionState {
 		self.init(
 			clientId: archive.clientId,
 			issuingServer: archive.issuingServer,
-			additionalParams: archive.additionalParams,
 			dPoPState: try .restore(
 				archivedKey: archive.dPopKey,
 				decoder: dpopDecoder
@@ -200,7 +193,6 @@ extension OAuth.SessionState {
 				clientId: clientId,
 				dPopKey: dPoPState?.signingKey,
 				issuingServer: issuingServer,
-				additionalParams: additionalParams,
 				grantScopes: grantScopes,
 				tokenState: tokenState
 			)
@@ -227,19 +219,15 @@ extension OAuth.DPoP.State {
 //for tokenValidator
 extension OAuth.SessionState {
 	public struct Snapshot: Sendable {
-		public let issuingServer: String?
-		//stores the additional parameters from the TokenResponse
-		public let additionalParams: [String: String]?
+		public let issuingServer: String
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
 
 		public init(
-			issuingServer: String? = nil,
-			additionalParams: [String: String]? = nil,
+			issuingServer: String,
 			grantScopes: [String]?
 		) {
 			self.issuingServer = issuingServer
-			self.additionalParams = additionalParams
 			self.grantScopes = grantScopes
 		}
 	}
@@ -247,7 +235,6 @@ extension OAuth.SessionState {
 	public var snapshot: Snapshot {
 		.init(
 			issuingServer: issuingServer,
-			additionalParams: additionalParams,
 			grantScopes: grantScopes
 		)
 	}
@@ -258,8 +245,7 @@ extension OAuth.SessionState.Archive {
 		.init(
 			clientId: "app.example.com",
 			dPopKey: .generateP256(),
-			issuingServer: "ussure.example.com",
-			additionalParams: nil,
+			issuingServer: "issuer.example.com",
 			grantScopes: nil,
 			tokenState: .mock()
 		)
