@@ -21,7 +21,7 @@ extension OAuth {
 		case invalidScope
 		case httpResponse(response: HTTPDataResponse)
 		case oauthError(OAuth.ErrorResponse, HTTPResponse.Status)
-		case subjectMismatch
+		case subjectMismatch(actual: String?, expected: String)
 		case notImplemented
 
 		public var errorDescription: String? {
@@ -55,7 +55,11 @@ extension OAuth {
 				"HTTP error with status code: \(response.response.status.code), response: \(response)"
 			case .oauthError(let errorBody, let statusCode):
 				"OAuth error with status code: \(statusCode),  body: \(errorBody)"
-			case .subjectMismatch: "Subject mismatch"
+			case .subjectMismatch(
+				let actual,
+				let expected
+			):
+				"Subject mismatch, expected \(expected), actual: \(String(describing: actual))"
 			case .notImplemented: "Not implemented"
 			}
 		}
