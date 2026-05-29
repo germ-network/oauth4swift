@@ -25,6 +25,13 @@ authorization flow. `performUserAuthentication` produces a session archive.
 restores from a `OAuth.SessionState.Archive`. OAuth4Swift provides default implementations
 of protected resource requests and token refresh methods.
 
+# Persistence
+This library provides a SessionState and a corresponding, codable Archive. This state includes
+both immutable session state (clientId, issuingServer, initial grant scopes, and dPoPKey if using),
+and mutable state (refresh and auth tokens).
+
+The client may have additional state that needs to be persisted - client auth state or application specific data conveyed as additional parameters in token responses. The client may choose to store them alongside a `SessionState.Archive`, but we don't reserve entries for this state within SessionState.Archive.
+
 ## Contributing and Collaboration
 We welcome contributions!
 
