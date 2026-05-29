@@ -103,22 +103,21 @@ extension OAuth.Authorizer {
 
 		// If we're using PAR, perform the request and replace the parameters for
 		// authorization:
-		if authorizeInputs.authServerMetadata.pushedAuthorizationRequestEndpoint != nil {
+		do {
 			let parHTTPResponse = try await pushedAuthorizationRequest(
 				authServerMetadata: authorizeInputs.authServerMetadata,
-				parameters: parameters,
-
+				parameters: parameters
 			)
-
 			let parResponse = try OAuth.processPushedAuthorizationResponse(
 				response: parHTTPResponse
 			)
 
-			//reset the parameters
 			parameters = FormParameters([
 				"client_id": authorizeInputs.clientInfo.clientId,
 				"request_uri": parResponse.requestURI,
 			])
+		} catch OAuth.Errors.notSupported {
+			// PAR not advertised; proceed with standard authorization parameters
 		}
 
 		let authorizationUrl = try Self.authorizationURL(
@@ -159,8 +158,9 @@ extension OAuth.Authorizer {
 		parameters: FormParameters,
 		headers: HTTPFields? = nil,
 	) async throws -> HTTPDataResponse {
-		let parEndpoint = try authServerMetadata.resolve(
-			endpoint: .par)
+		guard let parEndpoint = try authServerMetadata.resolveMaybe(endpoint: .par) else {
+			throw OAuth.Errors.notSupported
+		}
 
 		var rawHeaders = headers ?? HTTPFields()
 		rawHeaders[.accept] = HTTPContentType.json.rawValue

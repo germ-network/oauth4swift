@@ -197,23 +197,47 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 		case protectedResources = "protected_resources"
 	}
 
-	enum Endpoint {
+	enum RequiredEndpoint {
 		case authorization
 		case token
+	}
+
+	enum OptionalEndpoint {
 		case par
+		case revocation
+		case userInfo
 	}
 
 	//for our purposes require secure
-	func resolve(endpoint: Endpoint) throws -> URL {
+	func resolve(endpoint: RequiredEndpoint) throws -> URL {
 		let url: URL =
 			switch endpoint {
 			case .authorization:
 				authorizationEndpoint
 			case .token:
 				tokenEndpoint
-			case .par:
-				try pushedAuthorizationRequestEndpoint.tryUnwrap
 			}
+
+		guard url.scheme == "https" else {
+			throw OAuth.Errors.insecureScheme
+		}
+
+		return url
+	}
+
+	func resolveMaybe(endpoint: OptionalEndpoint) throws -> URL? {
+		guard let url =
+			switch endpoint {
+			case .userInfo:
+				userinfoEndpoint
+			case .revocation:
+				revocationEndpoint
+			case .par:
+				pushedAuthorizationRequestEndpoint
+			}
+		else {
+			return nil
+		}
 
 		guard url.scheme == "https" else {
 			throw OAuth.Errors.insecureScheme
