@@ -23,6 +23,7 @@ extension OAuth {
 		case oauthError(OAuth.ErrorResponse, HTTPResponse.Status)
 		case subjectMismatch(actual: String?, expected: String)
 		case notImplemented
+		case notSupported
 
 		public var errorDescription: String? {
 			switch self {
@@ -61,6 +62,7 @@ extension OAuth {
 			):
 				"Subject mismatch, expected \(expected), actual: \(String(describing: actual))"
 			case .notImplemented: "Not implemented"
+			case .notSupported: "The authorization server does not support this feature"
 			}
 		}
 	}
