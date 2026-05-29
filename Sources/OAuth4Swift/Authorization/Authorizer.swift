@@ -87,6 +87,7 @@ extension OAuth.Authorizer {
 		parameters.mergeReplacingValues(
 			with: .init(
 				[
+					"client_id": authorizeInputs.clientInfo.clientId,
 					"scope": scopes,
 					"response_type": "code",
 					"redirect_uri": authorizeInputs.clientInfo.redirectURI
