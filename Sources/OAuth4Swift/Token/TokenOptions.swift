@@ -15,7 +15,7 @@ import Logging
 
 extension OAuth {
 	public protocol TokenRefreshOptions: Sendable {
-		var additionalParameters: [String: String] { get }
+		var additionalTokenRequestParameters: FormParameters? { get }
 
 		///Should return false if the tokenResponse is invalid, and throw if it is unable to
 		///resolve the validity - e.g. if an onlne check is required and the client is currently offline
@@ -28,7 +28,7 @@ extension OAuth {
 
 	public protocol TokenAuthorizeOptions: Sendable {
 		associatedtype ValidationOutput: Sendable
-		var additionalParameters: [String: String] { get }
+		var additionalTokenRequestParameters: FormParameters? { get }
 
 		///In contrast to the above, if the TokenEndpointResponse is invalid, this method should throw
 		///OAuth.Errors.tokenInvalid
@@ -41,9 +41,9 @@ extension OAuth {
 
 //default additionalParameters to empty
 extension OAuth.TokenRefreshOptions {
-	public var additionalParameters: [String: String] { [:] }
+	public var additionalTokenRequestParameters: FormParameters? { nil }
 }
 
 extension OAuth.TokenAuthorizeOptions {
-	public var additionalParameters: [String: String] { [:] }
+	public var additionalTokenRequestParameters: FormParameters? { nil }
 }

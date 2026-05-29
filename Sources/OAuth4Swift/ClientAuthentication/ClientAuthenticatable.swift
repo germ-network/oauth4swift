@@ -65,13 +65,13 @@ extension OAuth.ClientAuth.Authenticable {
 		callbackParameters: OAuth.AuthResponseParameters,
 		redirectURI: URL,
 		pkceVerifier: String?,
-		additionalParameters: [String: String],
+		additionalParameters: FormParameters?,
 	) async throws -> HTTPDataResponse {
 		guard let code = callbackParameters["code"].first else {
 			throw OAuth.Errors.missingAuthCode
 		}
 
-		var parameters = FormParameters(additionalParameters)
+		var parameters = additionalParameters ?? .init()
 		parameters["redirect_uri"] = [redirectURI.absoluteString]
 		parameters["code"] = [code]
 
@@ -88,10 +88,10 @@ extension OAuth.ClientAuth.Authenticable {
 
 	func refreshTokenGrantRequest(
 		authServerMetadata: AuthServerMetadata,
-		additionalParameters: [String: String],
+		additionalParameters: FormParameters?,
 		refreshToken: OAuth.RefreshToken,
 	) async throws -> HTTPDataResponse {
-		var parameters = FormParameters(additionalParameters)
+		var parameters = additionalParameters ?? .init()
 		parameters["refresh_token"] = [refreshToken.value]
 
 		return try await tokenEndpointRequest(

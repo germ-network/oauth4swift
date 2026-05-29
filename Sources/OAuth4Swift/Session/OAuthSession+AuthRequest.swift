@@ -119,7 +119,7 @@ extension OAuth.SessionCapabilities {
 			.notice("started token refresh")
 		let httpResponse = try await refreshTokenGrantRequest(
 			authServerMetadata: try await authServerMetadata,
-			additionalParameters: tokenRefreshOptions.additionalParameters,
+			additionalParameters: tokenRefreshOptions.additionalTokenRequestParameters,
 			refreshToken: refreshToken
 		)
 

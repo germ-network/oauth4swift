@@ -28,7 +28,7 @@ extension OAuth {
 		//the client should resolve authEndpoint from authServerMetadata
 		let authEndpoint: URL
 		let inputToken: String?
-		let additionalParameters: FormParameters?
+		let additionalAuthCodeRequestParameters: FormParameters?
 		let userAuthenticator: UserAuthenticator
 		let tokenAuthOptions: TokenOptions
 
@@ -47,7 +47,7 @@ extension OAuth {
 			self.authServerMetadata = authServerMetadata
 			self.authEndpoint = authEndpoint
 			self.inputToken = inputToken
-			self.additionalParameters = additionalParameters
+			self.additionalAuthCodeRequestParameters = additionalParameters
 			self.userAuthenticator = userAuthenticator
 			self.tokenAuthOptions = tokenAuthOptions
 		}
@@ -82,7 +82,7 @@ extension OAuth.Authorizer {
 
 		//any parameters we set in OAuth override conflicting parameters
 		//from the client app
-		var parameters = authorizeInputs.additionalParameters ?? .init()
+		var parameters = authorizeInputs.additionalAuthCodeRequestParameters ?? .init()
 
 		parameters.mergeReplacingValues(
 			with: .init(
@@ -197,7 +197,8 @@ extension OAuth.Authorizer {
 			callbackParameters: callbackParameters,
 			redirectURI: authorizeInputs.clientInfo.redirectURI,
 			pkceVerifier: authorizeInputs.pkceVerifier.verifier,
-			additionalParameters: authorizeInputs.tokenAuthOptions.additionalParameters,
+			additionalParameters: authorizeInputs.tokenAuthOptions
+				.additionalTokenRequestParameters,
 		)
 
 		let (tokenState, tokenValidationOutput) =
