@@ -201,7 +201,7 @@ extension OAuth {
 		if let parent, !parent.isEmpty {
 			if !Set(parent).isSuperset(of: scopes) {
 				Logger(label: "parseTokenScope").error(
-					"Received scopes \(scopes) in excess of requested scopes \(parent)"
+					"Requested scopes \(parent) but received \(scopes)"
 				)
 			}
 		}
