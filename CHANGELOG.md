@@ -1,5 +1,14 @@
 # @germ-network/oauth4swift
 
+## 0.5.0
+
+### Minor Changes
+
+- [#43](https://github.com/germ-network/oauth4swift/pull/43) [`6646f16`](https://github.com/germ-network/oauth4swift/commit/6646f1638454241c95e8c41af6f7784f1c2996fb) Thanks [@germ-mark](https://github.com/germ-mark)! - \* pass the tokenRequest as a sendable protocol rather than a closure
+  - separate out TokenRequestOptions into TokenRefreshOptions and TokenAuthorizeOptions
+    - Implement those as protocols, so that TokenAuthorizeOptions can return an associated type
+  - remove additional parameters from the Session state storage, defer to the client to process what it needs out of the additional parameters, return it in the validation output, and store it alongside this session archive
+
 ## 0.4.0
 
 ### Minor Changes
