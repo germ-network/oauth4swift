@@ -82,7 +82,10 @@ struct MastodonTokenRefreshOptions: OAuth.TokenRefreshOptions {
 		tokenResponse: TokenEndpointResponse,
 		authServerMetadata: AuthServerMetadata,
 		previousState: OAuth.SessionState.Snapshot
-	) async throws -> Bool { false }
+	) async throws -> Bool {
+		tokenResponse.refreshToken != nil
+			|| previousState.grantScopes?.contains("offline_access") == true
+	}
 }
 
 // MARK: - Session
