@@ -115,7 +115,10 @@ actor MastodonAgent: OAuth.SessionCapabilities {
 		public var session: OAuth.SessionState.Archive?
 		public var clientAuthArchive: Data?
 
-		public init(clientId: String, session: OAuth.SessionState.Archive?, clientAuthArchive: Data?) {
+		public init(
+			clientId: String, session: OAuth.SessionState.Archive?,
+			clientAuthArchive: Data?
+		) {
 			self.clientId = clientId
 			self.session = session
 			self.clientAuthArchive = clientAuthArchive
@@ -222,22 +225,25 @@ extension MastodonAgent {
 
 public struct MastodonClient: Sendable {
 	public let instance: URL
+	public let redirectURI: URL
 	let authFetcher: HTTPFetcher
 	let userAuthenticator: UserAuthenticator
 
 	public init(
 		instance: URL,
+		redirectURI: URL,
 		authFetcher: HTTPFetcher,
 		userAuthenticator: @escaping UserAuthenticator
 	) {
 		self.instance = instance
+		self.redirectURI = redirectURI
 		self.authFetcher = authFetcher
 		self.userAuthenticator = userAuthenticator
 	}
 }
 
 extension MastodonClient {
-	func authorize() async throws -> MastodonAgent.Archive {
+	func authorize(scopes: [String]) async throws -> MastodonAgent.Archive {
 		guard let metadata = try await authFetcher.authServerDiscovery(endpoint: instance)
 		else { throw OAuth.Errors.notSupported }
 
@@ -253,7 +259,7 @@ extension MastodonClient {
 					clientInfo: .init(
 						clientId: credentials.clientId,
 						scopes: ["profile"],
-						redirectURI: URL(string: "mastodon-demo://oauth")!
+						redirectURI: redirectURI
 					),
 					authServerMetadata: metadata,
 					authEndpoint: metadata.authorizationEndpoint,

@@ -6,6 +6,7 @@ import OAuth4Swift
 import Security
 import SwiftUI
 
+let redirectURI = URL(string: "mastodon-demo://oauth")!
 @Observable @MainActor
 final class AppState {
 	var instanceDomain: String = ""
@@ -26,17 +27,20 @@ final class AppState {
 		do {
 			let client = MastodonClient(
 				instance: instance,
+				redirectURI: redirectURI,
 				authFetcher: URLSession.manualRedirect(),
 				userAuthenticator: ASWebAuthenticationSession.userAuthenticator(),
 			)
 
-			let archive = try await client.authorize()
+			let archive = try await client.authorize(scopes: ["profile"])
 			save(archive: archive)
 
 			let agent = try await client.restore(archive: archive)
 			userInfo = try await agent.fetchUserInfo()
 			session = agent
-		} catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+		} catch let error as ASWebAuthenticationSessionError
+			where error.code == .canceledLogin
+		{
 			// User dismissed the authenticator — not an error
 		} catch {
 			errorMessage = error.localizedDescription
@@ -54,6 +58,7 @@ final class AppState {
 
 		let client = MastodonClient(
 			instance: instance,
+			redirectURI: redirectURI,
 			authFetcher: URLSession.manualRedirect(),
 			userAuthenticator: ASWebAuthenticationSession.userAuthenticator(),
 		)
@@ -85,7 +90,8 @@ final class AppState {
 
 	private func loadSaved() -> (MastodonAgent.Archive, String)? {
 		guard let data = Keychain.load(key: "mastodon.archive"),
-			let archive = try? JSONDecoder().decode(MastodonAgent.Archive.self, from: data),
+			let archive = try? JSONDecoder().decode(
+				MastodonAgent.Archive.self, from: data),
 			let domain = UserDefaults.standard.string(forKey: "mastodon.instanceDomain")
 		else { return nil }
 		return (archive, domain)
@@ -109,7 +115,9 @@ private enum Keychain {
 			kSecAttrAccount as String: key,
 		]
 		let attributes: [String: Any] = [kSecValueData as String: data]
-		if SecItemUpdate(query as CFDictionary, attributes as CFDictionary) == errSecItemNotFound {
+		if SecItemUpdate(query as CFDictionary, attributes as CFDictionary)
+			== errSecItemNotFound
+		{
 			SecItemAdd(query.merging(attributes) { $1 } as CFDictionary, nil)
 		}
 	}
