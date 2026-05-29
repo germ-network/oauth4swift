@@ -17,5 +17,18 @@ extension OAuth {
 			public let parameters: FormParameters
 			public let headers: HTTPFields
 		}
+
+		public protocol Method: Sendable {
+			var tokenEndpointAuthMethod: TokenEndpointMethods { get }
+			func authenticate(clientId: String, inputs: Inputs) async throws -> (
+				FormParameters, HTTPFields
+			)
+		}
+
+		/// Refinement of Method for auth methods that use a client secret.
+		/// Excludes `None`, which is for public clients.
+		public protocol SecretMethod: Method {
+			var archive: Data? { get throws }
+		}
 	}
 }

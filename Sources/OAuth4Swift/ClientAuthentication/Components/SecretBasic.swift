@@ -5,7 +5,7 @@ import struct HTTPTypes.HTTPFields
 
 // Usage not recommended, use ClientAuthSecretPost
 extension OAuth.ClientAuth {
-	public struct SecretBasic: Sendable {
+	public struct SecretBasic: SecretMethod {
 		private let clientSecret: String
 		public var tokenEndpointAuthMethod: TokenEndpointMethods = .clientSecretBasic
 
