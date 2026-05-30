@@ -158,31 +158,25 @@ extension OAuth.ClientAuth.Authenticable {
 			return
 		}
 
-		let (parameters, headers) = try await authenticate(
+		let rawHeaders = HTTPFields(
+			dictionaryLiteral: (.accept, HTTPContentType.json.rawValue),
+			(.contentType, HTTPContentType.formUrlEncoded.rawValue),
+		)
+
+		let response = try await authenticatedRequest(
+			url: url,
+			method: .post,
 			inputs: .init(
 				authServerMetadata: authServerMetadata,
 				parameters: FormParameters([
 					"token": token.value,
 					"token_type_hint": token.hint,
 				]),
-				headers: HTTPFields(
-					dictionaryLiteral: (
-						.contentType,
-						HTTPContentType.formUrlEncoded.rawValue
-					)
-				)
-			)
+				headers: rawHeaders
+			),
+			retryNonce: true,
+			endpointType: .auth
 		)
-
-		let request = try BundledHTTPRequest(
-			method: .post,
-			url: url,
-			headerFields: headers,
-			body: parameters.data
-		)
-
-		// Explicitly not DPoP, as we're sending client authentication + token:
-		let response = try await authFetcher.data(for: request)
 
 		// There is no response body, only 200 or an error response:
 		try response.successOrThrow(decoding: OAuth.ErrorResponse.self) { error, status in
