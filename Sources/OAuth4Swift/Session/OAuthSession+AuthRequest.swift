@@ -123,12 +123,28 @@ extension OAuth.SessionCapabilities {
 			refreshToken: refreshToken
 		)
 
-		//if we get an HTTP response but it isn't successful we nil the session
+		//Only invalid_grant confirms that the refresh token is no longer usable.
 		let tokenResponse: TokenEndpointResponse
 		do {
 			tokenResponse = try OAuth.processRefreshTokenResponse(
 				response: httpResponse)
+		} catch {
+			if case OAuth.Errors.oauthError(let errorBody, let status) = error,
+				!(errorBody.error == "invalid_grant" && status.code == 400)
+			{
+				Logger(label: "OAuth.SessionCapabilities")
+					.error(
+						"refresh error, preserving session \(error)"
+					)
+				throw error
+			}
 
+			Logger(label: "OAuth.SessionCapabilities")
+				.error("error refreshing, terminating session \(error)")
+			return nil
+		}
+
+		do {
 			//check the token response is valid, e.g., asserting the authorization
 			//server can really issue the token for that `sub` parameter in the
 			//tokenResponse; also passes the current session state to allow verifying
