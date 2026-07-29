@@ -101,9 +101,12 @@ extension OAuth.Authorizer {
 			parameters["state"] = [stateToken]
 		}
 
-		// If we're using PAR, perform the request and replace the parameters for
-		// authorization:
-		do {
+		// If the server advertises PAR, perform the request and replace the
+		// parameters for authorization. Checked here rather than by catching
+		// notSupported around the whole attempt, so an error thrown from the
+		// network path or a consumer's authenticate(inputs:) can never silently
+		// downgrade PAR to a front-channel request
+		if try authorizeInputs.authServerMetadata.resolveMaybe(endpoint: .par) != nil {
 			let parHTTPResponse = try await pushedAuthorizationRequest(
 				authServerMetadata: authorizeInputs.authServerMetadata,
 				parameters: parameters
@@ -116,8 +119,6 @@ extension OAuth.Authorizer {
 				"client_id": authorizeInputs.clientInfo.clientId,
 				"request_uri": parResponse.requestURI,
 			])
-		} catch OAuth.Errors.notSupported {
-			// PAR not advertised; proceed with standard authorization parameters
 		}
 
 		let authorizationUrl = try Self.authorizationURL(

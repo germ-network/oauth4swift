@@ -197,19 +197,19 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 		case protectedResources = "protected_resources"
 	}
 
-	enum RequiredEndpoint {
+	public enum RequiredEndpoint: Sendable {
 		case authorization
 		case token
 	}
 
-	enum OptionalEndpoint {
+	public enum OptionalEndpoint: Sendable {
 		case par
 		case revocation
 		case userInfo
 	}
 
 	//for our purposes require secure
-	func resolve(endpoint: RequiredEndpoint) throws -> URL {
+	public func resolve(endpoint: RequiredEndpoint) throws -> URL {
 		let url: URL =
 			switch endpoint {
 			case .authorization:
@@ -225,16 +225,20 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 		return url
 	}
 
-	func resolveMaybe(endpoint: OptionalEndpoint) throws -> URL? {
-		guard let url =
-			switch endpoint {
-			case .userInfo:
-				userinfoEndpoint
-			case .revocation:
-				revocationEndpoint
-			case .par:
-				pushedAuthorizationRequestEndpoint
-			}
+	/// The endpoint's url when the server advertises it, nil when it does not,
+	/// throwing when it is advertised over an insecure scheme. Use this rather
+	/// than reading the endpoint properties directly, which skips that check.
+	public func resolveMaybe(endpoint: OptionalEndpoint) throws -> URL? {
+		guard
+			let url =
+				switch endpoint {
+				case .userInfo:
+					userinfoEndpoint
+				case .revocation:
+					revocationEndpoint
+				case .par:
+					pushedAuthorizationRequestEndpoint
+				}
 		else {
 			return nil
 		}
