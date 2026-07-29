@@ -54,21 +54,17 @@ extension OAuth.SessionCapabilities {
 		accessToken: OAuth.AccessToken,
 	) async throws -> HTTPDataResponse {
 		if let dpopSigner = self as? OAuth.DPoP.Signing {
-			var request = request
-			request.request
-				.headerFields[.authorization] = "DPoP " + accessToken.value
-
 			return try await dpopSigner.authenticated(
-				request: request,
+				request: request.settingHeader(
+					"DPoP " + accessToken.value, for: .authorization),
 				token: accessToken,
 				fetcher: authFetcher
 			)
 		} else {
-			var request = request
-			request.request
-				.headerFields[.authorization] = "Bearer " + accessToken.value
-
-			return try await authFetcher.data(for: request)
+			return try await authFetcher.data(
+				for: request.settingHeader(
+					"Bearer " + accessToken.value, for: .authorization)
+			)
 		}
 	}
 

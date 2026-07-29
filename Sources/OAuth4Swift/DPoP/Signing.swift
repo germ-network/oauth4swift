@@ -44,10 +44,7 @@ extension OAuth.DPoP.Signing {
 			)
 		)
 
-		var output = request
-		output.request.headerFields[try .dpop.tryUnwrap] = jwt.string
-
-		return output
+		return request.settingHeader(jwt.string, for: try .dpop.tryUnwrap)
 	}
 
 	func nonceRetryAuthenticated(
