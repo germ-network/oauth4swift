@@ -24,6 +24,7 @@ extension OAuth {
 		case subjectMismatch(actual: String?, expected: String)
 		case notImplemented
 		case notSupported
+		case refreshNotSupported
 
 		public var errorDescription: String? {
 			switch self {
@@ -63,6 +64,8 @@ extension OAuth {
 				"Subject mismatch, expected \(expected), actual: \(String(describing: actual))"
 			case .notImplemented: "Not implemented"
 			case .notSupported: "The authorization server does not support this feature"
+			case .refreshNotSupported:
+				"The authorization server does not list refresh_token in grant_types_supported"
 			}
 		}
 	}
