@@ -113,6 +113,35 @@ struct RefreshErrorTests {
 		}
 	}
 
+	//TokenRefreshOptions documents a throw as "couldn't resolve validity", which
+	//covers transient failures in an online check
+	@Test("Preserves the session when validation can't be resolved")
+	func unresolvableValidation() async throws {
+		let session = try TestSession(validating: .unresolvable)
+
+		try await expectPreservedSession(from: session) { error in
+			guard case TestSessionError.offline = error else {
+				Issue.record("Unexpected error: \(error)")
+				return
+			}
+		}
+	}
+
+	@Test("Terminates the session when validation fails")
+	func failedValidation() async throws {
+		let session = try TestSession(validating: .invalid)
+
+		let task = try #require(try await session.refresh())
+		do {
+			_ = try await task.value
+			Issue.record("Expected the session to terminate")
+		} catch TestSessionError.terminated {
+			// Expected: an invalid token response terminates the session.
+		} catch {
+			Issue.record("Unexpected error: \(error)")
+		}
+	}
+
 	private func expectPropagatedOAuthError(
 		from session: TestSession,
 		error expectedError: String,
@@ -150,6 +179,7 @@ struct RefreshErrorTests {
 
 private enum TestSessionError: Error {
 	case terminated
+	case offline
 }
 
 private struct FixedResponseFetcher: HTTPFetcher {
@@ -160,13 +190,29 @@ private struct FixedResponseFetcher: HTTPFetcher {
 	}
 }
 
-private struct ValidRefreshOptions: OAuth.TokenRefreshOptions {
+private struct StubRefreshOptions: OAuth.TokenRefreshOptions {
+	enum Outcome {
+		case valid
+		case invalid
+		case unresolvable
+	}
+
+	let outcome: Outcome
+
+	init(_ outcome: Outcome = .valid) {
+		self.outcome = outcome
+	}
+
 	func validate(
 		tokenResponse: TokenEndpointResponse,
 		authServerMetadata: AuthServerMetadata,
 		previousState: OAuth.SessionState.Snapshot
 	) async throws -> Bool {
-		true
+		switch outcome {
+		case .valid: true
+		case .invalid: false
+		case .unresolvable: throw TestSessionError.offline
+		}
 	}
 }
 
@@ -176,14 +222,31 @@ private actor TestSession: OAuth.SessionCapabilities {
 	nonisolated let authFetcher: any HTTPFetcher
 
 	let metadata: AuthServerMetadata
-	let tokenRefreshOptions: any OAuth.TokenRefreshOptions = ValidRefreshOptions()
+	let tokenRefreshOptions: any OAuth.TokenRefreshOptions
 	var state: OAuth.SessionState
 
 	init(status: HTTPResponse.Status, error: String) throws {
 		try self.init(status: status, body: Data(#"{"error":"\#(error)"}"#.utf8))
 	}
 
-	init(status: HTTPResponse.Status, body: Data) throws {
+	//a token endpoint response the client accepts, so the refresh reaches validation
+	init(validating outcome: StubRefreshOptions.Outcome) throws {
+		try self.init(
+			status: .ok,
+			body: Data(
+				#"{"access_token":"new-access-token","token_type":"DPoP","refresh_token":"new-refresh-token"}"#
+					.utf8
+			),
+			refreshOptions: .init(outcome)
+		)
+	}
+
+	init(
+		status: HTTPResponse.Status,
+		body: Data,
+		refreshOptions: StubRefreshOptions = .init()
+	) throws {
+		tokenRefreshOptions = refreshOptions
 		metadata = try JSONDecoder().decode(
 			AuthServerMetadata.self,
 			from: Data(

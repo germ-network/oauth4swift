@@ -155,25 +155,24 @@ extension OAuth.SessionCapabilities {
 			throw error
 		}
 
-		do {
-			//check the token response is valid, e.g., asserting the authorization
-			//server can really issue the token for that `sub` parameter in the
-			//tokenResponse; also passes the current session state to allow verifying
-			//that the token sub hasn't changed during refresh:
+		//check the token response is valid, e.g., asserting the authorization
+		//server can really issue the token for that `sub` parameter in the
+		//tokenResponse; also passes the current session state to allow verifying
+		//that the token sub hasn't changed during refresh:
 
-			guard
-				try await tokenRefreshOptions
-					.validate(
-						tokenResponse: tokenResponse,
-						authServerMetadata: metadata,
-						previousState: stateSnapshot
-					)
-			else {
-				throw OAuth.Errors.tokenInvalid
-			}
-		} catch {
+		//per TokenRefreshOptions, false means the response is invalid, while a
+		//thrown error means validity couldn't be resolved - e.g. an offline
+		//client - and so preserves the session
+		guard
+			try await tokenRefreshOptions
+				.validate(
+					tokenResponse: tokenResponse,
+					authServerMetadata: metadata,
+					previousState: stateSnapshot
+				)
+		else {
 			Logger(label: "OAuth.SessionCapabilities")
-				.error("error refreshing, terminating session \(error)")
+				.error("token failed validation, terminating session")
 			return nil
 		}
 
