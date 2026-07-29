@@ -112,11 +112,21 @@ extension OAuth.SessionCapabilities {
 		refreshToken: OAuth.RefreshToken
 	) async throws -> OAuth.SessionState.TokenState? {
 		let metadata = try await authServerMetadata
+		// A server that does not offer refresh_token gets no request, but the
+		// session stays alive until its access token expires: throwing preserves
+		// the previous state, where returning nil would terminate the session.
+		//
+		// RFC 8414 2's default for an omitted grant_types_supported is
+		// ["authorization_code", "implicit"] - strictly, absent means no refresh.
+		// We deliberately read absent as "unstated" and attempt the refresh:
+		// many servers omit the field yet support refresh, and one that truly
+		// does not will answer unsupported_grant_type, which also preserves
+		// the session.
 		guard
 			metadata.grantTypesSupported?.contains(
 				OAuth.GrantType.refreshToken.rawValue) != false
 		else {
-			return nil
+			throw OAuth.Errors.refreshNotSupported
 		}
 
 		Logger(label: "OAuthSessionCapabilities")
