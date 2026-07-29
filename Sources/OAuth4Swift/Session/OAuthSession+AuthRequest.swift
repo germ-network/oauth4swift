@@ -138,32 +138,34 @@ extension OAuth.SessionCapabilities {
 		)
 
 		//Only invalid_grant confirms that the refresh token is no longer usable.
+		//Everything else preserves the session so the caller can retry.
 		let tokenResponse: TokenEndpointResponse
 		do {
 			tokenResponse = try OAuth.processRefreshTokenResponse(
 				response: httpResponse)
-		} catch {
-			if case OAuth.Errors.oauthError(let errorBody, let status) = error,
-				!(errorBody.error == "invalid_grant" && status.code == 400)
-			{
-				Logger(label: "OAuth.SessionCapabilities")
-					.error(
-						"refresh error, preserving session \(error)"
-					)
-				throw error
-			}
-
+		} catch OAuth.Errors.oauthError(let errorBody, let status)
+			where errorBody.error == "invalid_grant" && status.code == 400
+		{
 			Logger(label: "OAuth.SessionCapabilities")
-				.error("error refreshing, terminating session \(error)")
+				.error("invalid_grant, terminating session \(errorBody)")
 			return nil
+		} catch {
+			Logger(label: "OAuth.SessionCapabilities")
+				.warning("refresh error, preserving session \(error)")
+			throw error
 		}
 
-		do {
-			//check the token response is valid, e.g., asserting the authorization
-			//server can really issue the token for that `sub` parameter in the
-			//tokenResponse; also passes the current session state to allow verifying
-			//that the token sub hasn't changed during refresh:
+		//check the token response is valid, e.g., asserting the authorization
+		//server can really issue the token for that `sub` parameter in the
+		//tokenResponse; also passes the current session state to allow verifying
+		//that the token sub hasn't changed during refresh:
 
+		//per TokenRefreshOptions, false means the response is invalid, while a
+		//thrown error means validity couldn't be resolved - e.g. an offline
+		//client - and so preserves the session. A thrown tokenInvalid also
+		//terminates: TokenAuthorizeOptions directs validators to throw it, so
+		//a validator shared across both flows may signal invalidity that way
+		do {
 			guard
 				try await tokenRefreshOptions
 					.validate(
@@ -174,9 +176,9 @@ extension OAuth.SessionCapabilities {
 			else {
 				throw OAuth.Errors.tokenInvalid
 			}
-		} catch {
+		} catch OAuth.Errors.tokenInvalid {
 			Logger(label: "OAuth.SessionCapabilities")
-				.error("error refreshing, terminating session \(error)")
+				.error("token failed validation, terminating session")
 			return nil
 		}
 
