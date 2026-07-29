@@ -17,14 +17,15 @@ extension OAuth.ClientAuth {
 			clientId: String,
 			inputs: Inputs
 		) async throws -> (FormParameters, HTTPFields) {
+			// RFC 6749 2.3.1: form-url-encode the id and secret before joining
 			let basicAuth = [
-				clientId,
-				clientSecret,
+				clientId.formURLEncoded,
+				clientSecret.formURLEncoded,
 			].joined(separator: ":")
 
 			var headers = inputs.headers
 			// Replace the authorization header:
-			headers[.authorization] = basicAuth.utf8Data.base64EncodedString()
+			headers[.authorization] = "Basic " + basicAuth.utf8Data.base64EncodedString()
 
 			return (inputs.parameters, headers)
 		}
@@ -34,5 +35,11 @@ extension OAuth.ClientAuth {
 				try JSONEncoder().encode(clientSecret)
 			}
 		}
+	}
+}
+
+extension String {
+	fileprivate var formURLEncoded: String {
+		addingPercentEncoding(withAllowedCharacters: .urlFormEncodedAllowed) ?? self
 	}
 }
