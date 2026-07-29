@@ -138,24 +138,21 @@ extension OAuth.SessionCapabilities {
 		)
 
 		//Only invalid_grant confirms that the refresh token is no longer usable.
+		//Everything else preserves the session so the caller can retry.
 		let tokenResponse: TokenEndpointResponse
 		do {
 			tokenResponse = try OAuth.processRefreshTokenResponse(
 				response: httpResponse)
-		} catch {
-			if case OAuth.Errors.oauthError(let errorBody, let status) = error,
-				!(errorBody.error == "invalid_grant" && status.code == 400)
-			{
-				Logger(label: "OAuth.SessionCapabilities")
-					.error(
-						"refresh error, preserving session \(error)"
-					)
-				throw error
-			}
-
+		} catch OAuth.Errors.oauthError(let errorBody, let status)
+			where errorBody.error == "invalid_grant" && status.code == 400
+		{
 			Logger(label: "OAuth.SessionCapabilities")
-				.error("error refreshing, terminating session \(error)")
+				.error("invalid_grant, terminating session \(errorBody)")
 			return nil
+		} catch {
+			Logger(label: "OAuth.SessionCapabilities")
+				.warning("refresh error, preserving session \(error)")
+			throw error
 		}
 
 		do {
