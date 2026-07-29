@@ -50,6 +50,35 @@ extension OAuth {
 		public let expiry: Date?
 		public var fetchedOn: Date?
 	}
+
+	//bundles the token value with its RFC 7009 token_type_hint so the pair
+	//cannot disagree
+	public enum RevocableToken: Sendable {
+		case access(OAuth.AccessToken)
+		case refresh(OAuth.RefreshToken)
+
+		init(_ token: OAuth.AccessToken) {
+			self = .access(token)
+		}
+
+		init(_ token: OAuth.RefreshToken) {
+			self = .refresh(token)
+		}
+
+		var value: String {
+			switch self {
+			case .access(let t): t.value
+			case .refresh(let t): t.value
+			}
+		}
+
+		var hint: String {
+			switch self {
+			case .access: "access_token"
+			case .refresh: "refresh_token"
+			}
+		}
+	}
 }
 
 extension OAuth.AccessToken: OAuth.Token {}

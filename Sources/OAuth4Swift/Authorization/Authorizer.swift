@@ -87,6 +87,7 @@ extension OAuth.Authorizer {
 		parameters.mergeReplacingValues(
 			with: .init(
 				[
+					"client_id": authorizeInputs.clientInfo.clientId,
 					"scope": scopes,
 					"response_type": "code",
 					"redirect_uri": authorizeInputs.clientInfo.redirectURI
@@ -100,20 +101,20 @@ extension OAuth.Authorizer {
 			parameters["state"] = [stateToken]
 		}
 
-		// If we're using PAR, perform the request and replace the parameters for
-		// authorization:
-		if authorizeInputs.authServerMetadata.pushedAuthorizationRequestEndpoint != nil {
+		// If the server advertises PAR, perform the request and replace the
+		// parameters for authorization. Checked here rather than by catching
+		// notSupported around the whole attempt, so an error thrown from the
+		// network path or a consumer's authenticate(inputs:) can never silently
+		// downgrade PAR to a front-channel request
+		if try authorizeInputs.authServerMetadata.resolveMaybe(endpoint: .par) != nil {
 			let parHTTPResponse = try await pushedAuthorizationRequest(
 				authServerMetadata: authorizeInputs.authServerMetadata,
-				parameters: parameters,
-
+				parameters: parameters
 			)
-
 			let parResponse = try OAuth.processPushedAuthorizationResponse(
 				response: parHTTPResponse
 			)
 
-			//reset the parameters
 			parameters = FormParameters([
 				"client_id": authorizeInputs.clientInfo.clientId,
 				"request_uri": parResponse.requestURI,
@@ -158,8 +159,9 @@ extension OAuth.Authorizer {
 		parameters: FormParameters,
 		headers: HTTPFields? = nil,
 	) async throws -> HTTPDataResponse {
-		let parEndpoint = try authServerMetadata.resolve(
-			endpoint: .par)
+		guard let parEndpoint = try authServerMetadata.resolveMaybe(endpoint: .par) else {
+			throw OAuth.Errors.notSupported
+		}
 
 		var rawHeaders = headers ?? HTTPFields()
 		rawHeaders[.accept] = HTTPContentType.json.rawValue

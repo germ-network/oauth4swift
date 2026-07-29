@@ -1,5 +1,6 @@
 import Foundation
 import GermConvenience
+import Logging
 
 import struct HTTPTypes.HTTPFields
 import struct HTTPTypes.HTTPRequest
@@ -127,5 +128,80 @@ extension OAuth.ClientAuth.Authenticable {
 			retryNonce: true,
 			endpointType: .auth
 		)
+	}
+
+	/// Revokes an access token at the server's revocation endpoint (RFC 7009).
+	///
+	/// **Silently returns without any network call when the server does not
+	/// advertise a revocation endpoint** - the caller cannot distinguish
+	/// "revoked" from "server cannot revoke". Local session state is never
+	/// touched; clearing stored tokens is the caller's responsibility, whether
+	/// or not this succeeds.
+	///
+	/// To end a whole grant, revoke the refresh token instead - RFC 7009 §2.1
+	/// has the server also invalidate related access tokens.
+	public func revocationRequest(
+		authServerMetadata: AuthServerMetadata,
+		token: OAuth.AccessToken
+	) async throws {
+		try await revoke(
+			authServerMetadata: authServerMetadata,
+			token: OAuth.RevocableToken(token)
+		)
+	}
+
+	/// Revokes a refresh token at the server's revocation endpoint (RFC 7009),
+	/// which per §2.1 typically invalidates the whole grant, related access
+	/// tokens included.
+	///
+	/// **Silently returns without any network call when the server does not
+	/// advertise a revocation endpoint** - the caller cannot distinguish
+	/// "revoked" from "server cannot revoke". Local session state is never
+	/// touched; clearing stored tokens is the caller's responsibility, whether
+	/// or not this succeeds.
+	public func revocationRequest(
+		authServerMetadata: AuthServerMetadata,
+		token: OAuth.RefreshToken
+	) async throws {
+		try await revoke(
+			authServerMetadata: authServerMetadata,
+			token: OAuth.RevocableToken(token)
+		)
+	}
+
+	private func revoke(
+		authServerMetadata: AuthServerMetadata,
+		token: OAuth.RevocableToken
+	) async throws {
+		guard let url = try authServerMetadata.resolveMaybe(endpoint: .revocation) else {
+			return
+		}
+
+		let rawHeaders = HTTPFields(
+			dictionaryLiteral: (.accept, HTTPContentType.json.rawValue),
+			(.contentType, HTTPContentType.formUrlEncoded.rawValue),
+		)
+
+		let response = try await authenticatedRequest(
+			url: url,
+			method: .post,
+			inputs: .init(
+				authServerMetadata: authServerMetadata,
+				parameters: FormParameters([
+					"token": token.value,
+					"token_type_hint": token.hint,
+				]),
+				headers: rawHeaders
+			),
+			retryNonce: true,
+			endpointType: .auth
+		)
+
+		// There is no response body, only 200 or an error response:
+		try response.expectSuccess(orError: OAuth.ErrorResponse.self) { error, status in
+			Logger(label: "revocationRequest").error(
+				"Revocation error \(status): \(error)")
+			return OAuth.Errors.oauthError(error, status)
+		}
 	}
 }

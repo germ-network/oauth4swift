@@ -18,20 +18,15 @@ extension OAuth {
 	static public func processPushedAuthorizationResponse(
 		response: HTTPDataResponse
 	) throws -> PARResponse {
-		let parsed =
-			try response
+		try response
 			.success(
 				code: 201,
 				decodeResult: PARResponse.self,
 				orError: OAuth.ErrorResponse.self
 			)
-
-		switch parsed {
-		case .result(let result):
-			return result
-		case .error(let errorResponse, let errorCode):
-			throw OAuth.Errors.oauthError(errorResponse, errorCode)
-		}
+			.get { errorResponse, errorCode in
+				OAuth.Errors.oauthError(errorResponse, errorCode)
+			}
 	}
 
 	static public func validateAuthResponse(
@@ -159,26 +154,18 @@ extension OAuth {
 	static func processGenericAccessToken(
 		response: HTTPDataResponse
 	) throws -> TokenEndpointResponse {
-		let decodedResponse =
-			try response
+		try response
 			.success(
 				decodeResult: TokenEndpointResponse.self,
 				orError: OAuth.ErrorResponse.self
 			)
-
-		switch decodedResponse {
-		case .result(let r):
-			return r
-		case .error(let e, let statusCode):
-			switch e.error {
-			case "invalid_request":
-				throw Errors.invalidRequest
-			case "invalid_response":
-				throw Errors.invalidResponse
-			default:
-				throw Errors.oauthError(e, statusCode)
+			.get { e, statusCode in
+				switch e.error {
+				case "invalid_request": Errors.invalidRequest
+				case "invalid_response": Errors.invalidResponse
+				default: Errors.oauthError(e, statusCode)
+				}
 			}
-		}
 	}
 
 	//if no scopes are passed back, then we get the parent (requested or granted)

@@ -14,130 +14,130 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 	public let issuer: String
 
 	/// Array of claim types supported
-	let claimsSupported: [String]?
+	public let claimsSupported: [String]?
 
 	/// Languages and scripts supported for claims
-	let claimsLocalesSupported: [String]?
+	public let claimsLocalesSupported: [String]?
 
 	/// Whether the claims parameter is supported
-	let claimsParameterSupported: Bool?
+	public let claimsParameterSupported: Bool?
 
 	/// Whether the request parameter is supported
-	let requestParameterSupported: Bool?
+	public let requestParameterSupported: Bool?
 
 	/// Whether the request_uri parameter is supported
-	let requestUriParameterSupported: Bool?
+	public let requestUriParameterSupported: Bool?
 
 	/// Whether request_uri values must be pre-registered
-	let requireRequestUriRegistration: Bool?
+	public let requireRequestUriRegistration: Bool?
 
 	/// Array of OAuth 2.0 scope values supported
-	let scopesSupported: [String]?
+	public let scopesSupported: [String]?
 
 	/// Subject identifier types supported
-	let subjectTypesSupported: [String]?
+	public let subjectTypesSupported: [String]?
 
 	/// Response types supported
-	let responseTypesSupported: [String]?
+	public let responseTypesSupported: [String]?
 
 	/// Response modes supported
-	let responseModesSupported: [String]?
+	public let responseModesSupported: [String]?
 
 	/// Grant types supported
-	let grantTypesSupported: [String]?
+	public let grantTypesSupported: [String]?
 
 	/// PKCE code challenge methods supported
-	let codeChallengeMethodsSupported: [String]?
+	public let codeChallengeMethodsSupported: [String]?
 
 	/// Languages and scripts supported for UI
-	let uiLocalesSupported: [String]?
+	public let uiLocalesSupported: [String]?
 
 	/// Algorithms supported for signing ID tokens
-	let idTokenSigningAlgValuesSupported: [String]?
+	public let idTokenSigningAlgValuesSupported: [String]?
 
 	/// Display values supported
-	let displayValuesSupported: [String]?
+	public let displayValuesSupported: [String]?
 
 	/// Prompt values supported
-	let promptValuesSupported: [String]?
+	public let promptValuesSupported: [String]?
 
 	/// Algorithms supported for signing request objects
-	let requestObjectSigningAlgValuesSupported: [String]?
+	public let requestObjectSigningAlgValuesSupported: [String]?
 
 	/// Whether authorization response issuer parameter is supported
-	let authorizationResponseIssParameterSupported: Bool?
+	public let authorizationResponseIssParameterSupported: Bool?
 
 	/// Authorization details types supported
-	let authorizationDetailsTypesSupported: [String]?
+	public let authorizationDetailsTypesSupported: [String]?
 
 	/// Algorithms supported for encrypting request objects
-	let requestObjectEncryptionAlgValuesSupported: [String]?
+	public let requestObjectEncryptionAlgValuesSupported: [String]?
 
 	/// Encryption encodings supported for request objects
-	let requestObjectEncryptionEncValuesSupported: [String]?
+	public let requestObjectEncryptionEncValuesSupported: [String]?
 
 	/// URL of the authorization server's JWK Set document
-	let jwksUri: URL?
+	public let jwksUri: URL?
 
 	/// URL of the authorization endpoint
-	let authorizationEndpoint: URL
+	public let authorizationEndpoint: URL
 
 	/// URL of the token endpoint
-	let tokenEndpoint: URL
+	public let tokenEndpoint: URL
 
 	/// Authentication methods supported at token endpoint (RFC 8414 Section 2)
 	public let tokenEndpointAuthMethodsSupported: [String]?
 
 	/// Signing algorithms supported for token endpoint authentication
-	let tokenEndpointAuthSigningAlgValuesSupported: [String]?
+	public let tokenEndpointAuthSigningAlgValuesSupported: [String]?
 
 	/// URL of the revocation endpoint
-	let revocationEndpoint: URL?
+	public let revocationEndpoint: URL?
 
 	/// Authentication methods supported at revocation endpoint
-	let revocationEndpointAuthMethodsSupported: [String]?
+	public let revocationEndpointAuthMethodsSupported: [String]?
 
 	/// Signing algorithms supported for revocation endpoint authentication
-	let revocationEndpointAuthSigningAlgValuesSupported: [String]?
+	public let revocationEndpointAuthSigningAlgValuesSupported: [String]?
 
 	/// URL of the introspection endpoint
-	let introspectionEndpoint: URL?
+	public let introspectionEndpoint: URL?
 
 	/// Authentication methods supported at introspection endpoint
-	let introspectionEndpointAuthMethodsSupported: [String]?
+	public let introspectionEndpointAuthMethodsSupported: [String]?
 
 	/// Signing algorithms supported for introspection endpoint authentication
-	let introspectionEndpointAuthSigningAlgValuesSupported: [String]?
+	public let introspectionEndpointAuthSigningAlgValuesSupported: [String]?
 
 	/// URL of the pushed authorization request endpoint
-	let pushedAuthorizationRequestEndpoint: URL?
+	public let pushedAuthorizationRequestEndpoint: URL?
 
 	/// Authentication methods supported at PAR endpoint
-	let pushedAuthorizationRequestEndpointAuthMethodsSupported: [String]?
+	public let pushedAuthorizationRequestEndpointAuthMethodsSupported: [String]?
 
 	/// Signing algorithms supported for PAR endpoint authentication
-	let pushedAuthorizationRequestEndpointAuthSigningAlgValuesSupported: [String]?
+	public let pushedAuthorizationRequestEndpointAuthSigningAlgValuesSupported: [String]?
 
 	/// Whether pushed authorization requests are required
-	let requirePushedAuthorizationRequests: Bool?
+	public let requirePushedAuthorizationRequests: Bool?
 
 	/// URL of the UserInfo endpoint
-	let userinfoEndpoint: URL?
+	public let userinfoEndpoint: URL?
 
 	/// URL of the end session endpoint
-	let endSessionEndpoint: URL?
+	public let endSessionEndpoint: URL?
 
 	/// URL of the dynamic client registration endpoint
-	let registrationEndpoint: URL?
+	public let registrationEndpoint: URL?
 
 	/// DPoP signing algorithms supported (RFC 9449 Section 5.1)
 	public let dpopSigningAlgValuesSupported: [String]?
 
 	/// Protected resource URIs (RFC 9728 Section 4)
-	let protectedResources: [URL]?
+	public let protectedResources: [URL]?
 
 	/// Whether client ID metadata document is supported
-	let clientIdMetadataDocumentSupported: Bool?
+	public let clientIdMetadataDocumentSupported: Bool?
 
 	enum CodingKeys: String, CodingKey {
 		case issuer
@@ -197,23 +197,51 @@ public struct AuthServerMetadata: Codable, Hashable, Sendable {
 		case protectedResources = "protected_resources"
 	}
 
-	enum Endpoint {
+	public enum RequiredEndpoint: Sendable {
 		case authorization
 		case token
+	}
+
+	public enum OptionalEndpoint: Sendable {
 		case par
+		case revocation
+		case userInfo
 	}
 
 	//for our purposes require secure
-	func resolve(endpoint: Endpoint) throws -> URL {
+	public func resolve(endpoint: RequiredEndpoint) throws -> URL {
 		let url: URL =
 			switch endpoint {
 			case .authorization:
 				authorizationEndpoint
 			case .token:
 				tokenEndpoint
-			case .par:
-				try pushedAuthorizationRequestEndpoint.tryUnwrap
 			}
+
+		guard url.scheme == "https" else {
+			throw OAuth.Errors.insecureScheme
+		}
+
+		return url
+	}
+
+	/// The endpoint's url when the server advertises it, nil when it does not,
+	/// throwing when it is advertised over an insecure scheme. Use this rather
+	/// than reading the endpoint properties directly, which skips that check.
+	public func resolveMaybe(endpoint: OptionalEndpoint) throws -> URL? {
+		guard
+			let url =
+				switch endpoint {
+				case .userInfo:
+					userinfoEndpoint
+				case .revocation:
+					revocationEndpoint
+				case .par:
+					pushedAuthorizationRequestEndpoint
+				}
+		else {
+			return nil
+		}
 
 		guard url.scheme == "https" else {
 			throw OAuth.Errors.insecureScheme
