@@ -179,7 +179,7 @@ extension OAuth.ClientAuth.Authenticable {
 		)
 
 		// There is no response body, only 200 or an error response:
-		try response.successOrThrow(decoding: OAuth.ErrorResponse.self) { error, status in
+		try response.expectSuccess(orError: OAuth.ErrorResponse.self) { error, status in
 			Logger(label: "revocationRequest").error(
 				"Revocation error \(status): \(error)")
 			return OAuth.Errors.oauthError(error, status)
