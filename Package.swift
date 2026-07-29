@@ -40,7 +40,10 @@ let package = Package(
 		),
 		.testTarget(
 			name: "OAuth4SwiftTests",
-			dependencies: ["OAuth4Swift"]
+			dependencies: [
+				"OAuth4Swift",
+				.product(name: "GermConvenienceMocks", package: "GermConvenience"),
+			]
 		),
 	]
 )

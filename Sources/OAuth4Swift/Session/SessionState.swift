@@ -51,7 +51,9 @@ extension OAuth {
 		public var fetchedOn: Date?
 	}
 
-	public enum RevocableToken {
+	//bundles the token value with its RFC 7009 token_type_hint so the pair
+	//cannot disagree
+	public enum RevocableToken: Sendable {
 		case access(OAuth.AccessToken)
 		case refresh(OAuth.RefreshToken)
 

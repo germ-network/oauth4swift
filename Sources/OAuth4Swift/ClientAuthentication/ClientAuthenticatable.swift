@@ -130,6 +130,16 @@ extension OAuth.ClientAuth.Authenticable {
 		)
 	}
 
+	/// Revokes an access token at the server's revocation endpoint (RFC 7009).
+	///
+	/// **Silently returns without any network call when the server does not
+	/// advertise a revocation endpoint** - the caller cannot distinguish
+	/// "revoked" from "server cannot revoke". Local session state is never
+	/// touched; clearing stored tokens is the caller's responsibility, whether
+	/// or not this succeeds.
+	///
+	/// To end a whole grant, revoke the refresh token instead - RFC 7009 §2.1
+	/// has the server also invalidate related access tokens.
 	public func revocationRequest(
 		authServerMetadata: AuthServerMetadata,
 		token: OAuth.AccessToken
@@ -140,6 +150,15 @@ extension OAuth.ClientAuth.Authenticable {
 		)
 	}
 
+	/// Revokes a refresh token at the server's revocation endpoint (RFC 7009),
+	/// which per §2.1 typically invalidates the whole grant, related access
+	/// tokens included.
+	///
+	/// **Silently returns without any network call when the server does not
+	/// advertise a revocation endpoint** - the caller cannot distinguish
+	/// "revoked" from "server cannot revoke". Local session state is never
+	/// touched; clearing stored tokens is the caller's responsibility, whether
+	/// or not this succeeds.
 	public func revocationRequest(
 		authServerMetadata: AuthServerMetadata,
 		token: OAuth.RefreshToken
