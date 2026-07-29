@@ -104,8 +104,10 @@ private struct AlwaysValidRefreshOptions: OAuth.TokenRefreshOptions {
 	}
 }
 
-//mirrors the production adopter contract: nil from the refresh closure
-//terminates the session, a throw preserves the previous state
+//exercises the nil-vs-throw distinction of the refresh closure contract: nil
+//terminates the session, a throw preserves the previous state. Rethrows where
+//the production adopter swallows the error and returns the old token - the
+//preserve/terminate signal is the same, the throw is just observable here
 private actor GateTestSession: OAuth.SessionCapabilities {
 	nonisolated let clientId = "test-client"
 	nonisolated let tokenEndpointAuthMethod = OAuth.ClientAuth.TokenEndpointMethods.none
