@@ -42,15 +42,7 @@ struct RefreshErrorTests {
 			error: "invalid_grant"
 		)
 
-		let task = try #require(try await session.refresh())
-		do {
-			_ = try await task.value
-			Issue.record("Expected the session to terminate")
-		} catch TestSessionError.terminated {
-			// Expected: nil from the refresh closure terminates the session.
-		} catch {
-			Issue.record("Unexpected error: \(error)")
-		}
+		try await expectTerminatedSession(from: session)
 	}
 
 	@Test("Preserves the session for a 503 invalid grant")
@@ -131,15 +123,29 @@ struct RefreshErrorTests {
 	func failedValidation() async throws {
 		let session = try TestSession(validating: .invalid)
 
+		try await expectTerminatedSession(from: session)
+	}
+
+	//TokenAuthorizeOptions directs validators to throw tokenInvalid, so a
+	//validator shared across both flows may signal invalidity that way here too
+	@Test("Terminates the session when validation throws tokenInvalid")
+	func thrownInvalidValidation() async throws {
+		let session = try TestSession(validating: .invalidThrown)
+
+		try await expectTerminatedSession(from: session)
+	}
+
+	@Test("A valid refresh updates the session token state")
+	func successfulRefresh() async throws {
+		let session = try TestSession(validating: .valid)
+
 		let task = try #require(try await session.refresh())
-		do {
-			_ = try await task.value
-			Issue.record("Expected the session to terminate")
-		} catch TestSessionError.terminated {
-			// Expected: an invalid token response terminates the session.
-		} catch {
-			Issue.record("Unexpected error: \(error)")
-		}
+		let accessToken = try await task.value
+
+		#expect(accessToken.value == "new-access-token")
+		let tokens = await session.tokenValues
+		#expect(tokens.access == "new-access-token")
+		#expect(tokens.refresh == "new-refresh-token")
 	}
 
 	private func expectPropagatedOAuthError(
@@ -156,6 +162,20 @@ struct RefreshErrorTests {
 			}
 			#expect(errorResponse.error == expectedError)
 			#expect(status == expectedStatus)
+		}
+	}
+
+	//nil from the refresh closure is what the session implementation treats
+	//as terminal
+	private func expectTerminatedSession(from session: TestSession) async throws {
+		let task = try #require(try await session.refresh())
+		do {
+			_ = try await task.value
+			Issue.record("Expected the session to terminate")
+		} catch TestSessionError.terminated {
+			// Expected.
+		} catch {
+			Issue.record("Unexpected error: \(error)")
 		}
 	}
 
@@ -194,6 +214,7 @@ private struct StubRefreshOptions: OAuth.TokenRefreshOptions {
 	enum Outcome {
 		case valid
 		case invalid
+		case invalidThrown
 		case unresolvable
 	}
 
@@ -211,6 +232,7 @@ private struct StubRefreshOptions: OAuth.TokenRefreshOptions {
 		switch outcome {
 		case .valid: true
 		case .invalid: false
+		case .invalidThrown: throw OAuth.Errors.tokenInvalid
 		case .unresolvable: throw TestSessionError.offline
 		}
 	}
@@ -268,6 +290,13 @@ private actor TestSession: OAuth.SessionCapabilities {
 			tokenState: .mock(
 				refreshToken: .mock(value: "refresh-token")
 			)
+		)
+	}
+
+	var tokenValues: (access: String, refresh: String?) {
+		(
+			state.tokenState.accessToken.value,
+			state.tokenState.refreshToken?.value
 		)
 	}
 

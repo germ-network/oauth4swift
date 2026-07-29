@@ -162,15 +162,21 @@ extension OAuth.SessionCapabilities {
 
 		//per TokenRefreshOptions, false means the response is invalid, while a
 		//thrown error means validity couldn't be resolved - e.g. an offline
-		//client - and so preserves the session
-		guard
-			try await tokenRefreshOptions
-				.validate(
-					tokenResponse: tokenResponse,
-					authServerMetadata: metadata,
-					previousState: stateSnapshot
-				)
-		else {
+		//client - and so preserves the session. A thrown tokenInvalid also
+		//terminates: TokenAuthorizeOptions directs validators to throw it, so
+		//a validator shared across both flows may signal invalidity that way
+		do {
+			guard
+				try await tokenRefreshOptions
+					.validate(
+						tokenResponse: tokenResponse,
+						authServerMetadata: metadata,
+						previousState: stateSnapshot
+					)
+			else {
+				throw OAuth.Errors.tokenInvalid
+			}
+		} catch OAuth.Errors.tokenInvalid {
 			Logger(label: "OAuth.SessionCapabilities")
 				.error("token failed validation, terminating session")
 			return nil
