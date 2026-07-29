@@ -14,7 +14,7 @@ struct RefreshErrorTests {
 			error: "server_error"
 		)
 
-		await expectPropagatedOAuthError(
+		try await expectPropagatedOAuthError(
 			from: session,
 			error: "server_error",
 			status: .serviceUnavailable
@@ -28,7 +28,7 @@ struct RefreshErrorTests {
 			error: "temporarily_unavailable"
 		)
 
-		await expectPropagatedOAuthError(
+		try await expectPropagatedOAuthError(
 			from: session,
 			error: "temporarily_unavailable",
 			status: .badRequest
@@ -42,8 +42,8 @@ struct RefreshErrorTests {
 			error: "invalid_grant"
 		)
 
+		let task = try #require(try await session.refresh())
 		do {
-			let task = try #require(try await session.refresh())
 			_ = try await task.value
 			Issue.record("Expected the session to terminate")
 		} catch TestSessionError.terminated {
@@ -60,27 +60,90 @@ struct RefreshErrorTests {
 			error: "invalid_grant"
 		)
 
-		await expectPropagatedOAuthError(
+		try await expectPropagatedOAuthError(
 			from: session,
 			error: "invalid_grant",
 			status: .serviceUnavailable
 		)
 	}
 
+	@Test("Preserves the session for an error body that isn't an OAuth error")
+	func nonOAuthErrorBody() async throws {
+		let session = try TestSession(
+			status: .serviceUnavailable,
+			body: "<html>503</html>".utf8Data
+		)
+
+		try await expectPreservedSession(from: session) { error in
+			guard let httpError = error as? HTTPResponseError else {
+				Issue.record("Unexpected error: \(error)")
+				return
+			}
+			#expect(httpError.code == 503)
+			#expect(httpError.bodyString == "<html>503</html>")
+		}
+	}
+
+	@Test("Preserves the session for an empty error body")
+	func emptyErrorBody() async throws {
+		let session = try TestSession(status: .badGateway, body: Data())
+
+		try await expectPreservedSession(from: session) { error in
+			guard let httpError = error as? HTTPResponseError else {
+				Issue.record("Unexpected error: \(error)")
+				return
+			}
+			#expect(httpError.code == 502)
+		}
+	}
+
+	//invalid_request means the request was malformed, not that the grant is gone
+	@Test("Preserves the session for a 400 invalid request")
+	func invalidRequest() async throws {
+		let session = try TestSession(
+			status: .badRequest,
+			error: "invalid_request"
+		)
+
+		try await expectPreservedSession(from: session) { error in
+			guard case OAuth.Errors.invalidRequest = error else {
+				Issue.record("Unexpected error: \(error)")
+				return
+			}
+		}
+	}
+
 	private func expectPropagatedOAuthError(
 		from session: TestSession,
 		error expectedError: String,
 		status expectedStatus: HTTPResponse.Status
-	) async {
-		do {
-			let task = try #require(try await session.refresh())
-			_ = try await task.value
-			Issue.record("Expected the OAuth error to propagate")
-		} catch OAuth.Errors.oauthError(let errorResponse, let status) {
+	) async throws {
+		try await expectPreservedSession(from: session) { error in
+			guard
+				case OAuth.Errors.oauthError(let errorResponse, let status) = error
+			else {
+				Issue.record("Unexpected error: \(error)")
+				return
+			}
 			#expect(errorResponse.error == expectedError)
 			#expect(status == expectedStatus)
+		}
+	}
+
+	//the session survives when the refresh closure propagates rather than
+	//returning nil, which is what the session implementation treats as terminal
+	private func expectPreservedSession(
+		from session: TestSession,
+		matching assert: (any Error) -> Void
+	) async throws {
+		let task = try #require(try await session.refresh())
+		do {
+			_ = try await task.value
+			Issue.record("Expected the refresh error to propagate")
+		} catch TestSessionError.terminated {
+			Issue.record("Expected the session to be preserved")
 		} catch {
-			Issue.record("Unexpected error: \(error)")
+			assert(error)
 		}
 	}
 }
@@ -117,6 +180,10 @@ private actor TestSession: OAuth.SessionCapabilities {
 	var state: OAuth.SessionState
 
 	init(status: HTTPResponse.Status, error: String) throws {
+		try self.init(status: status, body: Data(#"{"error":"\#(error)"}"#.utf8))
+	}
+
+	init(status: HTTPResponse.Status, body: Data) throws {
 		metadata = try JSONDecoder().decode(
 			AuthServerMetadata.self,
 			from: Data(
@@ -126,7 +193,7 @@ private actor TestSession: OAuth.SessionCapabilities {
 		)
 		authFetcher = FixedResponseFetcher(
 			response: .init(
-				data: Data(#"{"error":"\#(error)"}"#.utf8),
+				data: body,
 				response: .init(status: status)
 			)
 		)
