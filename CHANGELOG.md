@@ -1,5 +1,58 @@
 # @germ-network/oauth4swift
 
+## 0.6.0
+
+### Minor Changes
+
+- [#48](https://github.com/germ-network/oauth4swift/pull/48) [`4458abe`](https://github.com/germ-network/oauth4swift/commit/4458abe55e058f84475d7eee92fdd03b2f97de0d) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Add `ClientAuth.Method` and `ClientAuth.SecretMethod` protocols; conform `None`, `SecretBasic`, and `SecretPost`
+
+- [#48](https://github.com/germ-network/oauth4swift/pull/48) [`fc3addb`](https://github.com/germ-network/oauth4swift/commit/fc3addb88e553e30eeb8bc8cbad09206ce429411) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Add `revocationRequest` to `ClientAuth.Authenticable`; add `RevocableToken` enum with `token_type_hint` support (RFC 7009)
+
+- [#48](https://github.com/germ-network/oauth4swift/pull/48) [`98faa4c`](https://github.com/germ-network/oauth4swift/commit/98faa4c6b95eeae649965f34273e886d882f5fd4) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Require GermConvenience 0.3.0, and adopt its response helpers
+
+  The dependency floor moves to 0.3.0, which makes `BundledHTTPRequest.request`
+  `private(set)` and `body` `let`. The three sites that assigned header fields in
+  place now use `settingHeader(_:for:)`. Anything depending on oauth4swift resolves
+  0.3.0 too.
+
+  Drops the local `HTTPDataResponse.successOrThrow` copy in favour of the version
+  lifted into GermConvenience as `expectSuccess(orError:)`, and collapses the
+  hand-rolled `.result`/`.error` switches in the PAR and token-endpoint paths onto
+  `get(mapError:)`.
+
+  0.3.0 also fixes `HTTPDataResponse.success`, which both of those paths use: a 2xx
+  whose body fails to decode now reports the real `DecodingError` rather than being
+  retried as an error body — previously a malformed token response surfaced as
+  `Errors.invalidRequest`. A non-2xx whose body is not an OAuth error response (a
+  proxy's HTML, an empty body) now throws `HTTPResponseError.unsuccessful` with the
+  status and bytes intact rather than a bare `DecodingError`.
+
+### Patch Changes
+
+- [#48](https://github.com/germ-network/oauth4swift/pull/48) [`4f12212`](https://github.com/germ-network/oauth4swift/commit/4f1221206cb9570130a84c2f56ed8309f7058129) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Make all AuthServerMetadata properties public
+
+- [#53](https://github.com/germ-network/oauth4swift/pull/53) [`c0deef1`](https://github.com/germ-network/oauth4swift/commit/c0deef18ac2d2fdb46963083eb5b93ef4029e13a) Thanks [@nnabeyang](https://github.com/nnabeyang)! - Preserve refresh tokens when token refresh fails with transient OAuth server errors.
+
+- [#56](https://github.com/germ-network/oauth4swift/pull/56) [`fc515f0`](https://github.com/germ-network/oauth4swift/commit/fc515f0b8ba5e2ef3b46c9f2db703c85ec488994) Thanks [@germ-mark](https://github.com/germ-mark)! - fix the client_secret_basic Authorization header: add the "Basic " scheme prefix and form-url-encode the client id and secret
+
+- [#52](https://github.com/germ-network/oauth4swift/pull/52) [`0f47abc`](https://github.com/germ-network/oauth4swift/commit/0f47abc013d1796757a5be79ee1a01b70d915788) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Skip refresh token requests when the server does not advertise `refresh_token` in `grant_types_supported`
+
+- [#48](https://github.com/germ-network/oauth4swift/pull/48) [`b165de4`](https://github.com/germ-network/oauth4swift/commit/b165de4fee2d5ab120cd67a0ed47e9b648530647) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Fix missing client_id when not using PAR for authorization
+
+- [#57](https://github.com/germ-network/oauth4swift/pull/57) [`c0c2c42`](https://github.com/germ-network/oauth4swift/commit/c0c2c420513126e0e089a8688bc310e2a30950a4) Thanks [@germ-mark](https://github.com/germ-mark)! - Preserve the session on any refresh failure other than a 400 `invalid_grant`, including error bodies that aren't structured OAuth errors. A `TokenRefreshOptions.validate` that throws now propagates rather than terminating the session, per its documented contract that throwing means validity couldn't be resolved; a thrown `tokenInvalid` still terminates, since validators shared with the authorize flow signal invalidity that way.
+
+- [#58](https://github.com/germ-network/oauth4swift/pull/58) [`8b826f4`](https://github.com/germ-network/oauth4swift/commit/8b826f45f9a509530a84fb486daa934796065813) Thanks [@germ-mark](https://github.com/germ-mark)! - Add `OAuth.Errors.refreshNotSupported`
+
+  Thrown by the refresh gate when the server's `grant_types_supported` excludes
+  `refresh_token`, so the session is preserved (skip) rather than terminated, and
+  callers can distinguish "this server can never refresh - plan around
+  access-token expiry" from a transient failure. Note: adding a case to a public
+  enum breaks exhaustive switches over `OAuth.Errors`; no known consumer has one.
+
+- [#48](https://github.com/germ-network/oauth4swift/pull/48) [`1da4bb8`](https://github.com/germ-network/oauth4swift/commit/1da4bb891ae97967da6a7bf8fc3b333b81e647ab) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Add resolveMaybe to AuthServerMetadata to fetch optional URLs in AS metadata
+
+- [#48](https://github.com/germ-network/oauth4swift/pull/48) [`88c1a79`](https://github.com/germ-network/oauth4swift/commit/88c1a796c8ebcee26f1ad57bf5047818448cb9f1) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Add notSupported error to OAuth.Errors
+
 ## 0.5.0
 
 ### Minor Changes
