@@ -1,3 +1,6 @@
+[![Apple](https://github.com/germ-network/oauth4swift/actions/workflows/ci-apple.yml/badge.svg)](https://github.com/germ-network/oauth4swift/actions/workflows/ci-apple.yml)
+[![Linux](https://github.com/germ-network/oauth4swift/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/germ-network/oauth4swift/actions/workflows/ci-linux.yml)
+
 Building blocks for an OAuth 2.1 client.
 
 (This is pre-release and not yet stable. It is initially built for the atproto OAuth requirements (DPoP, PAR))
