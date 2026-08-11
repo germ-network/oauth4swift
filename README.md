@@ -1,5 +1,6 @@
 [![Apple](https://github.com/germ-network/oauth4swift/actions/workflows/ci-apple.yml/badge.svg)](https://github.com/germ-network/oauth4swift/actions/workflows/ci-apple.yml)
 [![Linux](https://github.com/germ-network/oauth4swift/actions/workflows/ci-linux.yml/badge.svg)](https://github.com/germ-network/oauth4swift/actions/workflows/ci-linux.yml)
+[![Android](https://github.com/germ-network/oauth4swift/actions/workflows/ci-android.yml/badge.svg)](https://github.com/germ-network/oauth4swift/actions/workflows/ci-android.yml)
 
 Building blocks for an OAuth 2.1 client.
 
