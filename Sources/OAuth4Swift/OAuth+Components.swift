@@ -218,13 +218,13 @@ extension HTTPFetcher {
 	}
 
 	public func authServerDiscovery(endpoint: URL) async throws -> AuthServerMetadata? {
-		let url = endpoint.appending(
-			path: "/.well-known/oauth-authorization-server"
+		let discoveryURL = try endpoint.insertingWellKnownSegment(
+			OAuth.wellKnownAuthorizationServer
 		)
 
 		let request = try BundledHTTPRequest(
 			method: .get,
-			url: url,
+			url: discoveryURL,
 		)
 
 		return try await performDiscovery(request: request)?
