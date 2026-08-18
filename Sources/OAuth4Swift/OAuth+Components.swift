@@ -247,3 +247,35 @@ extension HTTPFetcher {
 		return result
 	}
 }
+
+extension OAuth {
+	// RFC 9728 Section 3.1 — Protected Resource Metadata well-known suffix.
+	static let wellKnownProtectedResource = ".well-known/oauth-protected-resource"
+	// RFC 8414 Section 3.1 — Authorization Server Metadata well-known suffix.
+	static let wellKnownAuthorizationServer = ".well-known/oauth-authorization-server"
+}
+
+extension URL {
+	/// Builds a `.well-known` discovery URL by inserting the given segment
+	/// between the host and the existing path, per RFC 9728 §3.1 and RFC 8414 §3.1.
+	/// Any terminating `/` on the source path is stripped before inserting the
+	/// well-known segment so that trailing-slash and no-slash variants of the
+	/// same origin resolve to the same RFC-compliant metadata URL.
+	/// Preserves the original path's percent-encoding, port, and query; drops the fragment.
+	func insertingWellKnownSegment(_ segment: String) throws -> URL {
+		guard
+			var components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+			let host = components.host, !host.isEmpty,
+			components.scheme != nil
+		else {
+			throw OAuth.Errors.missingScheme
+		}
+		var existingPath = components.percentEncodedPath
+		while existingPath.hasSuffix("/") {
+			existingPath.removeLast()
+		}
+		components.percentEncodedPath = "/" + segment + existingPath
+		components.fragment = nil
+		return try components.url.tryUnwrap(OAuth.Errors.missingScheme)
+	}
+}
