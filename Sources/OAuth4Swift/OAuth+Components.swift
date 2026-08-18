@@ -202,14 +202,13 @@ extension HTTPFetcher {
 	public func resourceDiscoveryRequest(
 		url: URL,
 	) async throws -> ProtectedResourceMetadata? {
-		//TODO: should properly prepend, not append
-		let url = url.appending(
-			path: "/.well-known/oauth-protected-resource"
+		let discoveryURL = try url.insertingWellKnownSegment(
+			OAuth.wellKnownProtectedResource
 		)
 
 		let request = try BundledHTTPRequest(
 			method: .get,
-			url: url,
+			url: discoveryURL,
 		)
 
 		return try await performDiscovery(request: request)?
