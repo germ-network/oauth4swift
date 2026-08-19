@@ -7,6 +7,8 @@ import struct HTTPTypes.HTTPResponse
 extension OAuth {
 	public enum Errors: LocalizedError {
 		case missingScheme
+		case missingHost
+		case invalidResourceIdentifier
 		case missingIssuer
 		case insecureScheme
 		case unrecognizedTokenType
@@ -17,6 +19,8 @@ extension OAuth {
 		case redirectError(String, String?)
 		case stateTokenMismatch(String, String)
 		case issuingServerMismatch(String, String)
+		case discoveredIssuerMismatch(actual: String, expected: String)
+		case discoveredResourceMismatch(actual: String, expected: String)
 		case accessDenied
 		case invalidScope
 		case httpResponse(response: HTTPDataResponse)
@@ -29,6 +33,9 @@ extension OAuth {
 		public var errorDescription: String? {
 			switch self {
 			case .missingScheme: "Missing scheme"
+			case .missingHost: "Missing host"
+			case .invalidResourceIdentifier:
+				"Resource or issuer identifier must not contain userinfo, a query, a fragment, or a \".\" / \"..\" / empty path segment"
 			case .missingIssuer:
 				"Missing iss parameter when authorization server supports issuer identification"
 			case .insecureScheme: "Insecure scheme"
@@ -43,6 +50,10 @@ extension OAuth {
 			): "State token did not match, expected \(expected), got \(got)"
 			case .issuingServerMismatch(let expected, let got):
 				"Issuing server did not match, expected \(expected), got \(got)"
+			case .discoveredIssuerMismatch(let actual, let expected):
+				"Discovered issuer did not match the requested identifier, expected \(expected), got \(actual)"
+			case .discoveredResourceMismatch(let actual, let expected):
+				"Discovered resource did not match the requested identifier, expected \(expected), got \(actual)"
 			case .redirectError(let error, let errorDescription):
 				if let description = errorDescription {
 					"Redirect error: \(error) \(description)"
