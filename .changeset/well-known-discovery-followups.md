@@ -1,5 +1,5 @@
 ---
-"@germ-network/oauth4swift": patch
+"@germ-network/oauth4swift": minor
 ---
 
 Follow-ups to the `.well-known` discovery URL fix:
