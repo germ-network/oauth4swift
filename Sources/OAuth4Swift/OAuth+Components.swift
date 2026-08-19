@@ -202,32 +202,80 @@ extension HTTPFetcher {
 	public func resourceDiscoveryRequest(
 		url: URL,
 	) async throws -> ProtectedResourceMetadata? {
-		let discoveryURL = try url.insertingWellKnownSegment(
+		let discovery = try url.insertingWellKnownSegment(
 			OAuth.wellKnownProtectedResource
 		)
 
-		let request = try BundledHTTPRequest(
-			method: .get,
-			url: discoveryURL,
-		)
+		guard
+			let metadata: ProtectedResourceMetadata = try await performDiscovery(
+				primaryURL: discovery.url,
+				legacyURL: discovery.legacyURL
+			)
+		else {
+			return nil
+		}
 
-		return try await performDiscovery(request: request)?
-			.expectSuccess()
-			.decode()
-
+		guard
+			let discoveredCanonical = try? URL(string: metadata.resource)?
+				.canonicalDiscoveryIdentifier(),
+			discoveredCanonical == discovery.canonicalIdentifier
+		else {
+			throw OAuth.Errors.discoveredResourceMismatch(
+				actual: metadata.resource,
+				expected: discovery.canonicalIdentifier
+			)
+		}
+		return metadata
 	}
 
 	public func authServerDiscovery(endpoint: URL) async throws -> AuthServerMetadata? {
-		let discoveryURL = try endpoint.insertingWellKnownSegment(
+		let discovery = try endpoint.insertingWellKnownSegment(
 			OAuth.wellKnownAuthorizationServer
 		)
 
-		let request = try BundledHTTPRequest(
-			method: .get,
-			url: discoveryURL,
-		)
+		guard
+			let metadata: AuthServerMetadata = try await performDiscovery(
+				primaryURL: discovery.url,
+				legacyURL: discovery.legacyURL
+			)
+		else {
+			return nil
+		}
 
-		return try await performDiscovery(request: request)?
+		guard
+			let discoveredCanonical = try? URL(string: metadata.issuer)?
+				.canonicalDiscoveryIdentifier(),
+			discoveredCanonical == discovery.canonicalIdentifier
+		else {
+			throw OAuth.Errors.discoveredIssuerMismatch(
+				actual: metadata.issuer,
+				expected: discovery.canonicalIdentifier
+			)
+		}
+		return metadata
+	}
+
+	/// The two URLs coincide whenever the identifier has no path, so path-less
+	/// issuers/resources never issue a second request.
+	private func performDiscovery<Metadata: Decodable>(
+		primaryURL: URL,
+		legacyURL: URL
+	) async throws -> Metadata? {
+		let request = try BundledHTTPRequest(method: .get, url: primaryURL)
+		if let result = try await performDiscovery(request: request) {
+			return try result.expectSuccess().decode()
+		}
+		guard legacyURL != primaryURL else {
+			return nil
+		}
+
+		Logger(label: "OAuth4Swift.discovery")
+			.debug(
+				"no metadata at \(primaryURL), retrying legacy location \(legacyURL)"
+			)
+
+		let legacyRequest = try BundledHTTPRequest(method: .get, url: legacyURL)
+		return try await performDiscovery(request: legacyRequest)?
 			.expectSuccess()
 			.decode()
 	}
@@ -241,40 +289,12 @@ extension HTTPFetcher {
 		}
 		let result = try await data(for: request)
 		if result.response.status == .notFound {
+			Logger(label: "OAuth4Swift.discovery")
+				.debug(
+					"discovery request 404'd: \(request.request.url?.absoluteString ?? "?")"
+				)
 			return nil
 		}
 		return result
-	}
-}
-
-extension OAuth {
-	// RFC 9728 Section 3.1 — Protected Resource Metadata well-known suffix.
-	static let wellKnownProtectedResource = ".well-known/oauth-protected-resource"
-	// RFC 8414 Section 3.1 — Authorization Server Metadata well-known suffix.
-	static let wellKnownAuthorizationServer = ".well-known/oauth-authorization-server"
-}
-
-extension URL {
-	/// Builds a `.well-known` discovery URL by inserting the given segment
-	/// between the host and the existing path, per RFC 9728 §3.1 and RFC 8414 §3.1.
-	/// Any terminating `/` on the source path is stripped before inserting the
-	/// well-known segment so that trailing-slash and no-slash variants of the
-	/// same origin resolve to the same RFC-compliant metadata URL.
-	/// Preserves the original path's percent-encoding, port, and query; drops the fragment.
-	func insertingWellKnownSegment(_ segment: String) throws -> URL {
-		guard
-			var components = URLComponents(url: self, resolvingAgainstBaseURL: false),
-			let host = components.host, !host.isEmpty,
-			components.scheme != nil
-		else {
-			throw OAuth.Errors.missingScheme
-		}
-		var existingPath = components.percentEncodedPath
-		while existingPath.hasSuffix("/") {
-			existingPath.removeLast()
-		}
-		components.percentEncodedPath = "/" + segment + existingPath
-		components.fragment = nil
-		return try components.url.tryUnwrap(OAuth.Errors.missingScheme)
 	}
 }
