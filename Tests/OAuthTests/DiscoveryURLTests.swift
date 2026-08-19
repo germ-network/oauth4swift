@@ -185,4 +185,32 @@ struct DiscoveryURLTests {
 			try await mock.resourceDiscoveryRequest(url: resource)
 		}
 	}
+
+	@Test(
+		"authServerDiscovery accepts an issuer claim that differs only by default port and host case"
+	)
+	func authorizationServerMetadataAcceptsEquivalentIssuer() async throws {
+		let issuer = try #require(URL(string: "https://AS.Example.com:443/tenant1"))
+		let expected = try #require(
+			URL(
+				string:
+					"https://AS.Example.com:443/.well-known/oauth-authorization-server/tenant1"
+			)
+		)
+		let body = """
+			{
+			  "issuer": "https://as.example.com/tenant1",
+			  "authorization_endpoint": "https://as.example.com/tenant1/oauth/authorize",
+			  "token_endpoint": "https://as.example.com/tenant1/oauth/token"
+			}
+			"""
+
+		let mock = await MockHTTPFetcher()
+			.on(expected, method: .get)
+			.enqueue(.success(.ok(body)))
+
+		let metadata = try await mock.authServerDiscovery(endpoint: issuer)
+
+		#expect(metadata?.issuer == "https://as.example.com/tenant1")
+	}
 }

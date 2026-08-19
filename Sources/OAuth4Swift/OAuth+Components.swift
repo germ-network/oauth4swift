@@ -209,14 +209,17 @@ extension HTTPFetcher {
 		guard
 			let metadata: ProtectedResourceMetadata = try await performDiscovery(
 				primaryURL: discovery.url,
-				legacyURL: url.appending(
-					path: "/" + OAuth.wellKnownProtectedResource)
+				legacyURL: discovery.legacyURL
 			)
 		else {
 			return nil
 		}
 
-		guard metadata.resource == discovery.canonicalIdentifier else {
+		guard
+			let discoveredCanonical = try? URL(string: metadata.resource)?
+				.canonicalDiscoveryIdentifier(),
+			discoveredCanonical == discovery.canonicalIdentifier
+		else {
 			throw OAuth.Errors.discoveredResourceMismatch(
 				actual: metadata.resource,
 				expected: discovery.canonicalIdentifier
@@ -233,14 +236,17 @@ extension HTTPFetcher {
 		guard
 			let metadata: AuthServerMetadata = try await performDiscovery(
 				primaryURL: discovery.url,
-				legacyURL: endpoint.appending(
-					path: "/" + OAuth.wellKnownAuthorizationServer)
+				legacyURL: discovery.legacyURL
 			)
 		else {
 			return nil
 		}
 
-		guard metadata.issuer == discovery.canonicalIdentifier else {
+		guard
+			let discoveredCanonical = try? URL(string: metadata.issuer)?
+				.canonicalDiscoveryIdentifier(),
+			discoveredCanonical == discovery.canonicalIdentifier
+		else {
 			throw OAuth.Errors.discoveredIssuerMismatch(
 				actual: metadata.issuer,
 				expected: discovery.canonicalIdentifier
@@ -249,11 +255,8 @@ extension HTTPFetcher {
 		return metadata
 	}
 
-	/// Fetches `primaryURL`, the RFC 8414 §3.1 / RFC 9728 §3.1 well-known
-	/// location. A 404 there retries once at `legacyURL` — the pre-RFC "append"
-	/// location some deployed authorization servers still serve — before
-	/// reporting no metadata. The two coincide whenever the identifier has no
-	/// path, so path-less issuers/resources never issue a second request.
+	/// The two URLs coincide whenever the identifier has no path, so path-less
+	/// issuers/resources never issue a second request.
 	private func performDiscovery<Metadata: Decodable>(
 		primaryURL: URL,
 		legacyURL: URL
