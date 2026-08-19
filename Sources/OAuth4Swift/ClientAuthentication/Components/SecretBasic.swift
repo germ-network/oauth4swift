@@ -25,7 +25,8 @@ extension OAuth.ClientAuth {
 
 			var headers = inputs.headers
 			// Replace the authorization header:
-			headers[.authorization] = "Basic " + basicAuth.utf8Data.base64EncodedString()
+			headers[.authorization] =
+				"Basic " + basicAuth.utf8Data.base64EncodedString()
 
 			return (inputs.parameters, headers)
 		}
