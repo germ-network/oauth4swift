@@ -182,15 +182,18 @@ extension OAuth.SessionCapabilities {
 			return nil
 		}
 
+		let refreshTokenTimeout = TimeInterval(tokenResponse.refreshTokenTimeout)
 		let newTokenState = OAuth.SessionState.TokenState(
 			accessToken: .init(
 				value: tokenResponse.accessToken,
 				expiresIn: .init(tokenResponse.expiresIn)
 			),
+			//RFC 6749 §6: keep the existing refresh token if the response
+			//omits one
 			refreshToken: .init(
 				value: tokenResponse.refreshToken,
-				timeout: .init(tokenResponse.refreshTokenTimeout)
-			),
+				timeout: refreshTokenTimeout
+			) ?? refreshToken.refetched(timeout: refreshTokenTimeout),
 			scopes: OAuth.parseTokenScope(
 				tokenResponse.scope, parent: stateSnapshot.grantScopes),
 			grantExpiresIn: .init(tokenResponse.authorizationExpiresIn)
