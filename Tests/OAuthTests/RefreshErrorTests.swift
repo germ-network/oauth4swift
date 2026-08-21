@@ -148,6 +148,95 @@ struct RefreshErrorTests {
 		#expect(tokens.refresh == "new-refresh-token")
 	}
 
+	//RFC 6749 §6: a refresh response that omits refresh_token leaves the
+	//existing one in force
+	@Test("Preserves the existing refresh token when the response omits one")
+	func omittedRefreshToken() async throws {
+		let lastFetchedOn = Date(timeIntervalSinceNow: -3600)
+		let existing = OAuth.RefreshToken(
+			value: "refresh-token",
+			expiry: Date(timeIntervalSinceNow: 3600),
+			fetchedOn: lastFetchedOn
+		)
+		let session = try TestSession(
+			status: .ok,
+			body: Self.responseWithoutRefreshToken,
+			refreshToken: existing
+		)
+
+		let task = try #require(try await session.refresh())
+		let accessToken = try await task.value
+
+		#expect(accessToken.value == "new-access-token")
+		let refreshToken = try #require(await session.currentRefreshToken)
+		#expect(refreshToken.value == existing.value)
+		#expect(refreshToken.expiry == existing.expiry)
+
+		//the token carries over unchanged, but we just exercised it, and the
+		//debounce gate reads fetchedOn to decide whether to refresh again
+		let fetchedOn = try #require(refreshToken.fetchedOn)
+		#expect(fetchedOn > lastFetchedOn)
+	}
+
+	//dropping the omitted token left the session unable to refresh at all,
+	//since startRefresh has no token to send
+	@Test("Refreshes again after a response omits the refresh token")
+	func refreshAgainAfterOmittedRefreshToken() async throws {
+		let session = try TestSession(
+			status: .ok,
+			body: Self.responseWithoutRefreshToken
+		)
+
+		let first = try #require(try await session.refresh())
+		_ = try await first.value
+
+		let second = try #require(try await session.refresh())
+		_ = try await second.value
+
+		let tokens = await session.tokenValues
+		#expect(tokens.refresh == "refresh-token")
+	}
+
+	//draft-ietf-oauth-refresh-token-expiration: the server MAY send
+	//refresh_token_timeout without a refresh_token, and the value then applies
+	//to the token the client presented
+	@Test("Applies refresh_token_timeout to a preserved refresh token")
+	func omittedRefreshTokenWithTimeout() async throws {
+		let existing = OAuth.RefreshToken(
+			value: "refresh-token",
+			expiry: Date(timeIntervalSinceNow: 60),
+			fetchedOn: Date(timeIntervalSinceNow: -3600)
+		)
+		let session = try TestSession(
+			status: .ok,
+			body: Data(
+				#"{"access_token":"new-access-token","token_type":"DPoP","refresh_token_timeout":604800}"#
+					.utf8
+			),
+			refreshToken: existing
+		)
+
+		let task = try #require(try await session.refresh())
+		_ = try await task.value
+
+		let refreshToken = try #require(await session.currentRefreshToken)
+		#expect(refreshToken.value == "refresh-token")
+
+		//the timeout restates the lifetime from now, extending the minute the
+		//preserved token had left
+		let previousRemaining = try #require(existing.expiry).timeIntervalSinceNow
+		let remaining = try #require(refreshToken.expiry).timeIntervalSinceNow
+		#expect(remaining > previousRemaining)
+		#expect(remaining > 604800 - 60)
+		#expect(remaining <= 604800)
+	}
+
+	//a token endpoint response that renews the access token without rotating
+	//the refresh token
+	private static let responseWithoutRefreshToken = Data(
+		#"{"access_token":"new-access-token","token_type":"DPoP"}"#.utf8
+	)
+
 	private func expectPropagatedOAuthError(
 		from session: TestSession,
 		error expectedError: String,
@@ -266,7 +355,8 @@ private actor TestSession: OAuth.SessionCapabilities {
 	init(
 		status: HTTPResponse.Status,
 		body: Data,
-		refreshOptions: StubRefreshOptions = .init()
+		refreshOptions: StubRefreshOptions = .init(),
+		refreshToken: OAuth.RefreshToken = .mock(value: "refresh-token")
 	) throws {
 		tokenRefreshOptions = refreshOptions
 		metadata = try JSONDecoder().decode(
@@ -288,9 +378,13 @@ private actor TestSession: OAuth.SessionCapabilities {
 			dPoPState: nil,
 			grantScopes: nil,
 			tokenState: .mock(
-				refreshToken: .mock(value: "refresh-token")
+				refreshToken: refreshToken
 			)
 		)
+	}
+
+	var currentRefreshToken: OAuth.RefreshToken? {
+		state.tokenState.refreshToken
 	}
 
 	var tokenValues: (access: String, refresh: String?) {
