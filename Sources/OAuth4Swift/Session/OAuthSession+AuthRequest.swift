@@ -7,6 +7,7 @@
 
 import Foundation
 import GermConvenience
+import GermConvenienceHTTP
 import Logging
 
 extension OAuth.SessionCapabilities {

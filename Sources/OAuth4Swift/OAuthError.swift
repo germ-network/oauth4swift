@@ -1,5 +1,6 @@
 import Foundation
 import GermConvenience
+import GermConvenienceHTTP
 
 import struct HTTPTypes.HTTPResponse
 

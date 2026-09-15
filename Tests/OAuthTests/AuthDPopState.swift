@@ -7,6 +7,7 @@
 
 import Foundation
 import GermConvenience
+import GermConvenienceHTTP
 import OAuth4Swift
 
 ///A simple actor to manage dpop state for initial auth

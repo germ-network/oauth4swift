@@ -7,6 +7,7 @@
 
 import Foundation
 import GermConvenience
+import GermConvenienceHTTP
 
 extension OAuth.DPoP {
 	enum Endpoint {
