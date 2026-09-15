@@ -1,5 +1,93 @@
 # @germ-network/oauth4swift
 
+## 0.7.0
+
+### Minor Changes
+
+- [#63](https://github.com/germ-network/oauth4swift/pull/63) [`61c613e`](https://github.com/germ-network/oauth4swift/commit/61c613ed9609badb0da202c0248a1605082f0668) Thanks [@germ-mark](https://github.com/germ-mark)! - Follow-ups to the `.well-known` discovery URL fix:
+
+  - `resourceDiscoveryRequest`/`authServerDiscovery` now validate that the
+    discovered `resource`/`issuer` claim matches the requested identifier
+    (RFC 9728 §3.3 / RFC 8414 §3.3), throwing `discoveredResourceMismatch` /
+    `discoveredIssuerMismatch` otherwise. The comparison canonicalizes both
+    sides (lowercased scheme/host, default port removed, path percent-encoding
+    and Unicode normalization made consistent) so equivalent identifiers that
+    differ only superficially — host case, an explicit default port, hex-case
+    in a percent-escape, or Unicode normalization form — aren't rejected as a
+    mismatch.
+  - `insertingWellKnownSegment` now rejects (rather than silently normalizes)
+    identifiers carrying userinfo, a query, a fragment, or a
+    `.`/`..`/empty path segment — including a percent-encoded one (`%2e`) —
+    throwing `invalidResourceIdentifier`. A missing scheme now throws
+    `missingScheme` and a missing host throws `missingHost`, distinctly.
+  - A 404 at the RFC-compliant location now retries once at the pre-fix
+    "append" location before reporting no metadata, for authorization/resource
+    servers that only serve the legacy path. Both URLs are now derived from a
+    single parse of the source identifier.
+  - The helper and its `.well-known` suffix constants are now public, and moved
+    to `URL+WellKnownDiscovery.swift` alongside the package's other `URL`
+    extensions.
+
+  Known behavior changes from the pre-[#61](https://github.com/germ-network/oauth4swift/issues/61) baseline, kept as-is: a query string
+  on the identifier is now rejected rather than silently forwarded; an
+  identifier with more than one trailing slash is now rejected rather than
+  normalized; discovery may issue a second HTTP request (the legacy-location
+  retry) where it previously issued exactly one.
+
+### Patch Changes
+
+- [#59](https://github.com/germ-network/oauth4swift/pull/59) [`385d372`](https://github.com/germ-network/oauth4swift/commit/385d37229c0378f810e611cb7c0634f222ce7b39) Thanks [@germ-mark](https://github.com/germ-mark)! - Add Android CI. No source change — the package was already fully portable (it already
+  carries two `canImport(FoundationNetworking)` gates), so this just wires up the leg.
+
+  Verified with a clean Android cross-build including the test target
+  (`swift build --build-tests --swift-sdk aarch64-unknown-linux-android28`) — builds and
+  links green from an empty `.build`.
+
+- [#61](https://github.com/germ-network/oauth4swift/pull/61) [`ee01408`](https://github.com/germ-network/oauth4swift/commit/ee014081d228e61a41c3d37c3641a238adb89aaa) Thanks [@nnabeyang](https://github.com/nnabeyang)! - Fix `.well-known` discovery URL construction for Protected Resource Metadata
+  (RFC 9728 §3.1) and Authorization Server Metadata (RFC 8414 §3.1). Both
+  `resourceDiscoveryRequest(url:)` and `authServerDiscovery(endpoint:)` now insert
+  `.well-known/oauth-protected-resource` / `.well-known/oauth-authorization-server`
+  **between the host and any existing path**, preserving the original path's
+  percent-encoding, port, and query, instead of appending it. Discovery against
+  resource identifiers or issuer URLs that carry a path (e.g.
+  `https://api.example.com/xrpc`) now hits the RFC-compliant metadata endpoint
+  and no longer silently 404s.
+
+- [#64](https://github.com/germ-network/oauth4swift/pull/64) [`4d5f120`](https://github.com/germ-network/oauth4swift/commit/4d5f120a94bf467c0a11bd19c20019009de6a67c) Thanks [@nnabeyang](https://github.com/nnabeyang)! - Preserve the existing refresh token when a refresh response omits `refresh_token`.
+
+  RFC 6749 §6 lets an authorization server renew the access token without rotating
+  the refresh token, in which case the client keeps using the one it already holds.
+  The refresh path rebuilt the token state from the response alone, so an omitted
+  `refresh_token` cleared the stored one. The session was then left with nothing to
+  send on the next refresh and effectively signed the user out once the access token
+  expired.
+
+  The refresh path now carries the existing refresh token over. `fetchedOn` is
+  restamped so the `refresh(debounce:)` gate still sees that a refresh just happened,
+  and a `refresh_token_timeout` that arrives without a `refresh_token` now restates
+  the preserved token's expiry, per
+  [draft-ietf-oauth-refresh-token-expiration](https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html):
+  "The authorization server MAY return these values even if the response contains no
+  refresh_token field in the response, in which case the values correspond to the
+  presented refresh_token." A response that does include a `refresh_token` continues
+  to replace the stored one.
+
+- [#66](https://github.com/germ-network/oauth4swift/pull/66) [`97664ff`](https://github.com/germ-network/oauth4swift/commit/97664ff418602928db3846bbf482dcfa599dcde8) Thanks [@germ-mark](https://github.com/germ-mark)! - Treat a present-but-empty `refresh_token` in a token response as absent. Some
+  servers send `"refresh_token": ""` rather than omitting the field; the value
+  passed the nil-only guard and overwrote the stored token with an empty value,
+  undoing the preservation added for omitted refresh tokens. An empty value now
+  falls through to the existing token, which is kept in force.
+
+- [#65](https://github.com/germ-network/oauth4swift/pull/65) [`ecca2d4`](https://github.com/germ-network/oauth4swift/commit/ecca2d44a91aebc6a070de039d0f77f009098fee) Thanks [@germ-mark](https://github.com/germ-mark)! - Fix build against GermConvenience 0.8.0, which split `HTTPDataResponse`,
+  `HTTPFetcher`, `BundledHTTPRequest`, `HTTPStreamFetcher`, and `URLScheme` out of
+  the base `GermConvenience` library into a new `GermConvenienceHTTP` product.
+  Adds the `GermConvenienceHTTP` product dependency and the matching import
+  everywhere those types are used, and raises the floor to `from: "0.8.0"` since
+  that's the first version carrying the split product this package now needs.
+
+  No public API change — this only restores buildability against current
+  GermConvenience releases.
+
 ## 0.6.0
 
 ### Minor Changes
