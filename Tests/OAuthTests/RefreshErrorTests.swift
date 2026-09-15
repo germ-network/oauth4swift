@@ -231,6 +231,32 @@ struct RefreshErrorTests {
 		#expect(remaining <= 604800)
 	}
 
+	//a present-but-empty refresh_token is treated as absent, so the existing
+	//token survives rather than being overwritten with an empty value
+	@Test("Preserves the existing refresh token when the response sends an empty one")
+	func emptyRefreshToken() async throws {
+		let existing = OAuth.RefreshToken(
+			value: "refresh-token",
+			expiry: Date(timeIntervalSinceNow: 3600),
+			fetchedOn: Date(timeIntervalSinceNow: -3600)
+		)
+		let session = try TestSession(
+			status: .ok,
+			body: Data(
+				#"{"access_token":"new-access-token","token_type":"DPoP","refresh_token":""}"#
+					.utf8
+			),
+			refreshToken: existing
+		)
+
+		let task = try #require(try await session.refresh())
+		_ = try await task.value
+
+		let refreshToken = try #require(await session.currentRefreshToken)
+		#expect(refreshToken.value == existing.value)
+		#expect(refreshToken.expiry == existing.expiry)
+	}
+
 	//a token endpoint response that renews the access token without rotating
 	//the refresh token
 	private static let responseWithoutRefreshToken = Data(

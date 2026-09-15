@@ -88,7 +88,10 @@ extension OAuth.RefreshToken: OAuth.Token {}
 //defining in an extension to preserve the memberwise intializer
 extension OAuth.RefreshToken {
 	init?(value: String?, timeout: TimeInterval?) {
-		guard let value else {
+		//a present-but-empty refresh_token is treated as absent: some servers
+		//send "" rather than omitting the field, and building an empty token
+		//would clobber a refresh token the response meant to leave in force
+		guard let value, !value.isEmpty else {
 			return nil
 		}
 		self.init(value: value, expiresIn: timeout)
