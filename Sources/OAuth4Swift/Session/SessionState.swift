@@ -93,6 +93,18 @@ extension OAuth.RefreshToken {
 		}
 		self.init(value: value, expiresIn: timeout)
 	}
+
+	//for a refresh response that leaves this token in force: the value carries
+	//over, and refresh_token_timeout - which the server MAY send without a
+	//refresh_token, in which case it applies to the presented one - restates
+	//the expiry
+	func refetched(timeout: TimeInterval?) -> Self {
+		.init(
+			value: value,
+			expiry: timeout?.expiryDateFromNow ?? expiry,
+			fetchedOn: .now
+		)
+	}
 }
 
 extension TimeInterval {
