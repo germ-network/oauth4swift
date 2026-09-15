@@ -7,6 +7,7 @@
 
 import Foundation
 import GermConvenience
+import GermConvenienceHTTP
 
 ///reusable class to encapsulate DPoP state. Should generally protect this in some isolation (Actor or @MainActor which can conform to DPoPSigning and pass its methods through
 

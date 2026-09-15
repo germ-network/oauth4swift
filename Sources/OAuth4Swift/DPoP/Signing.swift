@@ -9,6 +9,7 @@ import Base64
 import Crypto
 import Foundation
 import GermConvenience
+import GermConvenienceHTTP
 
 extension OAuth.DPoP {
 	public protocol Signing: Actor {

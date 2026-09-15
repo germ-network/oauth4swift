@@ -16,7 +16,9 @@ let package = Package(
 	dependencies: [
 		.package(
 			url: "https://github.com/germ-network/GermConvenience.git",
-			from: "0.3.0"
+			// 0.8.0 split HTTP helpers into GermConvenienceHTTP — the floor this
+			// package now needs for HTTPDataResponse/HTTPFetcher/BundledHTTPRequest.
+			from: "0.8.0"
 		),
 		.package(url: "https://github.com/swift-libp2p/swift-bases.git", from: "0.2.0"),
 		.package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),
@@ -32,6 +34,7 @@ let package = Package(
 			name: "OAuth4Swift",
 			dependencies: [
 				"GermConvenience",
+				.product(name: "GermConvenienceHTTP", package: "GermConvenience"),
 				.product(name: "Crypto", package: "swift-crypto"),
 				.product(name: "HTTPTypes", package: "swift-http-types"),
 				.product(name: "Logging", package: "swift-log"),
@@ -43,6 +46,7 @@ let package = Package(
 			dependencies: [
 				"OAuth4Swift",
 				.product(name: "GermConvenienceMocks", package: "GermConvenience"),
+				.product(name: "GermConvenienceHTTP", package: "GermConvenience"),
 			]
 		),
 	]
