@@ -128,4 +128,28 @@ struct SecretCustodyTests {
 			.decode(OAuth.SessionState.Archive.self)
 		#expect(restored.dPopKey?.keyData == key.keyData)
 	}
+
+	@Test("a base64-shaped legacy token is read as the token, not decoded")
+	func legacyBase64ShapedTokenIsLiteral() throws {
+		// The legacy token was written as a JSON string, and OAuth tokens are
+		// base64url-shaped — so a reader that "tried Data first" would silently
+		// turn this token into different bytes. The string is the token.
+		let token = Data("token-bytes-encoded".utf8).base64EncodedString()
+
+		let json = """
+			{
+			  "clientId": "app.example.com",
+			  "issuingServer": "issuer.example.com",
+			  "tokenState": {
+			    "scopes": [],
+			    "accessToken": { "value": "\(token)" }
+			  }
+			}
+			"""
+
+		let archive = try OAuth.SessionState.Archive.decodeLegacy(Data(json.utf8))
+		#expect(
+			try OAuth.SecretText.string(from: archive.tokenState.accessToken.value)
+				== token)
+	}
 }

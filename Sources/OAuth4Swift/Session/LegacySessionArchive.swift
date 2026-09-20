@@ -48,7 +48,14 @@ extension OAuth.SessionState {
 		}
 	}
 
-	/// The legacy shape of an access or refresh token: a plain `String` value.
+	/// The legacy shape of an access or refresh token: a plain JSON `String`.
+	///
+	/// Deliberately String-only. A blob whose token bytes were written as JSON
+	/// `Data` (base64) is **not** distinguished from one whose token literally
+	/// is that base64 text — and OAuth tokens are base64url-shaped, so a
+	/// "try `Data` first" reader would silently decode a real token into
+	/// different bytes. The historical writer was `JSONEncoder` over a `String`
+	/// field, so the string is the token; nothing else is inferred from its shape.
 	public struct LegacyToken: Decodable {
 		public let value: String
 		public let expiry: Date?
