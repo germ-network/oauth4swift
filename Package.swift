@@ -16,11 +16,8 @@ let package = Package(
 	dependencies: [
 		.package(
 			url: "https://github.com/germ-network/GermConvenience.git",
-			// Temporary revision pin to the swift-crypto-5 branch's commit
-			// (germ-network/GermConvenience#55); replace with the released
-			// version once it cuts. Needed because this package now requires
-			// swift-crypto 5 and the 0.8.x line is fenced below it.
-			revision: "f907c9018dd4c2f0110ab5f1f37c7c53fa0ae6ca"
+			// 0.10.0 is its swift-crypto-5 release — the revision pin drops.
+			from: "0.10.0"
 		),
 		.package(url: "https://github.com/swift-libp2p/swift-bases.git", from: "0.2.0"),
 		.package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),
