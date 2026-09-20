@@ -18,8 +18,8 @@ extension OAuth {
 		//This is for now, congruent to its archive
 		//TODO: simplify this into an archive and
 		public struct Key: Codable, Hashable, Sendable {
-			let alg: Alg
-			let keyData: Data
+			public let alg: Alg
+			public let keyData: Data
 
 			public static func generateP256() -> Self {
 				.init(

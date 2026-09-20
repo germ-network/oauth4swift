@@ -42,6 +42,15 @@ extension OAuth {
 		public let value: String
 		public let expiry: Date?
 		public var fetchedOn: Date?
+
+		// Public so a consumer can rebuild an archive it re-homed into zeroizing
+		// custody without round-tripping through Codable (which keys on property
+		// names and breaks silently on a rename).
+		public init(value: String, expiry: Date?, fetchedOn: Date?) {
+			self.value = value
+			self.expiry = expiry
+			self.fetchedOn = fetchedOn
+		}
 	}
 
 	/// Holds a refresh token value and optionally it's expiry
@@ -49,6 +58,13 @@ extension OAuth {
 		public let value: String
 		public let expiry: Date?
 		public var fetchedOn: Date?
+
+		/// Mirror of `AccessToken.init` — see its note.
+		public init(value: String, expiry: Date?, fetchedOn: Date?) {
+			self.value = value
+			self.expiry = expiry
+			self.fetchedOn = fetchedOn
+		}
 	}
 
 	//bundles the token value with its RFC 7009 token_type_hint so the pair
@@ -151,12 +167,12 @@ extension OAuth {
 		}
 
 		public struct TokenState: Codable, Sendable {
-			var grantExpiry: Date?
+			public var grantExpiry: Date?
 			public var accessToken: AccessToken
 			public var refreshToken: RefreshToken?
 
 			//what is currently authorized on the last refresh
-			var scopes: [String]
+			public var scopes: [String]
 
 			init(
 				accessToken: AccessToken,
@@ -171,6 +187,21 @@ extension OAuth {
 				// Support for Authorization Grants with expiry:
 				// https://www.ietf.org/archive/id/draft-ietf-oauth-refresh-token-expiration-01.html
 				self.grantExpiry = grantExpiresIn?.expiryDateFromNow
+			}
+
+			// Public mirror of the above that stores an already-resolved
+			// `grantExpiry`, so an archive re-homed into zeroizing custody
+			// round-trips its expiry Date exactly rather than re-deriving it.
+			public init(
+				accessToken: AccessToken,
+				refreshToken: RefreshToken? = nil,
+				scopes: [String] = [],
+				grantExpiry: Date? = nil
+			) {
+				self.accessToken = accessToken
+				self.refreshToken = refreshToken
+				self.scopes = scopes
+				self.grantExpiry = grantExpiry
 			}
 
 			/// Determines if the token object is valid.
@@ -191,9 +222,12 @@ extension OAuth {
 
 extension OAuth.SessionState {
 	public struct Archive: Sendable, Codable {
-		let clientId: String
-		let dPopKey: OAuth.DPoP.Key?
-		let issuingServer: String
+		// Public so a consumer can re-home the archive (and its secrets) into
+		// zeroizing custody without round-tripping through this type's Codable
+		// shape — a bridge keyed on property names breaks silently on a rename.
+		public let clientId: String
+		public let dPopKey: OAuth.DPoP.Key?
+		public let issuingServer: String
 
 		//stores the authorization grant scope:
 		public let grantScopes: [String]?
