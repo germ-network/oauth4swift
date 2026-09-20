@@ -68,7 +68,7 @@ struct RefreshGateTests {
 		let task = try #require(try await session.refresh())
 		let accessToken = try await task.value
 
-		#expect(accessToken.value == "new-at")
+		#expect(try OAuth.SecretText.string(from: accessToken.value) == "new-at")
 		#expect(await mock.requests(for: Self.tokenUrl).count == 1)
 	}
 
@@ -126,8 +126,8 @@ private actor GateTestSession: OAuth.SessionCapabilities {
 			issuingServer: metadata.issuer,
 			dPoPState: nil,
 			grantScopes: nil,
-			tokenState: .mock(
-				refreshToken: .mock(value: "refresh-token")
+			tokenState: try .mock(
+				refreshToken: try .mock(value: "refresh-token")
 			)
 		)
 	}

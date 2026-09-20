@@ -143,8 +143,8 @@ struct RefreshErrorTests {
 		let task = try #require(try await session.refresh())
 		let accessToken = try await task.value
 
-		#expect(accessToken.value == "new-access-token")
-		let tokens = await session.tokenValues
+		#expect(try OAuth.SecretText.string(from: accessToken.value) == "new-access-token")
+		let tokens = try await session.tokenValues
 		#expect(tokens.access == "new-access-token")
 		#expect(tokens.refresh == "new-refresh-token")
 	}
@@ -154,7 +154,7 @@ struct RefreshErrorTests {
 	@Test("Preserves the existing refresh token when the response omits one")
 	func omittedRefreshToken() async throws {
 		let lastFetchedOn = Date(timeIntervalSinceNow: -3600)
-		let existing = OAuth.RefreshToken(
+		let existing = try OAuth.RefreshToken(
 			value: "refresh-token",
 			expiry: Date(timeIntervalSinceNow: 3600),
 			fetchedOn: lastFetchedOn
@@ -168,7 +168,7 @@ struct RefreshErrorTests {
 		let task = try #require(try await session.refresh())
 		let accessToken = try await task.value
 
-		#expect(accessToken.value == "new-access-token")
+		#expect(try OAuth.SecretText.string(from: accessToken.value) == "new-access-token")
 		let refreshToken = try #require(await session.currentRefreshToken)
 		#expect(refreshToken.value == existing.value)
 		#expect(refreshToken.expiry == existing.expiry)
@@ -194,7 +194,7 @@ struct RefreshErrorTests {
 		let second = try #require(try await session.refresh())
 		_ = try await second.value
 
-		let tokens = await session.tokenValues
+		let tokens = try await session.tokenValues
 		#expect(tokens.refresh == "refresh-token")
 	}
 
@@ -203,7 +203,7 @@ struct RefreshErrorTests {
 	//to the token the client presented
 	@Test("Applies refresh_token_timeout to a preserved refresh token")
 	func omittedRefreshTokenWithTimeout() async throws {
-		let existing = OAuth.RefreshToken(
+		let existing = try OAuth.RefreshToken(
 			value: "refresh-token",
 			expiry: Date(timeIntervalSinceNow: 60),
 			fetchedOn: Date(timeIntervalSinceNow: -3600)
@@ -221,7 +221,7 @@ struct RefreshErrorTests {
 		_ = try await task.value
 
 		let refreshToken = try #require(await session.currentRefreshToken)
-		#expect(refreshToken.value == "refresh-token")
+		#expect(try OAuth.SecretText.string(from: refreshToken.value) == "refresh-token")
 
 		//the timeout restates the lifetime from now, extending the minute the
 		//preserved token had left
@@ -236,7 +236,7 @@ struct RefreshErrorTests {
 	//token survives rather than being overwritten with an empty value
 	@Test("Preserves the existing refresh token when the response sends an empty one")
 	func emptyRefreshToken() async throws {
-		let existing = OAuth.RefreshToken(
+		let existing = try OAuth.RefreshToken(
 			value: "refresh-token",
 			expiry: Date(timeIntervalSinceNow: 3600),
 			fetchedOn: Date(timeIntervalSinceNow: -3600)
@@ -383,7 +383,7 @@ private actor TestSession: OAuth.SessionCapabilities {
 		status: HTTPResponse.Status,
 		body: Data,
 		refreshOptions: StubRefreshOptions = .init(),
-		refreshToken: OAuth.RefreshToken = .mock(value: "refresh-token")
+		refreshToken: OAuth.RefreshToken? = nil
 	) throws {
 		tokenRefreshOptions = refreshOptions
 		metadata = try JSONDecoder().decode(
@@ -404,8 +404,8 @@ private actor TestSession: OAuth.SessionCapabilities {
 			issuingServer: metadata.issuer,
 			dPoPState: nil,
 			grantScopes: nil,
-			tokenState: .mock(
-				refreshToken: refreshToken
+			tokenState: try .mock(
+				refreshToken: try refreshToken ?? .mock(value: "refresh-token")
 			)
 		)
 	}
@@ -415,10 +415,12 @@ private actor TestSession: OAuth.SessionCapabilities {
 	}
 
 	var tokenValues: (access: String, refresh: String?) {
-		(
-			state.tokenState.accessToken.value,
-			state.tokenState.refreshToken?.value
-		)
+		get throws {
+			(
+				try state.tokenState.accessToken.materializedValue,
+				try state.tokenState.refreshToken?.materializedValue
+			)
+		}
 	}
 
 	var authServerMetadata: AuthServerMetadata {

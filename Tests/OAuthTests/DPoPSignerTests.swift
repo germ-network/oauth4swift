@@ -49,7 +49,7 @@ struct Test {
 
 		let token: OAuth.AccessToken? =
 			if let token {
-				.mock(value: token)
+				try .mock(value: token)
 			} else {
 				nil
 			}

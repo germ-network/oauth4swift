@@ -5,7 +5,10 @@ import PackageDescription
 
 let package = Package(
 	name: "OAuth4Swift",
-	platforms: [.iOS(.v16), .macOS(.v15)],
+	// iOS 18 / macOS 15. The floor is set by swift-secret-bytes 0.5.0 (the
+	// swift-crypto-5 release this package now rides for zeroizing secret
+	// custody), which declares iOS 18 / macOS 15.
+	platforms: [.iOS(.v18), .macOS(.v15)],
 	products: [
 		// Products define the executables and libraries a package produces, making them visible to other packages.
 		.library(
@@ -25,6 +28,14 @@ let package = Package(
 			url: "https://github.com/apple/swift-crypto.git",
 			from: "5.0.0"),
 		.package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
+		// Zeroizing custody for the secrets this package carries — the DPoP
+		// P-256 private scalar and the access/refresh token values, which were
+		// previously plain `Data`/`String`. 0.5.0 is its swift-crypto-5
+		// release, matching this package's swift-crypto 5 move.
+		.package(
+			url: "https://github.com/germ-network/swift-secret-bytes.git",
+			.upToNextMinor(from: "0.5.0")
+		),
 	],
 	targets: [
 		// Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -38,6 +49,7 @@ let package = Package(
 				.product(name: "HTTPTypes", package: "swift-http-types"),
 				.product(name: "Logging", package: "swift-log"),
 				.product(name: "Base64", package: "swift-bases"),
+				.product(name: "SecretBytes", package: "swift-secret-bytes"),
 			]
 		),
 		.testTarget(
@@ -46,6 +58,7 @@ let package = Package(
 				"OAuth4Swift",
 				.product(name: "GermConvenienceMocks", package: "GermConvenience"),
 				.product(name: "GermConvenienceHTTP", package: "GermConvenience"),
+				.product(name: "SecretBytes", package: "swift-secret-bytes"),
 			]
 		),
 	]

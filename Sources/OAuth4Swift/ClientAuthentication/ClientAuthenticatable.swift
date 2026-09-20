@@ -94,7 +94,7 @@ extension OAuth.ClientAuth.Authenticable {
 		refreshToken: OAuth.RefreshToken,
 	) async throws -> HTTPDataResponse {
 		var parameters = additionalParameters ?? .init()
-		parameters["refresh_token"] = [refreshToken.value]
+		parameters["refresh_token"] = [try refreshToken.materializedValue]
 
 		return try await tokenEndpointRequest(
 			authServerMetadata: authServerMetadata,
@@ -189,7 +189,7 @@ extension OAuth.ClientAuth.Authenticable {
 			inputs: .init(
 				authServerMetadata: authServerMetadata,
 				parameters: FormParameters([
-					"token": token.value,
+					"token": try token.materializedValue(),
 					"token_type_hint": token.hint,
 				]),
 				headers: rawHeaders

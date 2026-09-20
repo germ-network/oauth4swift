@@ -7,15 +7,18 @@
 
 import Foundation
 import GermConvenience
+import SecretBytes
 
 extension OAuth {
 	protocol Token {
+		/// The token's secret value, held in zeroizing storage.
+		var value: SecretBytes { get }
 		var expiry: Date? { get }
 		//optional for both backward compatibility in decoding,
-		//and to allow the adopter to efface it when rtoring
+		//and to allow the adopter to efface it when storing
 		var fetchedOn: Date? { get }
 
-		init(value: String, expiry: Date?, fetchedOn: Date?)
+		init(value: SecretBytes, expiry: Date?, fetchedOn: Date?)
 	}
 }
 
@@ -26,27 +29,47 @@ extension OAuth.Token {
 		return date.timeIntervalSinceNow > 0
 	}
 
-	init(value: String, expiresIn: TimeInterval?) {
-		self.init(
+	/// Builds from a wire `String`, wrapping it into zeroizing custody. RFC 6749
+	/// token values are ASCII, so this is lossless — see `OAuth.SecretText`.
+	init(value: String, expiry: Date?, fetchedOn: Date?) throws {
+		try self.init(
+			value: OAuth.SecretText.secretBytes(from: value),
+			expiry: expiry,
+			fetchedOn: fetchedOn
+		)
+	}
+
+	init(value: String, expiresIn: TimeInterval?) throws {
+		try self.init(
 			value: value,
 			expiry: expiresIn?.expiryDateFromNow,
 			fetchedOn: .now
 		)
+	}
+
+	/// Materializes the token value as text, only for the call that needs a
+	/// `String` (an `Authorization` header, a form field). Transient plaintext
+	/// copy — see `OAuth.SecretText`.
+	var materializedValue: String {
+		get throws { try OAuth.SecretText.string(from: value) }
 	}
 }
 
 extension OAuth {
 	//while the types are structually identical, defining as separate types
 	//to prevent use confusion
-	public struct AccessToken: Codable, Hashable, Sendable {
-		public let value: String
+	public struct AccessToken: Codable, Equatable, Sendable {
+		/// The token value, in zeroizing custody. It is a secret, so it rides
+		/// `swift-secret-bytes`' `@SecretField`: this type is `Codable` only into
+		/// a `SecretArchive`; any other coder throws rather than writing it plainly.
+		@SecretField public var value: SecretBytes
 		public let expiry: Date?
 		public var fetchedOn: Date?
 
 		// Public so a consumer can rebuild an archive it re-homed into zeroizing
 		// custody without round-tripping through Codable (which keys on property
 		// names and breaks silently on a rename).
-		public init(value: String, expiry: Date?, fetchedOn: Date?) {
+		public init(value: SecretBytes, expiry: Date?, fetchedOn: Date?) {
 			self.value = value
 			self.expiry = expiry
 			self.fetchedOn = fetchedOn
@@ -54,13 +77,14 @@ extension OAuth {
 	}
 
 	/// Holds a refresh token value and optionally it's expiry
-	public struct RefreshToken: Codable, Hashable, Sendable {
-		public let value: String
+	public struct RefreshToken: Codable, Equatable, Sendable {
+		/// The token value, in zeroizing custody — see `AccessToken.value`.
+		@SecretField public var value: SecretBytes
 		public let expiry: Date?
 		public var fetchedOn: Date?
 
 		/// Mirror of `AccessToken.init` — see its note.
-		public init(value: String, expiry: Date?, fetchedOn: Date?) {
+		public init(value: SecretBytes, expiry: Date?, fetchedOn: Date?) {
 			self.value = value
 			self.expiry = expiry
 			self.fetchedOn = fetchedOn
@@ -81,10 +105,12 @@ extension OAuth {
 			self = .refresh(token)
 		}
 
-		var value: String {
+		/// Materializes the bundled token's value as text for the revocation
+		/// request body. Transient plaintext copy — see `OAuth.SecretText`.
+		func materializedValue() throws -> String {
 			switch self {
-			case .access(let t): t.value
-			case .refresh(let t): t.value
+			case .access(let t): try t.materializedValue
+			case .refresh(let t): try t.materializedValue
 			}
 		}
 
@@ -103,14 +129,14 @@ extension OAuth.RefreshToken: OAuth.Token {}
 
 //defining in an extension to preserve the memberwise intializer
 extension OAuth.RefreshToken {
-	init?(value: String?, timeout: TimeInterval?) {
+	init?(value: String?, timeout: TimeInterval?) throws {
 		//a present-but-empty refresh_token is treated as absent: some servers
 		//send "" rather than omitting the field, and building an empty token
 		//would clobber a refresh token the response meant to leave in force
 		guard let value, !value.isEmpty else {
 			return nil
 		}
-		self.init(value: value, expiresIn: timeout)
+		try self.init(value: value, expiresIn: timeout)
 	}
 
 	//for a refresh response that leaves this token in force: the value carries
@@ -319,13 +345,13 @@ extension OAuth.SessionState {
 }
 
 extension OAuth.SessionState.Archive {
-	static public func mock() -> Self {
+	static public func mock() throws -> Self {
 		.init(
 			clientId: "app.example.com",
 			dPopKey: .generateP256(),
 			issuingServer: "issuer.example.com",
 			grantScopes: nil,
-			tokenState: .mock()
+			tokenState: try .mock()
 		)
 	}
 }
@@ -333,13 +359,13 @@ extension OAuth.SessionState.Archive {
 extension OAuth.SessionState.TokenState {
 	//takes the place of a public memberwise intializer
 	static public func mock(
-		accessToken: OAuth.AccessToken = .mock(),
+		accessToken: OAuth.AccessToken? = nil,
 		refreshToken: OAuth.RefreshToken? = nil,
 		scopes: [String] = [],
 		grantExpiresIn: TimeInterval? = nil
-	) -> Self {
+	) throws -> Self {
 		.init(
-			accessToken: accessToken,
+			accessToken: try accessToken ?? .mock(),
 			refreshToken: refreshToken,
 			scopes: scopes,
 			grantExpiresIn: grantExpiresIn
@@ -351,8 +377,8 @@ extension OAuth.AccessToken {
 	static public func mock(
 		value: String = UUID().uuidString,
 		expiresIn: TimeInterval? = nil
-	) -> Self {
-		.init(value: value, expiresIn: expiresIn)
+	) throws -> Self {
+		try .init(value: value, expiresIn: expiresIn)
 	}
 }
 
@@ -360,7 +386,7 @@ extension OAuth.RefreshToken {
 	static public func mock(
 		value: String = UUID().uuidString,
 		expiresIn: TimeInterval? = nil
-	) -> Self {
-		.init(value: value, expiresIn: expiresIn)
+	) throws -> Self {
+		try .init(value: value, expiresIn: expiresIn)
 	}
 }
