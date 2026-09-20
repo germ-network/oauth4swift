@@ -52,7 +52,7 @@ extension OAuth {
 			/// custody — the counterpart to reading `keyData` for a caller that
 			/// holds the bytes as `Data` (a legacy decode, a test vector).
 			public init(alg: Alg, rawKeyData: Data) throws {
-				try self.init(
+				self.init(
 					alg: alg,
 					keyData: try SecretBytes(bytes: rawKeyData))
 			}
