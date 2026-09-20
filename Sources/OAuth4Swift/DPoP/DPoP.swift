@@ -38,7 +38,8 @@ extension OAuth {
 					let keyData = try? SecretBytes(
 						bytes: P256.Signing.PrivateKey().rawRepresentation)
 				else {
-					preconditionFailure("a generated P-256 scalar is never empty")
+					preconditionFailure(
+						"a generated P-256 scalar is never empty")
 				}
 				return .init(alg: .es256, keyData: keyData)
 			}
