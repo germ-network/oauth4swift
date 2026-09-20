@@ -16,15 +16,17 @@ let package = Package(
 	dependencies: [
 		.package(
 			url: "https://github.com/germ-network/GermConvenience.git",
-			// 0.8.0 split HTTP helpers into GermConvenienceHTTP — the floor this
-			// package now needs for HTTPDataResponse/HTTPFetcher/BundledHTTPRequest.
-			from: "0.8.0"
+			// Temporary revision pin to the swift-crypto-5 branch's commit
+			// (germ-network/GermConvenience#55); replace with the released
+			// version once it cuts. Needed because this package now requires
+			// swift-crypto 5 and the 0.8.x line is fenced below it.
+			revision: "f907c9018dd4c2f0110ab5f1f37c7c53fa0ae6ca"
 		),
 		.package(url: "https://github.com/swift-libp2p/swift-bases.git", from: "0.2.0"),
 		.package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),
 		.package(
 			url: "https://github.com/apple/swift-crypto.git",
-			.upToNextMajor(from: "4.2.0")),
+			from: "5.0.0"),
 		.package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
 	],
 	targets: [

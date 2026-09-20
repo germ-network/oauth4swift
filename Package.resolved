@@ -1,13 +1,13 @@
 {
-  "originHash" : "ba390d4465e066e2db37a34038c1b8dbc0f3a96cead6e97497159347ac6b4d20",
+  "originHash" : "d83b1c1f5b04283a476c31311137051ce715ce0046fdc5e0e759cc7c60c42b5a",
   "pins" : [
     {
       "identity" : "germconvenience",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/germ-network/GermConvenience.git",
       "state" : {
-        "revision" : "e474915e5ab3f917d5f5496af5fb4814081fb75c",
-        "version" : "0.8.0"
+        "branch" : "llm/swift-crypto-5",
+        "revision" : "f907c9018dd4c2f0110ab5f1f37c7c53fa0ae6ca"
       }
     },
     {
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "1b6b2e274e85105bfa155183145a1dcfd63331f1",
-        "version" : "4.5.0"
+        "revision" : "a9d1d5ab8951ada40cafff8c8e2b551dfde4f390",
+        "version" : "5.0.0"
       }
     },
     {
