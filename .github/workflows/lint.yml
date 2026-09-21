@@ -1,0 +1,49 @@
+name: Lint
+
+# No paths filter: the formatting job covers Markdown, JSON and YAML across the
+# whole repo, so limiting this to .github/workflows would miss most of what it
+# checks.
+on:
+  push:
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+# Both jobs only report, so read access is all they need.
+permissions:
+  contents: read
+
+jobs:
+  pinact:
+    name: Actions pinned
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify every action is SHA-pinned with a truthful version comment
+        uses: suzuki-shunsuke/pinact-action@896d595f299e71d65b9d28349d6956abe144390a # v3.0.0
+        with:
+          # Report, don't rewrite. A fix belongs in a reviewed commit, not in CI.
+          fix: false
+          # A version comment written by hand, or by an attacker, doesn't have
+          # to name the version its SHA actually is. This checks that it does.
+          verify: true
+          # Give a compromised release time to be spotted before it can run here, in days.
+          min_age: 1
+
+  format:
+    name: Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        with:
+          require-lockfile: true
+      - name: Check formatting
+        run: pnpm format:check

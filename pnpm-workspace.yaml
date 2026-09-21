@@ -1,0 +1,21 @@
+# pnpm settings for this repo. Kept per-repo rather than relying on a global
+# config, because CI runners and contributors have no global config, and a
+# supply-chain control that only protects one laptop is not a control.
+
+# 1440 minutes is one day: long enough for a compromised publish to be spotted
+# and unpublished before it can be installed. Matches pnpm 11's default, stated
+# explicitly so it survives a change of default.
+minimumReleaseAge: 1440
+
+# Fail the install when a version is too new, instead of quietly resolving to an
+# older one. A silent downgrade hides the fact that the policy fired.
+minimumReleaseAgeStrict: true
+
+# A package whose registry metadata carries no publish time cannot be aged, so
+# treat that as untrustworthy rather than waving it through.
+minimumReleaseAgeIgnoreMissingTime: false
+
+# Transitive dependencies may not come from git URLs or tarballs. Those have no
+# registry publish time, so the release-age settings above cannot age them and
+# offer no protection whatsoever.
+blockExoticSubdeps: true

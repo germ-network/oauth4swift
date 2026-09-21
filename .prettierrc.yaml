@@ -1,0 +1,12 @@
+# Single quotes in YAML. GitHub Actions expressions (`${{ ... }}`) require single
+# quotes for their string literals, so matching that keeps one quoting style per
+# workflow file rather than two sitting next to each other.
+#
+# Scoped to YAML deliberately: JSON requires double quotes, and Prettier enforces
+# that regardless of this setting.
+overrides:
+  - files:
+      - '*.yml'
+      - '*.yaml'
+    options:
+      singleQuote: true
