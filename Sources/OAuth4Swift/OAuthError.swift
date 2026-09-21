@@ -83,7 +83,7 @@ extension OAuth {
 			case .malformedToken:
 				"A token value does not match the RFC 6749 access_token/refresh_token grammar (1*VSCHAR, %x20-7E)"
 			case .tokenNotBearerSafe:
-				"A token cannot be carried as a Bearer credential: it does not match RFC 6750 section 2.1's b64token grammar"
+				"A token cannot be carried as an Authorization credential: it does not match the b64token/token68 grammar RFC 6750 section 2.1 and RFC 9449 section 7.1 require"
 			}
 		}
 	}

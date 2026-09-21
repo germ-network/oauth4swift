@@ -60,32 +60,41 @@ extension OAuth.Token {
 		get throws { try value.utf8String() }
 	}
 
-	/// The full **Bearer credential** — scheme, one space, token — as RFC 6750
-	/// §2.1 defines it: `credentials = "Bearer" 1*SP b64token`. The colon that
-	/// appears in `Authorization: Bearer …` is the header *name* separator, not
-	/// part of this value, so the scheme is followed by a single space and
-	/// nothing else.
+	/// Forms the `Authorization` credential for `scheme` — scheme, one space,
+	/// token — the shape both RFC 6750 §2.1 (`credentials = "Bearer" 1*SP
+	/// b64token`) and RFC 9449 §7.1 (`credentials = "DPoP" 1*SP token68`)
+	/// define. The colon that appears in `Authorization: Bearer …` is the header
+	/// *name* separator, not part of this value, so a single space follows the
+	/// scheme and nothing else.
 	///
-	/// This is also where RFC 6750's grammar binds: `b64token =
-	/// 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="`. The token
-	/// *itself* stays opaque — ingest enforces only RFC 6749's `1*VSCHAR` (see
-	/// `OAuth.TokenGrammar`) — but at the point a Bearer credential is actually
-	/// formed, the narrower grammar is exactly the one that governs, so it is
-	/// enforced here rather than asserted about the issuer.
+	/// This is where the credential grammar binds: `b64token` and `token68` are
+	/// the same production, and it is narrower than the token's own RFC 6749
+	/// `1*VSCHAR` (see `OAuth.TokenGrammar`). The token *itself* stays opaque and
+	/// ingest does not enforce it, but at the point a credential is actually
+	/// formed this grammar is exactly the one that governs, so it is enforced
+	/// here rather than asserted about the issuer.
 	///
-	/// `materializedValue` remains the prefix-less, unvalidated exit for other
-	/// transports (a form body, a revocation request).
+	/// `materializedValue` remains the prefix-less, unvalidated exit for
+	/// transports where no scheme governs (a form body, a revocation request).
 	///
 	/// - Throws: `OAuth.Errors.tokenNotBearerSafe` when the token falls outside
 	///   the grammar, alongside any error from materializing it. Transient
 	///   plaintext copy, as above.
-	var asBearerToken: String {
-		get throws {
-			guard OAuth.TokenGrammar.isBearerSafe(value) else {
-				throw OAuth.Errors.tokenNotBearerSafe
-			}
-			return "Bearer " + (try materializedValue)
+	func asCredential(_ scheme: OAuth.CredentialScheme) throws -> String {
+		guard OAuth.TokenGrammar.isToken68(value) else {
+			throw OAuth.Errors.tokenNotBearerSafe
 		}
+		return scheme.rawValue + " " + (try materializedValue)
+	}
+
+	/// The full RFC 6750 §2.1 Bearer credential — `"Bearer" 1*SP b64token`.
+	var asBearerToken: String {
+		get throws { try asCredential(.bearer) }
+	}
+
+	/// The full RFC 9449 §7.1 DPoP credential — `"DPoP" 1*SP token68`.
+	var asDPoPToken: String {
+		get throws { try asCredential(.dpop) }
 	}
 }
 

@@ -125,8 +125,20 @@ struct SecretCustodyTests {
 			return true
 		}
 
+		//the DPoP scheme is the same credential shape with a different scheme
+		//(RFC 9449 §7.1: `credentials = "DPoP" 1*SP token68`), so it forms and
+		//refuses identically
+		#expect(try safe.asDPoPToken == "DPoP at-123._~+/=")
+		#expect(try safe.asCredential(.dpop) == "DPoP at-123._~+/=")
+		#expect {
+			_ = try opaque.asDPoPToken
+		} throws: { error in
+			guard case OAuth.Errors.tokenNotBearerSafe = error else { return false }
+			return true
+		}
+
 		//materializedValue is the prefix-less, unvalidated exit, for the
-		//transports where the Bearer grammar does not govern
+		//transports where neither scheme grammar governs
 		#expect(try opaque.materializedValue == "a,b")
 	}
 
