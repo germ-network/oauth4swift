@@ -30,6 +30,8 @@ extension OAuth {
 		case notImplemented
 		case notSupported
 		case refreshNotSupported
+		case malformedToken
+		case tokenNotBearerSafe
 
 		public var errorDescription: String? {
 			switch self {
@@ -78,6 +80,10 @@ extension OAuth {
 			case .notSupported: "The authorization server does not support this feature"
 			case .refreshNotSupported:
 				"The authorization server does not list refresh_token in grant_types_supported"
+			case .malformedToken:
+				"A token value does not match the RFC 6749 access_token/refresh_token grammar (1*VSCHAR, %x20-7E)"
+			case .tokenNotBearerSafe:
+				"A token cannot be carried as a Bearer credential: it does not match RFC 6750 section 2.1's b64token grammar"
 			}
 		}
 	}

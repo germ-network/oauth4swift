@@ -247,11 +247,11 @@ extension OAuth.Authorizer {
 		)
 
 		let sessionState = OAuth.SessionState.TokenState(
-			accessToken: .init(
+			accessToken: try .init(
 				value: tokenResponse.accessToken,
 				expiresIn: .init(tokenResponse.expiresIn)
 			),
-			refreshToken: .init(
+			refreshToken: try .init(
 				value: tokenResponse.refreshToken,
 				timeout: .init(tokenResponse.refreshTokenTimeout)
 			),

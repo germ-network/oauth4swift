@@ -54,17 +54,23 @@ extension OAuth.SessionCapabilities {
 		for request: BundledHTTPRequest,
 		accessToken: OAuth.AccessToken,
 	) async throws -> HTTPDataResponse {
+		//the token is materialized once; both schemes put the same credentials
+		//string in the same header field
+		let materialized = try accessToken.materializedValue
+
 		if let dpopSigner = self as? OAuth.DPoP.Signing {
 			return try await dpopSigner.authenticated(
 				request: request.settingHeader(
-					"DPoP " + accessToken.value, for: .authorization),
+					"DPoP " + materialized,
+					for: .authorization),
 				token: accessToken,
 				fetcher: authFetcher
 			)
 		} else {
 			return try await authFetcher.data(
 				for: request.settingHeader(
-					"Bearer " + accessToken.value, for: .authorization)
+					"Bearer " + materialized,
+					for: .authorization)
 			)
 		}
 	}
@@ -185,13 +191,13 @@ extension OAuth.SessionCapabilities {
 
 		let refreshTokenTimeout = TimeInterval(tokenResponse.refreshTokenTimeout)
 		let newTokenState = OAuth.SessionState.TokenState(
-			accessToken: .init(
+			accessToken: try .init(
 				value: tokenResponse.accessToken,
 				expiresIn: .init(tokenResponse.expiresIn)
 			),
 			//RFC 6749 §6: keep the existing refresh token if the response
 			//omits one
-			refreshToken: .init(
+			refreshToken: try .init(
 				value: tokenResponse.refreshToken,
 				timeout: refreshTokenTimeout
 			) ?? refreshToken.refetched(timeout: refreshTokenTimeout),

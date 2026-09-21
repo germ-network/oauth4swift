@@ -32,9 +32,12 @@ extension OAuth.DPoP.Signing {
 
 		//right now the RFC has SHA256 baked into the RFC and a new draft needed
 		//to specify alg agility
-		let tokenHash = token.map {
-			SHA256.hash(data: $0.value.utf8Data)
-				.data.base64URLEncoded(padded: false)
+		//the token's bytes are hashed in place — no plaintext `Data` copy of
+		//the secret is minted for the input
+		let tokenHash = token.map { token in
+			token.value.withUnsafeBytes {
+				SHA256.hash(data: $0).data.base64URLEncoded(padded: false)
+			}
 		}
 		let jwt = try dpopKey.sign(
 			payload: .init(

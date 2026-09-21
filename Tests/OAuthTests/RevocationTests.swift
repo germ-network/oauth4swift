@@ -39,8 +39,10 @@ import Testing
 		return try JSONDecoder().decode(AuthServerMetadata.self, from: json.utf8Data)
 	}
 
-	static let accessToken = OAuth.AccessToken(value: "at-123", expiry: nil, fetchedOn: nil)
-	static let refreshToken = OAuth.RefreshToken(value: "rt-456", expiry: nil, fetchedOn: nil)
+	static let accessToken = try! OAuth.AccessToken(
+		value: "at-123", expiry: nil, fetchedOn: nil)
+	static let refreshToken = try! OAuth.RefreshToken(
+		value: "rt-456", expiry: nil, fetchedOn: nil)
 
 	@Test("revoking an access token sends the RFC 7009 form body")
 	func accessTokenWireFormat() async throws {
