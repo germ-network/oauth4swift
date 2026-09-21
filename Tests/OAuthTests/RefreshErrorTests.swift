@@ -143,7 +143,7 @@ struct RefreshErrorTests {
 		let task = try #require(try await session.refresh())
 		let accessToken = try await task.value
 
-		#expect(try OAuth.SecretText.string(from: accessToken.value) == "new-access-token")
+		#expect(try accessToken.value.utf8String() == "new-access-token")
 		let tokens = try await session.tokenValues
 		#expect(tokens.access == "new-access-token")
 		#expect(tokens.refresh == "new-refresh-token")
@@ -168,7 +168,7 @@ struct RefreshErrorTests {
 		let task = try #require(try await session.refresh())
 		let accessToken = try await task.value
 
-		#expect(try OAuth.SecretText.string(from: accessToken.value) == "new-access-token")
+		#expect(try accessToken.value.utf8String() == "new-access-token")
 		let refreshToken = try #require(await session.currentRefreshToken)
 		#expect(refreshToken.value == existing.value)
 		#expect(refreshToken.expiry == existing.expiry)
@@ -221,7 +221,7 @@ struct RefreshErrorTests {
 		_ = try await task.value
 
 		let refreshToken = try #require(await session.currentRefreshToken)
-		#expect(try OAuth.SecretText.string(from: refreshToken.value) == "refresh-token")
+		#expect(try refreshToken.value.utf8String() == "refresh-token")
 
 		//the timeout restates the lifetime from now, extending the minute the
 		//preserved token had left

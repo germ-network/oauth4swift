@@ -54,10 +54,14 @@ extension OAuth.SessionCapabilities {
 		for request: BundledHTTPRequest,
 		accessToken: OAuth.AccessToken,
 	) async throws -> HTTPDataResponse {
+		//the token is materialized once; both schemes put the same credentials
+		//string in the same header field
+		let materialized = try accessToken.materializedValue
+
 		if let dpopSigner = self as? OAuth.DPoP.Signing {
 			return try await dpopSigner.authenticated(
 				request: request.settingHeader(
-					"DPoP " + (try accessToken.materializedValue),
+					"DPoP " + materialized,
 					for: .authorization),
 				token: accessToken,
 				fetcher: authFetcher
@@ -65,7 +69,7 @@ extension OAuth.SessionCapabilities {
 		} else {
 			return try await authFetcher.data(
 				for: request.settingHeader(
-					"Bearer " + (try accessToken.materializedValue),
+					"Bearer " + materialized,
 					for: .authorization)
 			)
 		}

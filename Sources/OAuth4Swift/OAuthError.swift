@@ -30,7 +30,7 @@ extension OAuth {
 		case notImplemented
 		case notSupported
 		case refreshNotSupported
-		case secretNotUTF8
+		case malformedToken
 
 		public var errorDescription: String? {
 			switch self {
@@ -79,8 +79,8 @@ extension OAuth {
 			case .notSupported: "The authorization server does not support this feature"
 			case .refreshNotSupported:
 				"The authorization server does not list refresh_token in grant_types_supported"
-			case .secretNotUTF8:
-				"A held secret's bytes are not valid UTF-8 and cannot be materialized as text"
+			case .malformedToken:
+				"A token value does not match the RFC 6749 access_token/refresh_token grammar (1*VSCHAR, %x20-7E)"
 			}
 		}
 	}

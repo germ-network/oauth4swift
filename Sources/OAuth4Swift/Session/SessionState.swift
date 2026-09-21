@@ -29,11 +29,17 @@ extension OAuth.Token {
 		return date.timeIntervalSinceNow > 0
 	}
 
-	/// Builds from a wire `String`, wrapping it into zeroizing custody. RFC 6749
-	/// token values are ASCII, so this is lossless — see `OAuth.SecretText`.
+	/// Builds from a wire `String`, validating its grammar and wrapping it into
+	/// zeroizing custody.
+	///
+	/// The grammar enforced is `1*VSCHAR` — RFC 6749 A.12/A.17 — which is the
+	/// token's own grammar; the narrower RFC 6750 §2.1 `b64token` shape belongs
+	/// to a Bearer *credential* and is not enforced here. See
+	/// `OAuth.TokenGrammar` for why.
 	init(value: String, expiry: Date?, fetchedOn: Date?) throws {
-		try self.init(
-			value: OAuth.SecretText.secretBytes(from: value),
+		try OAuth.TokenGrammar.validate(value)
+		self.init(
+			value: try SecretBytes(utf8: value),
 			expiry: expiry,
 			fetchedOn: fetchedOn
 		)
@@ -49,9 +55,23 @@ extension OAuth.Token {
 
 	/// Materializes the token value as text, only for the call that needs a
 	/// `String` (an `Authorization` header, a form field). Transient plaintext
-	/// copy — see `OAuth.SecretText`.
+	/// copy — see `SecretBytes.utf8String()`.
 	var materializedValue: String {
-		get throws { try OAuth.SecretText.string(from: value) }
+		get throws { try value.utf8String() }
+	}
+
+	/// The token materialized as a Bearer credential value — the canonical
+	/// bearer form, and the accessor to reach for when forming one.
+	///
+	/// Same bytes as `materializedValue`, named for the credential it forms.
+	/// It deliberately does **not** enforce RFC 6750 §2.1's `b64token`: the
+	/// token is opaque (RFC 6749 §1.4/§1.5, §10.3) and that grammar constrains
+	/// the credential, so a client rejecting a token its authorization server
+	/// issued would be asserting a rule that is not its to assert. Callers that
+	/// must know whether a value is Bearer-carriable can ask
+	/// `OAuth.TokenGrammar.isBearerSafe(_:)`. Transient plaintext copy, as above.
+	var asBearerToken: String {
+		get throws { try materializedValue }
 	}
 }
 
@@ -106,7 +126,7 @@ extension OAuth {
 		}
 
 		/// Materializes the bundled token's value as text for the revocation
-		/// request body. Transient plaintext copy — see `OAuth.SecretText`.
+		/// request body. Transient plaintext copy — see `SecretBytes.utf8String()`.
 		func materializedValue() throws -> String {
 			switch self {
 			case .access(let t): try t.materializedValue

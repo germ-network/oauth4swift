@@ -29,12 +29,17 @@ let package = Package(
 			from: "5.0.0"),
 		.package(url: "https://github.com/apple/swift-log", from: "1.6.0"),
 		// Zeroizing custody for the secrets this package carries — the DPoP
-		// P-256 private scalar and the access/refresh token values, which were
-		// previously plain `Data`/`String`. 0.5.0 is its swift-crypto-5
-		// release, matching this package's swift-crypto 5 move.
+		// P-256 private scalar and the access/refresh token values — plus the
+		// shared `SecretBytes`<->`String` text bridge (`utf8String()`), which
+		// moved here rather than living in this package.
+		//
+		// Temporary revision pin to that addition's branch
+		// (germ-network/swift-secret-bytes#16), which cuts as 0.6.0; replace
+		// with `.upToNextMinor(from: "0.6.0")` once it releases. The
+		// 0.5.x line does not carry the bridge.
 		.package(
 			url: "https://github.com/germ-network/swift-secret-bytes.git",
-			.upToNextMinor(from: "0.5.0")
+			revision: "3f6b4fad69101bcb0898b8dca559d1cbc9357078"
 		),
 	],
 	targets: [

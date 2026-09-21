@@ -74,18 +74,49 @@ struct SecretCustodyTests {
 		}
 	}
 
-	@Test("SecretText round-trips a token value losslessly")
-	func secretTextRoundTrip() throws {
-		let original = "abc-123_XYZ.~"
-		let secret = try OAuth.SecretText.secretBytes(from: original)
-		#expect(try OAuth.SecretText.string(from: secret) == original)
+	@Test("an empty token is refused: `1*VSCHAR` requires at least one character")
+	func emptyTokenRejected() throws {
+		#expect {
+			_ = try OAuth.AccessToken(value: "", expiry: nil, fetchedOn: nil)
+		} throws: { error in
+			guard case OAuth.Errors.malformedToken = error else { return false }
+			return true
+		}
 	}
 
-	@Test("an empty token cannot be placed in zeroizing custody")
-	func emptyTokenRejected() throws {
-		#expect(throws: SecretBytesError.emptySecret) {
-			_ = try OAuth.SecretText.secretBytes(from: "")
+	@Test("a token outside the RFC 6749 grammar is refused on ingest")
+	func malformedTokenRejected() throws {
+		//VSCHAR is %x20-7E: a control character or a non-ASCII scalar is outside it
+		#expect {
+			_ = try OAuth.AccessToken(value: "bad\ttoken", expiry: nil, fetchedOn: nil)
+		} throws: { error in
+			guard case OAuth.Errors.malformedToken = error else { return false }
+			return true
 		}
+		#expect {
+			_ = try OAuth.RefreshToken(value: "tökén", expiry: nil, fetchedOn: nil)
+		} throws: { error in
+			guard case OAuth.Errors.malformedToken = error else { return false }
+			return true
+		}
+		//space is IN VSCHAR, so it is accepted — the grammar is the RFC's, not a guess
+		#expect(OAuth.TokenGrammar.isValid("a b"))
+		#expect(OAuth.TokenGrammar.isValid("tökén") == false)
+	}
+
+	@Test("asBearerToken materializes the token, and does not reject a non-b64token one")
+	func asBearerTokenMaterializes() throws {
+		let token = try OAuth.AccessToken(
+			value: "at-123._~+/=", expiry: nil, fetchedOn: nil)
+		#expect(try token.asBearerToken == "at-123._~+/=")
+		#expect(OAuth.TokenGrammar.isBearerSafe(token.value))
+
+		//RFC 6750 §2.1 is narrower than RFC 6749 A.12, and it is not enforced
+		//here: this token is VSCHAR-valid but not b64token-valid, and the
+		//accessor still materializes it rather than pretending it is malformed
+		let opaque = try OAuth.AccessToken(value: "a,b", expiry: nil, fetchedOn: nil)
+		#expect(try opaque.asBearerToken == "a,b")
+		#expect(OAuth.TokenGrammar.isBearerSafe(opaque.value) == false)
 	}
 
 	@Test("a legacy plaintext JSON archive decodes into zeroizing custody")
@@ -149,7 +180,7 @@ struct SecretCustodyTests {
 
 		let archive = try OAuth.SessionState.Archive.decodeLegacy(Data(json.utf8))
 		#expect(
-			try OAuth.SecretText.string(from: archive.tokenState.accessToken.value)
+			try archive.tokenState.accessToken.value.utf8String()
 				== token)
 	}
 }

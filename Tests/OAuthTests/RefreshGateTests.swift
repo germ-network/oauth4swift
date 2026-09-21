@@ -68,7 +68,7 @@ struct RefreshGateTests {
 		let task = try #require(try await session.refresh())
 		let accessToken = try await task.value
 
-		#expect(try OAuth.SecretText.string(from: accessToken.value) == "new-at")
+		#expect(try accessToken.value.utf8String() == "new-at")
 		#expect(await mock.requests(for: Self.tokenUrl).count == 1)
 	}
 

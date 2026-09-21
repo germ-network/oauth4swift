@@ -13,13 +13,23 @@ token plainly. `AccessToken`/`RefreshToken`/`DPoP.Key` drop `Hashable` — a
 secret's hash is a leak vector, and `SecretField` is deliberately not `Hashable`
 — keeping `Equatable`.
 
-- **`OAuth.SecretText`** is the one, documented bridge between a secret's bytes
-  and its UTF-8 text form (RFC 6749 tokens are ASCII, so it is lossless in both
-  directions). A `String` is materialized only where one is actually needed —
-  the `Authorization` header (`OAuth.Token.materializedValue`) and the RFC 7009
-  revocation form body (`OAuth.RevocableToken.materializedValue()`) — as a
-  transient copy. The token values no longer round-trip through `.utf8` at each
-  call site.
+- **The text bridge lives in `swift-secret-bytes` now** — `SecretBytes(utf8:)`
+  and `SecretBytes.utf8String()`, added in 0.6.0 (germ-network/swift-secret-bytes#16),
+  rather than a local helper. A `String` is materialized only where one is
+  actually needed — the `Authorization` header and the RFC 7009 revocation form
+  body — as a transient copy. This package revision-pins that addition until
+  0.6.0 cuts.
+- **`OAuth.TokenGrammar`** validates a token on ingest against RFC 6749's own
+  grammar — Appendix A.12/A.17 `access-token`/`refresh-token = 1*VSCHAR`, with
+  `VSCHAR = %x20-7E` (Appendix A) — and throws `OAuth.Errors.malformedToken` on
+  a value outside it. RFC 6750 §2.1's narrower `b64token` is deliberately **not**
+  enforced at ingest: it constrains a Bearer *credential*, not the token, and
+  §§1.4/1.5 make the value opaque to the client. `OAuth.TokenGrammar.isBearerSafe(_:)`
+  exposes it for callers that need it.
+- **`OAuth.Token.asBearerToken`** is the canonical bearer-form materialization,
+  on the shared `Token` protocol so access and refresh tokens both get it.
+- The `Authorization` header path materializes the token once, outside the
+  DPoP/Bearer branch, instead of in each arm.
 - **Legacy plaintext archives still decode.** `OAuth.SessionState.LegacyArchive`
   is the pre-zeroizing JSON shape (token `String`s, base64 `Data` DPoP scalar),
   and `OAuth.SessionState.Archive.decodeLegacy(_:)` migrates one into the
