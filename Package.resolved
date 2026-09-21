@@ -1,5 +1,5 @@
 {
-  "originHash" : "2e311a19b2471a23398fcda2448681c7c56332162adb296fc7149efe159f421d",
+  "originHash" : "2eaaf27126a44ebc47394f8b511b8d3222b2a8eab13b57a9bc7af11891d42691",
   "pins" : [
     {
       "identity" : "germconvenience",
@@ -60,7 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/germ-network/swift-secret-bytes.git",
       "state" : {
-        "revision" : "3f6b4fad69101bcb0898b8dca559d1cbc9357078"
+        "revision" : "fcd33784910cdc2aff9e83a14e16e613ffc86ca9",
+        "version" : "0.6.0"
       }
     }
   ],

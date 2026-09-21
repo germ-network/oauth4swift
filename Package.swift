@@ -33,13 +33,13 @@ let package = Package(
 		// shared `SecretBytes`<->`String` text bridge (`utf8String()`), which
 		// moved here rather than living in this package.
 		//
-		// Temporary revision pin to that addition's branch
-		// (germ-network/swift-secret-bytes#16), which cuts as 0.6.0; replace
-		// with `from: "0.6.0"` once it releases. The
-		// 0.5.x line does not carry the bridge.
+		// 0.6.0 adds the shared `SecretBytes`<->`String` text bridge
+		// (germ-network/swift-secret-bytes#16) this package uses.
+		// `from:` rather than `.upToNextMinor` so later 0.x releases are not
+		// fenced off.
 		.package(
 			url: "https://github.com/germ-network/swift-secret-bytes.git",
-			revision: "3f6b4fad69101bcb0898b8dca559d1cbc9357078"
+			from: "0.6.0"
 		),
 	],
 	targets: [
