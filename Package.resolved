@@ -1,5 +1,5 @@
 {
-  "originHash" : "2eaaf27126a44ebc47394f8b511b8d3222b2a8eab13b57a9bc7af11891d42691",
+  "originHash" : "425f300143006825e71b990ec419f32b9dce6d69298795f9813a5e3446ce26b8",
   "pins" : [
     {
       "identity" : "germconvenience",
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swift-libp2p/swift-bases.git",
       "state" : {
-        "revision" : "96615d4b582f9f6536d8278304ce2a64c8e5288a",
-        "version" : "0.2.0"
+        "revision" : "99bf30ca95313bbf2e815a82023a2aca99491a77",
+        "version" : "0.4.0"
       }
     },
     {
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-http-types.git",
       "state" : {
-        "revision" : "45eb0224913ea070ec4fba17291b9e7ecf4749ca",
-        "version" : "1.5.1"
+        "revision" : "bff4b6903cdc99dda49649dd52f46c11cfd3ed50",
+        "version" : "1.8.0"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-log",
       "state" : {
-        "revision" : "5073617dac96330a486245e4c0179cb0a6fd2256",
-        "version" : "1.12.0"
+        "revision" : "9c6fb14227f55d8f711ce3847dc2f419fb0ecacb",
+        "version" : "1.15.1"
       }
     },
     {
