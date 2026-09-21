@@ -2,7 +2,6 @@
 
 Contributions are welcomed and encouraged
 
-
 To give clarity of what is expected of our members, Germ has adopted the
 code of conduct defined by the Contributor Covenant. This document is used
 across many open source communities, and we think it articulates our values
@@ -18,15 +17,19 @@ Because these libraries are under very active development, we receive a lot of b
 Before opening a new issue, take a moment to [browse our existing issues](https://github.com/germ-network/oauth4swift/issues) to reduce the chance of reporting a duplicate.
 
 ## Linting
+
 The repo has a .editorconfig and .swift-format setup. We use both swift
 formatter and linter:
+
 ```
 swift format . -ri && swift format lint . -r
 ```
 
 ## Static Analyzer
+
 We also use the [periphery static analyzer](https://github.com/peripheryapp/periphery) and have a configured `periphery.yml`
 
 ## Changesets
+
 We use [Changesets](https://github.com/changesets/changesets) to document changes and releases.
 Please [generate a changeset](https://github.com/changesets/changesets/blob/main/docs/adding-a-changeset.md) for your pull requests.

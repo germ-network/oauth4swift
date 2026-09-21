@@ -1,20 +1,19 @@
-name: Workflows
+name: Lint
 
+# No paths filter: the formatting job covers Markdown, JSON and YAML across the
+# whole repo, so limiting this to .github/workflows would miss most of what it
+# checks.
 on:
   push:
-    paths:
-      - ".github/workflows/**"
   pull_request:
     branches:
       - main
-    paths:
-      - ".github/workflows/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
-# Check only, so read access is all it needs.
+# Both jobs only report, so read access is all they need.
 permissions:
   contents: read
 
@@ -35,3 +34,16 @@ jobs:
           verify: true
           # Give a compromised release time to be spotted before it can run here, in days.
           min_age: 1
+
+  format:
+    name: Formatting
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        with:
+          require-lockfile: true
+      - name: Check formatting
+        run: pnpm format:check

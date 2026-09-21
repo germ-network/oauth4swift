@@ -172,6 +172,9 @@ importers:
       '@changesets/cli':
         specifier: ^2.30.0
         version: 2.30.0
+      prettier:
+        specifier: ^3.9.8
+        version: 3.9.8
 
 packages:
 
@@ -490,6 +493,11 @@ packages:
   prettier@2.8.8:
     resolution: {integrity: sha512-tdN8qQGvNjw4CHbY+XXk0JgCXn9QiF21a55rBe5LJAU+kDyC4WQn4+awm2Xfk2lQMk5fKup9XgzTZtGkjBdP9Q==}
     engines: {node: '>=10.13.0'}
+    hasBin: true
+
+  prettier@3.9.8:
+    resolution: {integrity: sha512-WRFq3Wn3WId7LLROfMLdH7xaFr2jR62wU8nLO6rQUOLOxNZUviyJQs1M0iIhLexSFy+L+w0ch66wtoO2jRjG0A==}
+    engines: {node: '>=14'}
     hasBin: true
 
   quansync@0.2.11:
@@ -960,6 +968,8 @@ snapshots:
   pify@4.0.1: {}
 
   prettier@2.8.8: {}
+
+  prettier@3.9.8: {}
 
   quansync@0.2.11: {}
 

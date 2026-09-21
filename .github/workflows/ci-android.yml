@@ -5,10 +5,10 @@ on:
     # branches:
     #   - main
     paths-ignore:
-      - "README.md"
-      - "CODE_OF_CONDUCT.md"
-      - ".editorconfig"
-      - ".spi.yml"
+      - 'README.md'
+      - 'CODE_OF_CONDUCT.md'
+      - '.editorconfig'
+      - '.spi.yml'
   pull_request:
     branches:
       - main
@@ -28,9 +28,9 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: "Test Swift Package on Android"
+      - name: 'Test Swift Package on Android'
         # Third-party action: pinned to a commit SHA so a rewritten tag can't
         # change what runs. Dependabot keeps the pin current.
         uses: skiptools/swift-android-action@2044b79660f201ccef8cbce62877e4ec5409f9c8 # v2.9.5
         with:
-          swift-version: "6.3"
+          swift-version: '6.3'

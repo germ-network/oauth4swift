@@ -3,20 +3,20 @@ updates:
   # Third-party actions are pinned to commit SHAs in the workflows. Pinning
   # without automated updates is how a workflow ends up years behind, so this
   # is what keeps the pins honest.
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     groups:
       actions:
         patterns:
-          - "*"
+          - '*'
 
-  - package-ecosystem: "swift"
-    directory: "/"
+  - package-ecosystem: 'swift'
+    directory: '/'
     schedule:
-      interval: "weekly"
+      interval: 'weekly'
     groups:
       swift:
         patterns:
-          - "*"
+          - '*'
