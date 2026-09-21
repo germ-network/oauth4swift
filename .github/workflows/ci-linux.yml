@@ -5,10 +5,10 @@ on:
     # branches:
     #   - main
     paths-ignore:
-      - 'README.md'
-      - 'CODE_OF_CONDUCT.md'
-      - '.editorconfig'
-      - '.spi.yml'
+      - "README.md"
+      - "CODE_OF_CONDUCT.md"
+      - ".editorconfig"
+      - ".spi.yml"
   pull_request:
     branches:
       - main
@@ -17,16 +17,21 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+# Least privilege: these jobs only read the repository.
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
     container:
-      image: swift:latest
+      # The floor, matching swift-tools-version in Package.swift
+      image: swift:6.3
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Lint
         run: swift format lint --recursive --configuration .swift-format --strict Sources Tests
 
@@ -37,12 +42,16 @@ jobs:
       image: swift:${{matrix.swift-version}}
     timeout-minutes: 30
     strategy:
+      # Don't let the floor failing cancel the `latest` canary
+      fail-fast: false
       matrix:
         swift-version:
-          - "latest"
+          - "6.3" # The floor, matching swift-tools-version in Package.swift
+          - "6.4"
+          - "latest" # Early warning for the next release. Same image as 6.4 today.
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: swift --version
       - name: Test
         run: swift test

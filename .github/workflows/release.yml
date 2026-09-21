@@ -10,6 +10,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
+# Default to nothing; the release job opts into exactly what it needs below.
+permissions: {}
+
 jobs:
   release:
     if: ${{ github.ref == 'refs/heads/main' && github.repository_owner == 'germ-network' }}
@@ -21,24 +24,24 @@ jobs:
       contents: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v5
+      - name: Setup pnpm and Node.js
+        # Supersedes pnpm/action-setup + actions/setup-node. Reads the pnpm
+        # version from devEngines.packageManager and auto-detects Node from
+        # .node-version, so neither version is declared in two places.
+        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
         with:
-          run_install: true
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version-file: ".node-version"
-          check-latest: true
-          cache: pnpm
+          cache: true
+          # Fail when no lockfile is present, rather than resolving from the
+          # registry and writing one, and install with --frozen-lockfile.
+          require-lockfile: true
 
       - name: Create Pull Request for next release or Publish a new github release
         id: changesets
-        uses: changesets/action@v1
-
+        # Pinned to a SHA at the current major. v2 is available and is the
+        # changesets upgrade still to be worked out.
+        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
         with:
           title: Prepare next release
           createGithubReleases: true
