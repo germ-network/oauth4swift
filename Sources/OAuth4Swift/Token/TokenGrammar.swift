@@ -23,8 +23,26 @@ extension OAuth {
 	/// *credential*, not the token. It is therefore **not** enforced on ingest —
 	/// a conforming authorization server may issue a token outside it, and
 	/// refusing one the server minted would be this client pretending to know
-	/// better than the issuer. `isBearerSafe(_:)` is exposed for a caller that
+	/// better than the issuer. `isToken68(_:)` is exposed for a caller that
 	/// does need to know whether a value can be carried that way.
+	/// The `Authorization` authentication scheme a token is carried under.
+	///
+	/// Both schemes share one token grammar — RFC 6750 §2.1 names it `b64token`
+	/// and RFC 9449 §7.1 names it `token68`, but the productions are the same
+	/// set — so the two credentials differ only in the scheme name:
+	///
+	/// - RFC 6750 §2.1: `credentials = "Bearer" 1*SP b64token`
+	/// - RFC 9449 §7.1: `credentials = "DPoP" 1*SP token68`
+	///
+	/// The raw values are the on-the-wire scheme tokens and are
+	/// case-sensitive (RFC 9110 §11.1).
+	public enum CredentialScheme: String, Sendable {
+		/// RFC 6750 §2.1 Bearer credentials.
+		case bearer = "Bearer"
+		/// RFC 9449 §7.1 DPoP credentials.
+		case dpop = "DPoP"
+	}
+
 	public enum TokenGrammar {
 		/// Enforces RFC 6749 A.12/A.17: `1*VSCHAR`, `VSCHAR = %x20-7E`.
 		///
@@ -44,9 +62,19 @@ extension OAuth {
 			return value.unicodeScalars.allSatisfy { (0x20...0x7E).contains($0.value) }
 		}
 
-		/// RFC 6750 §2.1 `b64token`: one or more of `ALPHA / DIGIT / - . _ ~ + /`,
-		/// then zero or more `=`.
+		/// The scheme-credential token grammar: one or more of
+		/// `ALPHA / DIGIT / - . _ ~ + /`, then zero or more `=`.
+		///
+		/// RFC 6750 §2.1 calls this production `b64token` and RFC 9449 §7.1 calls
+		/// it `token68`; the sets are identical, which is why one predicate
+		/// serves both schemes. `isBearerSafe` keeps the name it was introduced
+		/// under.
 		public static func isBearerSafe(_ value: SecretBytes) -> Bool {
+			isToken68(value)
+		}
+
+		/// Scheme-neutral spelling of `isBearerSafe` — see its note.
+		public static func isToken68(_ value: SecretBytes) -> Bool {
 			value.withUnsafeBytes { bytes in
 				guard !bytes.isEmpty else { return false }
 
