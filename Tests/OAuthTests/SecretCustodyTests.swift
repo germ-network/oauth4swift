@@ -104,11 +104,14 @@ struct SecretCustodyTests {
 		#expect(OAuth.TokenGrammar.isValid("tökén") == false)
 	}
 
-	@Test("asBearerToken materializes a b64token, and rejects one outside the grammar")
+	@Test("asBearerToken forms the RFC 6750 credential, and rejects a non-b64token token")
 	func asBearerTokenEnforcesTheCredentialGrammar() throws {
-		//RFC 6750 §2.1 b64token: ALPHA / DIGIT / - . _ ~ + / , then *"="
+		//RFC 6750 §2.1 b64token: ALPHA / DIGIT / - . _ ~ + / , then *"=",
+		//carried as `credentials = "Bearer" 1*SP b64token` — a space, no colon
 		let safe = try OAuth.AccessToken(value: "at-123._~+/=", expiry: nil, fetchedOn: nil)
-		#expect(try safe.asBearerToken == "at-123._~+/=")
+		#expect(try safe.asBearerToken == "Bearer at-123._~+/=")
+		#expect(try safe.asBearerToken.hasPrefix("Bearer "))
+		#expect(try safe.asBearerToken.contains(":") == false)
 		#expect(OAuth.TokenGrammar.isBearerSafe(safe.value))
 
 		//VSCHAR-valid (so ingest accepts it) but outside b64token, so it cannot
@@ -122,8 +125,8 @@ struct SecretCustodyTests {
 			return true
 		}
 
-		//materializedValue is the unvalidated exit, for the transports where the
-		//Bearer grammar does not govern
+		//materializedValue is the prefix-less, unvalidated exit, for the
+		//transports where the Bearer grammar does not govern
 		#expect(try opaque.materializedValue == "a,b")
 	}
 
