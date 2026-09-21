@@ -30,7 +30,7 @@ struct TestJWTSigning {
 		let verifier = ECDSASigner(key: privateKey)
 		#expect(
 			try verifier.verify(
-				Data(base64URLEncoded: jwt.signature).tryUnwrap,
+				try Data(base64URLEncoded: jwt.signature),
 				signs: jwt.signingInput.utf8Data
 			)
 		)

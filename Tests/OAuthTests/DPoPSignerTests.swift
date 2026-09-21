@@ -67,7 +67,7 @@ struct Test {
 
 		let header = try JSONDecoder().decode(
 			JWT.Header.self,
-			from: try #require(Data(base64URLEncoded: jwt.header))
+			from: try #require(try Data(base64URLEncoded: jwt.header))
 		)
 
 		#expect(header.typ == "dpop+jwt")
@@ -115,7 +115,7 @@ extension JWT.JWK {
 
 	func verifyP256(jwt: JWT) throws -> Bool {
 		let signOver = (jwt.header + [JWT.period] + jwt.payload).utf8Data
-		let signatureData = try #require(Data(base64URLEncoded: jwt.signature))
+		let signatureData = try #require(try Data(base64URLEncoded: jwt.signature))
 
 		return try p256Key.isValidSignature(
 			.init(rawRepresentation: signatureData),
@@ -127,8 +127,8 @@ extension JWT.JWK {
 		get throws {
 			#expect(kty == "EC")
 			#expect(crv == "P-256")
-			let xComponent = try #require(Data(base64URLEncoded: x))
-			let yComponent = try #require(Data(base64URLEncoded: y))
+			let xComponent = try #require(try Data(base64URLEncoded: x))
+			let yComponent = try #require(try Data(base64URLEncoded: y))
 
 			// Public key consists of 04 | X | Y where X and Y are the same length
 			// (Which, for P256, is 256 / 8 = 32 bytes each.)
