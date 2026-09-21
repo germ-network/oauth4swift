@@ -1,5 +1,73 @@
 # @germ-network/oauth4swift
 
+## 0.8.0
+
+### Minor Changes
+
+- [#67](https://github.com/germ-network/oauth4swift/pull/67) [`ca21968`](https://github.com/germ-network/oauth4swift/commit/ca21968df6cf702ed96956c3789c0245a481b62b) Thanks [@germ-mark](https://github.com/germ-mark)! - Expose `OAuth.SessionState.Archive`'s `clientId`, `dPopKey`, and `issuingServer`, and `OAuth.DPoP.Key`'s `alg` and `keyData`, as public; add public inits to `AccessToken`, `RefreshToken`, and `TokenState` and expose `TokenState.grantExpiry` / `.scopes`.
+
+  A consumer re-homing a session archive (and its secrets) into zeroizing custody needs to read and rebuild these without the type's synthesized `Codable` shape — a bridge through a coder keyed on property names breaks silently, at runtime, on any field rename or hand-written `CodingKeys`. Widening visibility and construction removes that fragility. Behavior is unchanged.
+
+  Also widens the `swift-crypto` dependency to `from: "5.0.0"` (org-wide move to swift-crypto 5; no code changes needed, full suite passes).
+
+- [#67](https://github.com/germ-network/oauth4swift/pull/67) [`70d7cc9`](https://github.com/germ-network/oauth4swift/commit/70d7cc9657e0d508701178bef50122bc38b9f7cf) Thanks [@germ-mark](https://github.com/germ-mark)! - Hold the session's secrets in zeroizing custody via `swift-secret-bytes`.
+
+  `OAuth.DPoP.Key.keyData` is now a `SecretBytes` (was `Data`), and
+  `OAuth.AccessToken.value` / `OAuth.RefreshToken.value` are `SecretBytes` (were
+  `String`). The persisted `OAuth.SessionState.Archive` therefore carries
+  `@SecretField` secrets and is `Codable` **only** into a `SecretArchive`; any
+  other coder (e.g. `JSONEncoder`) throws rather than writing a private scalar or
+  token plainly. `AccessToken`/`RefreshToken`/`DPoP.Key` drop `Hashable` — a
+  secret's hash is a leak vector, and `SecretField` is deliberately not `Hashable`
+  — keeping `Equatable`.
+
+  - **The text bridge lives in `swift-secret-bytes` now** — `SecretBytes(utf8:)`
+    and `SecretBytes.utf8String()`, added in 0.6.0 (germ-network/swift-secret-bytes#16),
+    rather than a local helper. A `String` is materialized only where one is
+    actually needed — the `Authorization` header and the RFC 7009 revocation form
+    body — as a transient copy. This package revision-pins that addition until
+    0.6.0 cuts.
+  - **`OAuth.TokenGrammar`** validates a token on ingest against RFC 6749's own
+    grammar — Appendix A.12/A.17 `access-token`/`refresh-token = 1*VSCHAR`, with
+    `VSCHAR = %x20-7E` (Appendix A) — and throws `OAuth.Errors.malformedToken` on
+    a value outside it. RFC 6750 §2.1's narrower `b64token` is deliberately **not**
+    enforced at ingest: it constrains a Bearer _credential_, not the token, and
+    §§1.4/1.5 make the value opaque to the client. `OAuth.TokenGrammar.isBearerSafe(_:)`
+    exposes it for callers that need it.
+  - **`OAuth.Token.asCredential(_:)`** forms a full `Authorization` credential —
+    scheme, one space, token — for `OAuth.CredentialScheme.bearer` (RFC 6750 §2.1
+    `credentials = "Bearer" 1*SP b64token`) and `.dpop` (RFC 9449 §7.1
+    `credentials = "DPoP" 1*SP token68`); those two productions are the same set,
+    so one predicate and one former serve both. `asBearerToken` / `asDPoPToken`
+    delegate to it, and the wire path forms its headers through them, so no call
+    site prepends a scheme itself. The former requires the grammar
+    (`TokenGrammar.isToken68(_:)`, the scheme-neutral spelling of `isBearerSafe`),
+    throwing `OAuth.Errors.tokenNotBearerSafe` otherwise.
+  - **`OAuth.Token.asBearerToken`** returns the full RFC 6750 §2.1 **credential**
+    — `credentials = "Bearer" 1*SP b64token`, scheme + one space + token (a space,
+    _not_ the colon that separates the header name), on the shared `Token`
+    protocol so access and refresh tokens both get it. It **requires** the
+    `b64token` grammar, throwing the new `OAuth.Errors.tokenNotBearerSafe`
+    otherwise: the token stays opaque and ingest keeps enforcing only `1*VSCHAR`,
+    but at the point a Bearer _credential_ is formed the narrower grammar is the
+    one that governs. The wire path forms its Bearer header through this accessor,
+    so the scheme lives in exactly one place. `materializedValue` stays the
+    prefix-less, unvalidated exit for the other transports.
+  - The `Authorization` header path materializes the token once, outside the
+    DPoP/Bearer branch, instead of in each arm.
+  - **Legacy plaintext archives still decode.** `OAuth.SessionState.LegacyArchive`
+    is the pre-zeroizing JSON shape (token `String`s, base64 `Data` DPoP scalar),
+    and `OAuth.SessionState.Archive.decodeLegacy(_:)` migrates one into the
+    zeroizing form — so an app whose own archive nests the session archive can
+    keep reading what it already persisted.
+
+  **Breaking:** the `String`-based token initializers are now `throws` (an empty
+  token cannot be a `SecretBytes`), the token/key types drop `Hashable`, and the
+  platform floor rises to iOS 18 (swift-secret-bytes 0.5.0's own floor). The
+  `OAuth.SessionState.*.mock()` helpers are now `throws` accordingly.
+  `OAuth.DPoP.Key.generateP256()` stays non-`throws`: the wrap can only fail on an
+  empty scalar, which a generated P-256 key never is.
+
 ## 0.7.0
 
 ### Minor Changes
