@@ -60,18 +60,29 @@ extension OAuth.Token {
 		get throws { try value.utf8String() }
 	}
 
-	/// The token materialized as a Bearer credential value — the canonical
-	/// bearer form, and the accessor to reach for when forming one.
+	/// The token materialized as a **Bearer credential** — the canonical bearer
+	/// form, and the accessor to reach for when forming one.
 	///
-	/// Same bytes as `materializedValue`, named for the credential it forms.
-	/// It deliberately does **not** enforce RFC 6750 §2.1's `b64token`: the
-	/// token is opaque (RFC 6749 §1.4/§1.5, §10.3) and that grammar constrains
-	/// the credential, so a client rejecting a token its authorization server
-	/// issued would be asserting a rule that is not its to assert. Callers that
-	/// must know whether a value is Bearer-carriable can ask
-	/// `OAuth.TokenGrammar.isBearerSafe(_:)`. Transient plaintext copy, as above.
+	/// This is where RFC 6750 §2.1's grammar binds: `b64token =
+	/// 1*( ALPHA / DIGIT / "-" / "." / "_" / "~" / "+" / "/" ) *"="`, carried as
+	/// `credentials = "Bearer" 1*SP b64token`. The token *itself* stays opaque —
+	/// ingest enforces only RFC 6749's `1*VSCHAR` (see `OAuth.TokenGrammar`) —
+	/// but at the point a Bearer credential is actually formed, the narrower
+	/// grammar is exactly the one that governs, so it is enforced here rather
+	/// than asserted about the issuer. `materializedValue` remains the
+	/// unvalidated exit for other transports (a form body, a revocation
+	/// request).
+	///
+	/// - Throws: `OAuth.Errors.tokenNotBearerSafe` when the token falls outside
+	///   the grammar, alongside any error from materializing it. Transient
+	///   plaintext copy, as above.
 	var asBearerToken: String {
-		get throws { try materializedValue }
+		get throws {
+			guard OAuth.TokenGrammar.isBearerSafe(value) else {
+				throw OAuth.Errors.tokenNotBearerSafe
+			}
+			return try materializedValue
+		}
 	}
 }
 

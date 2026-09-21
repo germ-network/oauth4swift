@@ -27,7 +27,12 @@ secret's hash is a leak vector, and `SecretField` is deliberately not `Hashable`
   §§1.4/1.5 make the value opaque to the client. `OAuth.TokenGrammar.isBearerSafe(_:)`
   exposes it for callers that need it.
 - **`OAuth.Token.asBearerToken`** is the canonical bearer-form materialization,
-  on the shared `Token` protocol so access and refresh tokens both get it.
+  on the shared `Token` protocol so access and refresh tokens both get it. It
+  **requires** RFC 6750 §2.1's `b64token` grammar, throwing the new
+  `OAuth.Errors.tokenNotBearerSafe` otherwise: the token stays opaque and ingest
+  keeps enforcing only `1*VSCHAR`, but at the point a Bearer *credential* is
+  formed the narrower grammar is the one that governs.
+  `materializedValue` stays the unvalidated exit for the other transports.
 - The `Authorization` header path materializes the token once, outside the
   DPoP/Bearer branch, instead of in each arm.
 - **Legacy plaintext archives still decode.** `OAuth.SessionState.LegacyArchive`

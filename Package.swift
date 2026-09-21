@@ -35,7 +35,7 @@ let package = Package(
 		//
 		// Temporary revision pin to that addition's branch
 		// (germ-network/swift-secret-bytes#16), which cuts as 0.6.0; replace
-		// with `.upToNextMinor(from: "0.6.0")` once it releases. The
+		// with `from: "0.6.0"` once it releases. The
 		// 0.5.x line does not carry the bridge.
 		.package(
 			url: "https://github.com/germ-network/swift-secret-bytes.git",

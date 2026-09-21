@@ -104,19 +104,27 @@ struct SecretCustodyTests {
 		#expect(OAuth.TokenGrammar.isValid("tökén") == false)
 	}
 
-	@Test("asBearerToken materializes the token, and does not reject a non-b64token one")
-	func asBearerTokenMaterializes() throws {
-		let token = try OAuth.AccessToken(
-			value: "at-123._~+/=", expiry: nil, fetchedOn: nil)
-		#expect(try token.asBearerToken == "at-123._~+/=")
-		#expect(OAuth.TokenGrammar.isBearerSafe(token.value))
+	@Test("asBearerToken materializes a b64token, and rejects one outside the grammar")
+	func asBearerTokenEnforcesTheCredentialGrammar() throws {
+		//RFC 6750 §2.1 b64token: ALPHA / DIGIT / - . _ ~ + / , then *"="
+		let safe = try OAuth.AccessToken(value: "at-123._~+/=", expiry: nil, fetchedOn: nil)
+		#expect(try safe.asBearerToken == "at-123._~+/=")
+		#expect(OAuth.TokenGrammar.isBearerSafe(safe.value))
 
-		//RFC 6750 §2.1 is narrower than RFC 6749 A.12, and it is not enforced
-		//here: this token is VSCHAR-valid but not b64token-valid, and the
-		//accessor still materializes it rather than pretending it is malformed
-		let opaque = try OAuth.AccessToken(value: "a,b", expiry: nil, fetchedOn: nil)
-		#expect(try opaque.asBearerToken == "a,b")
+		//VSCHAR-valid (so ingest accepts it) but outside b64token, so it cannot
+		//be carried as a Bearer credential — the boundary refuses it
+		let opaque = try OAuth.RefreshToken(value: "a,b", expiry: nil, fetchedOn: nil)
 		#expect(OAuth.TokenGrammar.isBearerSafe(opaque.value) == false)
+		#expect {
+			_ = try opaque.asBearerToken
+		} throws: { error in
+			guard case OAuth.Errors.tokenNotBearerSafe = error else { return false }
+			return true
+		}
+
+		//materializedValue is the unvalidated exit, for the transports where the
+		//Bearer grammar does not govern
+		#expect(try opaque.materializedValue == "a,b")
 	}
 
 	@Test("a legacy plaintext JSON archive decodes into zeroizing custody")
@@ -125,8 +133,8 @@ struct SecretCustodyTests {
 		let keyDataBase64 = key.keyData.withUnsafeBytes {
 			Data($0).base64EncodedString()
 		}
-		// the DPoP alg rides the enum's own synthesized Codable, exactly as the
-		// legacy encoder wrote it — derive it rather than hardcode the shape
+		//the DPoP alg rides the enum's own synthesized Codable, exactly as the
+		//legacy encoder wrote it — derive it rather than hardcode the shape
 		let algJSON = String(
 			decoding: try JSONEncoder().encode(OAuth.DPoP.Alg.es256),
 			as: UTF8.self)
@@ -150,11 +158,13 @@ struct SecretCustodyTests {
 		#expect(archive.clientId == "app.example.com")
 		#expect(archive.grantScopes == ["atproto"])
 		#expect(archive.dPopKey?.keyData == key.keyData)
-		#expect(plaintext(of: archive.tokenState.accessToken.value) == "legacy-access")
-		let refreshValue = archive.tokenState.refreshToken.map { plaintext(of: $0.value) }
+		#expect(try archive.tokenState.accessToken.value.utf8String() == "legacy-access")
+		let refreshValue = archive.tokenState.refreshToken.map {
+			try? $0.value.utf8String()
+		}
 		#expect(refreshValue == "legacy-refresh")
 
-		// and the decoded archive rides the sealed form from here on
+		//and the decoded archive rides the sealed form from here on
 		let restored = try SecretArchive(encoding: archive)
 			.decode(OAuth.SessionState.Archive.self)
 		#expect(restored.dPopKey?.keyData == key.keyData)
@@ -162,9 +172,9 @@ struct SecretCustodyTests {
 
 	@Test("a base64-shaped legacy token is read as the token, not decoded")
 	func legacyBase64ShapedTokenIsLiteral() throws {
-		// The legacy token was written as a JSON string, and OAuth tokens are
-		// base64url-shaped — so a reader that "tried Data first" would silently
-		// turn this token into different bytes. The string is the token.
+		//the legacy token was written as a JSON string, and OAuth tokens are
+		//base64url-shaped — so a reader that "tried Data first" would silently
+		//turn this token into different bytes. The string is the token.
 		let token = Data("token-bytes-encoded".utf8).base64EncodedString()
 
 		let json = """
@@ -179,8 +189,6 @@ struct SecretCustodyTests {
 			"""
 
 		let archive = try OAuth.SessionState.Archive.decodeLegacy(Data(json.utf8))
-		#expect(
-			try archive.tokenState.accessToken.value.utf8String()
-				== token)
+		#expect(try archive.tokenState.accessToken.value.utf8String() == token)
 	}
 }
