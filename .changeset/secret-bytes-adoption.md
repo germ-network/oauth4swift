@@ -26,6 +26,15 @@ secret's hash is a leak vector, and `SecretField` is deliberately not `Hashable`
   enforced at ingest: it constrains a Bearer *credential*, not the token, and
   §§1.4/1.5 make the value opaque to the client. `OAuth.TokenGrammar.isBearerSafe(_:)`
   exposes it for callers that need it.
+- **`OAuth.Token.asCredential(_:)`** forms a full `Authorization` credential —
+  scheme, one space, token — for `OAuth.CredentialScheme.bearer` (RFC 6750 §2.1
+  `credentials = "Bearer" 1*SP b64token`) and `.dpop` (RFC 9449 §7.1
+  `credentials = "DPoP" 1*SP token68`); those two productions are the same set,
+  so one predicate and one former serve both. `asBearerToken` / `asDPoPToken`
+  delegate to it, and the wire path forms its headers through them, so no call
+  site prepends a scheme itself. The former requires the grammar
+  (`TokenGrammar.isToken68(_:)`, the scheme-neutral spelling of `isBearerSafe`),
+  throwing `OAuth.Errors.tokenNotBearerSafe` otherwise.
 - **`OAuth.Token.asBearerToken`** returns the full RFC 6750 §2.1 **credential**
   — `credentials = "Bearer" 1*SP b64token`, scheme + one space + token (a space,
   *not* the colon that separates the header name), on the shared `Token`
