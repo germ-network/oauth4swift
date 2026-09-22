@@ -1,5 +1,19 @@
 # @germ-network/oauth4swift
 
+## 0.9.0
+
+### Minor Changes
+
+- [#72](https://github.com/germ-network/oauth4swift/pull/72) [`4379337`](https://github.com/germ-network/oauth4swift/commit/437933736b9394dd0692463532f8a48fcef6b01d) Thanks [@ThisIsMissEm](https://github.com/ThisIsMissEm)! - Raise the minimum Swift toolchain to 6.3.
+
+  `swift-tools-version` was 6.2 while CI only ever tested `swift:latest`, so the declared
+  floor was never actually exercised. Linux CI now tests the floor, the current release,
+  and `latest` as an early warning for the next one.
+
+### Patch Changes
+
+- [#75](https://github.com/germ-network/oauth4swift/pull/75) [`044cdfe`](https://github.com/germ-network/oauth4swift/commit/044cdfe6f1ffcfb721899e6308338350e4aea53d) Thanks [@dependabot](https://github.com/apps/dependabot)! - Bump swift-http-types, swift-bases, and swift-log to their latest minor releases.
+
 ## 0.8.0
 
 ### Minor Changes
@@ -290,12 +304,10 @@
   Client Auth is separated into two protocols for the Client Auth components and composition
 
   ### `ClientAuth.Component`
-
   - Implementations of objects that perform the authetication conform to this protocol. They're expected to be held within a client/session, so don't themselves hold on to e.g. clientId and instead take it as a parameter when authenticating.
   - Some auth components may contain mutable state. These can be implemented as classes, contained in a parent actor protecting all session state, and the access pattern supports this
 
   ### `ClientAuth.Authenticable`
-
   - Every client must use authentication, so `SessionCapabilities` now conforms to `ClientAuthenticable`
   - The other type of object conforming to `ClientAuthenticable` is the initial authorize flow, which needs to perform negotiation between the auth methods the client and server support. `Authorizer.negotiate` performs this, returning a stub ClientAuthenticable from which the initial state can be saved and re-restored into a Session object.
 
