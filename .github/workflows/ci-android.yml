@@ -29,8 +29,22 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 'Test Swift Package on Android'
+        id: android
         # Third-party action: pinned to a commit SHA so a rewritten tag can't
         # change what runs. Dependabot keeps the pin current.
         uses: skiptools/swift-android-action@2044b79660f201ccef8cbce62877e4ec5409f9c8 # v2.9.5
         with:
           swift-version: '6.3'
+      # The library and its dependency closure must not link FoundationNetworking.
+      # `--target` builds just that closure.
+      - name: 'Library does not link FoundationNetworking'
+        run: |
+          ${{ steps.android.outputs.swift-build }} --scratch-path .build-scan --target OAuth4Swift
+          Scripts/scan-foundation-networking.sh .build-scan
+      # Control: the scanner must flag a target that does import it, or a pass
+      # above could just mean it is not seeing the autolink entry. Built into a
+      # separate scratch path so the objects scanned are exactly that product's.
+      - name: 'Scanner detects FoundationNetworking in the URLSession product'
+        run: |
+          ${{ steps.android.outputs.swift-build }} --scratch-path .build-scan-control --target GermConvenienceURLSession
+          Scripts/scan-foundation-networking.sh --expect .build-scan-control

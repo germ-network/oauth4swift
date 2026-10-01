@@ -19,8 +19,9 @@ let package = Package(
 	dependencies: [
 		.package(
 			url: "https://github.com/germ-network/GermConvenience.git",
-			// 0.10.0 is its swift-crypto-5 release — the revision pin drops.
-			from: "0.10.0"
+			// 0.13.0 moved the URLSession conformers into their own product, so
+			// GermConvenienceHTTP no longer imports FoundationNetworking.
+			from: "0.13.0"
 		),
 		.package(url: "https://github.com/swift-libp2p/swift-bases.git", from: "0.2.0"),
 		.package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),

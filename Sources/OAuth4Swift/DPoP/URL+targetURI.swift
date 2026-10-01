@@ -7,10 +7,6 @@
 
 import Foundation
 
-#if canImport(FoundationNetworking)
-	import FoundationNetworking
-#endif
-
 extension URL {
 	var targetURI: URL? {
 		guard

@@ -7,10 +7,6 @@
 
 import Foundation
 
-#if canImport(FoundationNetworking)
-	import FoundationNetworking
-#endif
-
 extension OAuth {
 	/// RFC 9728 Section 3.1 — Protected Resource Metadata well-known suffix.
 	public static let wellKnownProtectedResource = ".well-known/oauth-protected-resource"
