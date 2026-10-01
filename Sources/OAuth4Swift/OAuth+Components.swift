@@ -10,10 +10,6 @@ import GermConvenience
 import GermConvenienceHTTP
 import Logging
 
-#if canImport(FoundationNetworking)
-	import FoundationNetworking
-#endif
-
 ///Direct analog to oauth4web's OAuth module in providing stateless API as building blocks for a full client
 extension OAuth {
 	static public func processPushedAuthorizationResponse(
