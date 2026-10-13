@@ -30,7 +30,7 @@ jobs:
         # Supersedes pnpm/action-setup + actions/setup-node. Reads the pnpm
         # version from devEngines.packageManager and auto-detects Node from
         # .node-version, so neither version is declared in two places.
-        uses: pnpm/setup@fbda4c85fc2e1e08721cd8763afea8f48d60f024 # v3.0.0
+        uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
         with:
           cache: true
           # Fail when no lockfile is present, rather than resolving from the
@@ -41,7 +41,7 @@ jobs:
         id: changesets
         # Pinned to a SHA at the current major. v2 is available and is the
         # changesets upgrade still to be worked out.
-        uses: changesets/action@a45c4d594aa4e2c509dc14a9f2b3b67ba3780d0d # v1.9.0
+        uses: changesets/action@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
         with:
           title: Prepare next release
           createGithubReleases: true
