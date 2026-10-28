@@ -1,5 +1,11 @@
 # @germ-network/oauth4swift
 
+## 0.9.1
+
+### Patch Changes
+
+- [#81](https://github.com/germ-network/oauth4swift/pull/81) [`89cdc86`](https://github.com/germ-network/oauth4swift/commit/89cdc8664ab4e178aa5517af9ee411c483c22096) Thanks [@germ-mark](https://github.com/germ-mark)! - Adopt the renamed GermConvenience and swift-bases APIs in OAuth4Swift.
+
 ## 0.9.0
 
 ### Minor Changes
