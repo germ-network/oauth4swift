@@ -5,6 +5,7 @@
 //  Created by Mark @ Germ on 3/11/26.
 //
 
+import Base64
 import Crypto
 import Foundation
 import GermConvenience
@@ -17,7 +18,7 @@ struct Test {
 		dpopKey: .generateP256(),
 		decoder: { (dataResponse, requestUrl) in
 			let nonce = dataResponse.response
-				.headerFields[try .dpopNonce.tryUnwrap]
+				.headerFields[try .dpopNonce.unwrapped]
 			guard let nonce else {
 				return nil
 			}
@@ -60,14 +61,14 @@ struct Test {
 		)
 
 		let dpopHeader = try signedRequest.request
-			.headerFields[try .dpop.tryUnwrap]
-			.tryUnwrap
+			.headerFields[try .dpop.unwrapped]
+			.unwrapped
 
 		let jwt = try JWT(string: dpopHeader)
 
 		let header = try JSONDecoder().decode(
 			JWT.Header.self,
-			from: try #require(try Data(base64URLEncoded: jwt.header))
+			from: Data(try Base64.decode(jwt.header.utf8, variant: .url))
 		)
 
 		#expect(header.typ == "dpop+jwt")
@@ -115,7 +116,7 @@ extension JWT.JWK {
 
 	func verifyP256(jwt: JWT) throws -> Bool {
 		let signOver = (jwt.header + [JWT.period] + jwt.payload).utf8Data
-		let signatureData = try #require(try Data(base64URLEncoded: jwt.signature))
+		let signatureData = Data(try Base64.decode(jwt.signature.utf8, variant: .url))
 
 		return try p256Key.isValidSignature(
 			.init(rawRepresentation: signatureData),
@@ -127,8 +128,8 @@ extension JWT.JWK {
 		get throws {
 			#expect(kty == "EC")
 			#expect(crv == "P-256")
-			let xComponent = try #require(try Data(base64URLEncoded: x))
-			let yComponent = try #require(try Data(base64URLEncoded: y))
+			let xComponent = Data(try Base64.decode(x.utf8, variant: .url))
+			let yComponent = Data(try Base64.decode(y.utf8, variant: .url))
 
 			// Public key consists of 04 | X | Y where X and Y are the same length
 			// (Which, for P256, is 256 / 8 = 32 bytes each.)

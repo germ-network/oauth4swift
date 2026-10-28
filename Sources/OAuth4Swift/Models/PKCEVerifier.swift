@@ -5,6 +5,7 @@
 //  Created by Mark @ Germ on 2/22/26 from OAuthenticator
 //
 
+import Base64
 import Crypto
 import Foundation
 
@@ -56,8 +57,11 @@ extension PKCEVerifier {
 		self.init(
 			hash: "S256",
 			hasher: { value in
-				SHA256.hash(data: value.utf8Data)
-					.data.base64URLEncoded(padded: false)
+				Base64.encodedString(
+					SHA256.hash(data: value.utf8Data).data,
+					variant: .url,
+					pad: .unpadded
+				)
 			}
 		)
 	}

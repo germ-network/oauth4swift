@@ -34,7 +34,7 @@ extension OAuth.ClientAuth.Authenticable {
 			method: method,
 			url: url,
 			headerFields: headers,
-			body: parameters.data
+			body: parameters.encodedData
 		)
 
 		if let dpopSigner = self as? OAuth.DPoP.Signing {
@@ -115,7 +115,7 @@ extension OAuth.ClientAuth.Authenticable {
 
 		let rawHeaders = HTTPFields(
 			dictionaryLiteral: (.accept, HTTPContentType.json.rawValue),
-			(.contentType, HTTPContentType.formUrlEncoded.rawValue),
+			(.contentType, HTTPContentType.formURLEncoded.rawValue),
 		)
 
 		return try await authenticatedRequest(
@@ -180,7 +180,7 @@ extension OAuth.ClientAuth.Authenticable {
 
 		let rawHeaders = HTTPFields(
 			dictionaryLiteral: (.accept, HTTPContentType.json.rawValue),
-			(.contentType, HTTPContentType.formUrlEncoded.rawValue),
+			(.contentType, HTTPContentType.formURLEncoded.rawValue),
 		)
 
 		let response = try await authenticatedRequest(

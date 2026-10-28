@@ -72,7 +72,7 @@ struct RefreshErrorTests {
 				Issue.record("Unexpected error: \(error)")
 				return
 			}
-			#expect(httpError.code == 503)
+			#expect(httpError.statusCode == 503)
 			#expect(httpError.bodyString == "<html>503</html>")
 		}
 	}
@@ -86,7 +86,7 @@ struct RefreshErrorTests {
 				Issue.record("Unexpected error: \(error)")
 				return
 			}
-			#expect(httpError.code == 502)
+			#expect(httpError.statusCode == 502)
 		}
 	}
 

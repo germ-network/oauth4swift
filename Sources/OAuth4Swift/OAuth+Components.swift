@@ -17,7 +17,7 @@ extension OAuth {
 	) throws -> PARResponse {
 		try response
 			.success(
-				code: 201,
+				statusCode: 201,
 				decodeResult: PARResponse.self,
 				orError: OAuth.ErrorResponse.self
 			)
@@ -36,7 +36,7 @@ extension OAuth {
 			try URLComponents(
 				url: callbackURL,
 				resolvingAgainstBaseURL: false
-			).tryUnwrap.queryItems ?? []
+			).unwrapped.queryItems ?? []
 
 		return try validateAuthResponse(
 			authServerMetadata: authServerMetadata,

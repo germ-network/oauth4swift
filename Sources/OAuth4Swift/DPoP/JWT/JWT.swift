@@ -5,6 +5,7 @@
 //  Created by Anna Mistele on 4/23/25.
 //
 
+import Base64
 import Crypto
 import Foundation
 
@@ -50,10 +51,16 @@ extension JWT {
 
 			self.kty = "EC"
 			self.crv = "P-256"
-			self.x = keyBytes.subdata(in: 1..<(componentSize + 1))
-				.base64URLEncoded(padded: false)
-			self.y = keyBytes.subdata(in: (componentSize + 1)..<(componentSize * 2 + 1))
-				.base64URLEncoded(padded: false)
+			self.x = Base64.encodedString(
+				keyBytes.subdata(in: 1..<(componentSize + 1)),
+				variant: .url,
+				pad: .unpadded
+			)
+			self.y = Base64.encodedString(
+				keyBytes.subdata(in: (componentSize + 1)..<(componentSize * 2 + 1)),
+				variant: .url,
+				pad: .unpadded
+			)
 		}
 	}
 
@@ -85,14 +92,13 @@ extension Encodable {
 		get throws {
 			let encoder = JSONEncoder()
 			encoder.dateEncodingStrategy = .secondsSince1970
-			let encodedHeader = try encoder.encode(self)
-				.base64URLPadEncodedData()
-				.tryUnwrap
+			let encodedHeader = Data(
+				Base64.encode(try encoder.encode(self), variant: .url))
 
 			return try String(
 				data: .init(encodedHeader),
 				encoding: .utf8
-			).tryUnwrap
+			).unwrapped
 		}
 	}
 }

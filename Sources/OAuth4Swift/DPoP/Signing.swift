@@ -26,7 +26,7 @@ extension OAuth.DPoP.Signing {
 		token: OAuth.AccessToken?
 	) throws -> BundledHTTPRequest {
 		let requestOrigin = try (request.request.url?.origin)
-			.tryUnwrap(OAuth.DPoP.Errors.requestInvalid(request.request))
+			.unwrap(or: OAuth.DPoP.Errors.requestInvalid(request.request))
 
 		let nonce = getNonce(origin: requestOrigin)
 
@@ -36,19 +36,23 @@ extension OAuth.DPoP.Signing {
 		//the secret is minted for the input
 		let tokenHash = token.map { token in
 			token.value.withUnsafeBytes {
-				SHA256.hash(data: $0).data.base64URLEncoded(padded: false)
+				Base64.encodedString(
+					SHA256.hash(data: $0).data,
+					variant: .url,
+					pad: .unpadded
+				)
 			}
 		}
 		let jwt = try dpopKey.sign(
 			payload: .init(
-				endpointUrl: (request.request.url?.targetURI).tryUnwrap,
+				endpointUrl: (request.request.url?.targetURI).unwrapped,
 				httpMethod: request.request.method.rawValue,
 				nonce: nonce?.nonce,
 				accessTokenHash: tokenHash
 			)
 		)
 
-		return request.settingHeader(jwt.string, for: try .dpop.tryUnwrap)
+		return request.settingHeader(jwt.string, for: try .dpop.unwrapped)
 	}
 
 	func nonceRetryAuthenticated(
@@ -90,7 +94,7 @@ extension OAuth.DPoP.Signing {
 
 		try cacheNonce(
 			response: response,
-			requestUrl: proofRequest.request.url.tryUnwrap
+			requestUrl: proofRequest.request.url.unwrapped
 		)
 
 		return response
