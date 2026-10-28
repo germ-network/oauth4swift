@@ -129,7 +129,7 @@ extension OAuth.Authorizer {
 		)
 
 		let scheme = try authorizeInputs.clientInfo.redirectURI.scheme
-			.tryUnwrap(OAuth.Errors.missingScheme)
+			.unwrap(or: OAuth.Errors.missingScheme)
 
 		let callbackURL = try await authorizeInputs.userAuthenticator(
 			authorizationUrl,
@@ -150,9 +150,9 @@ extension OAuth.Authorizer {
 		var components = URLComponents(
 			url: authorizationEndpoint, resolvingAgainstBaseURL: false)
 
-		components?.queryItems = parameters.asQueryItems()
+		components?.queryItems = parameters.queryItems
 
-		return try (components?.url).tryUnwrap
+		return try (components?.url).unwrapped
 	}
 
 	func pushedAuthorizationRequest(
@@ -166,7 +166,7 @@ extension OAuth.Authorizer {
 
 		var rawHeaders = headers ?? HTTPFields()
 		rawHeaders[.accept] = HTTPContentType.json.rawValue
-		rawHeaders[.contentType] = HTTPContentType.formUrlEncoded.rawValue
+		rawHeaders[.contentType] = HTTPContentType.formURLEncoded.rawValue
 
 		return try await authenticatedRequest(
 			url: parEndpoint,

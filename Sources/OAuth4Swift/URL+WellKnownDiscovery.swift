@@ -43,10 +43,10 @@ extension URL {
 		}
 
 		components.percentEncodedPath = "/" + segment + existingPath
-		let discoveryURL = try components.url.tryUnwrap(OAuth.Errors.missingHost)
+		let discoveryURL = try components.url.unwrap(or: OAuth.Errors.missingHost)
 
 		components.percentEncodedPath = existingPath + "/" + segment
-		let legacyURL = try components.url.tryUnwrap(OAuth.Errors.missingHost)
+		let legacyURL = try components.url.unwrap(or: OAuth.Errors.missingHost)
 
 		return WellKnownDiscovery(
 			url: discoveryURL,
@@ -114,7 +114,8 @@ extension URL {
 			throw OAuth.Errors.invalidResourceIdentifier
 		}
 		canonicalComponents.port = canonicalURL.nonDefaultHTTPort()
-		return try canonicalComponents.url.tryUnwrap(OAuth.Errors.invalidResourceIdentifier)
+		return try canonicalComponents.url
+			.unwrap(or: OAuth.Errors.invalidResourceIdentifier)
 			.absoluteString
 	}
 }
@@ -132,5 +133,5 @@ private func normalizedPathSegment(_ raw: Substring) throws -> String {
 	}
 	return try decoded.precomposedStringWithCanonicalMapping
 		.addingPercentEncoding(withAllowedCharacters: pathSegmentAllowed)
-		.tryUnwrap(OAuth.Errors.invalidResourceIdentifier)
+		.unwrap(or: OAuth.Errors.invalidResourceIdentifier)
 }

@@ -23,7 +23,7 @@ extension OAuth {
 
 		var redirectURIScheme: String {
 			get throws {
-				try redirectURI.scheme.tryUnwrap
+				try redirectURI.scheme.unwrapped
 			}
 		}
 	}

@@ -5,6 +5,7 @@
 //  Created by Mark @ Germ on 3/1/26.
 //
 
+import Base64
 import Crypto
 import Foundation
 import GermConvenience
@@ -30,7 +31,7 @@ struct TestJWTSigning {
 		let verifier = ECDSASigner(key: privateKey)
 		#expect(
 			try verifier.verify(
-				try Data(base64URLEncoded: jwt.signature),
+				Data(try Base64.decode(jwt.signature.utf8, variant: .url)),
 				signs: jwt.signingInput.utf8Data
 			)
 		)

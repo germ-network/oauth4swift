@@ -5,6 +5,7 @@
 //  Created by Anna Mistele on 4/24/25.
 //
 
+import Base64
 import Crypto
 import Foundation
 
@@ -33,7 +34,11 @@ struct ECDSASigner {
 		return .init(
 			header: headerEncoded,
 			payload: payloadEncoded,
-			signature: signatureData.base64URLEncoded(padded: false)
+			signature: Base64.encodedString(
+				signatureData,
+				variant: .url,
+				pad: .unpadded
+			)
 		)
 	}
 

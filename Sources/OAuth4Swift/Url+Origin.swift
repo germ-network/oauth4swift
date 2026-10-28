@@ -11,10 +11,10 @@ extension URL {
 	var origin: String {
 		get throws {
 			var originComponents = URLComponents()
-			originComponents.scheme = try scheme.tryUnwrap
-			originComponents.host = try host.tryUnwrap
+			originComponents.scheme = try scheme.unwrapped
+			originComponents.host = try host.unwrapped
 			originComponents.port = nonDefaultHTTPort()
-			return try originComponents.string.tryUnwrap
+			return try originComponents.string.unwrapped
 		}
 	}
 

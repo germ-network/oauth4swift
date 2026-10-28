@@ -125,7 +125,7 @@ import Testing
 				)
 			})
 
-		#expect(thrown.code == 502)
+		#expect(thrown.statusCode == 502)
 		#expect(thrown.bodyString == "<html>502</html>")
 	}
 
