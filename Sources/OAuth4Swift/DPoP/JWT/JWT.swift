@@ -92,13 +92,13 @@ extension Encodable {
 		get throws {
 			let encoder = JSONEncoder()
 			encoder.dateEncodingStrategy = .secondsSince1970
-			let encodedHeader = Data(
-				Base64.encode(try encoder.encode(self), variant: .url))
-
-			return try String(
-				data: .init(encodedHeader),
-				encoding: .utf8
-			).unwrapped
+			// JWS compact serialization is base64url WITHOUT padding (RFC 7515
+			// section 2, "Base64url Encoding"). Strict servers reject a padded segment.
+			return Base64.encodedString(
+				try encoder.encode(self),
+				variant: .url,
+				pad: .unpadded
+			)
 		}
 	}
 }
