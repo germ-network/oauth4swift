@@ -36,6 +36,21 @@ struct TestJWTSigning {
 		)
 	}
 
+	// RFC 7515 base64url omits "=" padding; strict servers (e.g. blacksky.app)
+	// reject a padded DPoP proof as "Invalid padding".
+	@Test(arguments: 0..<3)
+	func everySegmentIsUnpadded(extra: Int) throws {
+		let privateKey = try P256.Signing.PrivateKey(rawRepresentation: key.keyData)
+		// JSON payload lengths 2, 3 and 4 cover every residue mod 3.
+		let jwt = try ECDSASigner(key: privateKey)
+			.sign(keyType: "dpop+jwt", payload: String(repeating: "a", count: extra))
+
+		for segment in [jwt.header, jwt.payload, jwt.signature] {
+			#expect(!segment.contains("="))
+			#expect(!segment.contains("+") && !segment.contains("/"))
+		}
+	}
+
 }
 
 extension ECDSASigner {

@@ -85,14 +85,8 @@ extension Encodable {
 		get throws {
 			let encoder = JSONEncoder()
 			encoder.dateEncodingStrategy = .secondsSince1970
-			let encodedHeader = try encoder.encode(self)
-				.base64URLPadEncodedData()
-				.tryUnwrap
-
-			return try String(
-				data: .init(encodedHeader),
-				encoding: .utf8
-			).tryUnwrap
+			// RFC 7515: JWS segments are base64url without padding.
+			return try encoder.encode(self).base64URLEncoded(padded: false)
 		}
 	}
 }
