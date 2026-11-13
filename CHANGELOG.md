@@ -1,5 +1,11 @@
 # @germ-network/oauth4swift
 
+## 0.9.2
+
+### Patch Changes
+
+- [#85](https://github.com/germ-network/oauth4swift/pull/85) [`51a9c3c`](https://github.com/germ-network/oauth4swift/commit/51a9c3ccbeece481a99947f6d6997b9ad4a4cc36) Thanks [@anna-germ](https://github.com/anna-germ)! - Encode DPoP JWT header and claims as unpadded base64url (RFC 7515), so strict authorization servers such as blacksky.app no longer reject the proof with "Invalid padding".
+
 ## 0.9.1
 
 ### Patch Changes
