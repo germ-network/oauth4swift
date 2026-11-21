@@ -1,13 +1,13 @@
 {
-  "originHash" : "4beeb7330b9ee7ebf2ba1a3aee3d95138a75b46dfd3268ea4a8cf622ae9600a9",
+  "originHash" : "34861d02320959b603ee868596c026fe76a7753a98222816455d9c1ce2bda654",
   "pins" : [
     {
       "identity" : "germconvenience",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/germ-network/GermConvenience.git",
       "state" : {
-        "revision" : "6f9f44970d38889a02e8c3b2e51d0261c67237e2",
-        "version" : "0.15.0"
+        "branch" : "add-always-responder-to-mockhttpfetcher",
+        "revision" : "5f76ef80903dd0d5c804ffe9f48dd5427fced3cf"
       }
     },
     {

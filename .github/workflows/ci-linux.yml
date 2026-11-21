@@ -24,7 +24,7 @@ permissions:
 jobs:
   lint:
     name: Lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     container:
       # The floor, matching swift-tools-version in Package.swift
       image: swift:6.3
@@ -37,7 +37,7 @@ jobs:
 
   linux_test:
     name: Test Linux
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     container:
       image: swift:${{matrix.swift-version}}
     timeout-minutes: 30

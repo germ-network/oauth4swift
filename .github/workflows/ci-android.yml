@@ -24,7 +24,7 @@ permissions:
 jobs:
   linux-android:
     name: Test Android
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -34,7 +34,11 @@ jobs:
         # change what runs. Dependabot keeps the pin current.
         uses: skiptools/swift-android-action@2044b79660f201ccef8cbce62877e4ec5409f9c8 # v2.9.5
         with:
-          swift-version: '6.3'
+          # Full patch version on purpose: the action derives the download URL
+          # from it, and swift.org has no bare `swift-6.4-RELEASE` directory.
+          # 6.4 is also the first release with an Ubuntu 26.04 host toolchain,
+          # which this job's runner needs; 6.3 only 404s there.
+          swift-version: '6.4.3'
       # The library and its dependency closure must not link FoundationNetworking.
       # `--target` builds just that closure.
       - name: 'Library does not link FoundationNetworking'
