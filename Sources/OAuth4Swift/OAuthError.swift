@@ -38,7 +38,7 @@ extension OAuth {
 			case .missingScheme: "Missing scheme"
 			case .missingHost: "Missing host"
 			case .invalidResourceIdentifier:
-				"Resource or issuer identifier must not contain userinfo, a query, a fragment, or a \".\" / \"..\" / empty path segment"
+				"Resource or issuer identifier must not contain userinfo or a fragment, and an issuer must not contain a query"
 			case .missingIssuer:
 				"Missing iss parameter when authorization server supports issuer identification"
 			case .insecureScheme: "Insecure scheme"

@@ -192,106 +192,103 @@ extension OAuth {
 
 		return scopes
 	}
-}
 
-extension HTTPFetcher {
-	//should not redirect
-	public func resourceDiscoveryRequest(
-		url: URL,
-	) async throws -> ProtectedResourceMetadata? {
-		let discovery = try url.insertingWellKnownSegment(
-			OAuth.wellKnownProtectedResource
+	/// Fetches an authorization server's metadata from the location `algorithm`
+	/// selects. Pass the response to `processDiscoveryResponse`.
+	///
+	/// `algorithm` defaults to `.oauth2`, not oauth4webapi's `.oidc`; pass `.oidc`
+	/// for an OpenID Connect provider that only serves `openid-configuration`.
+	public static func discoveryRequest(
+		issuer: URL,
+		algorithm: DiscoveryAlgorithm = .oauth2,
+		fetcher: HTTPFetcher
+	) async throws -> HTTPDataResponse {
+		try await metadataRequest(
+			url: DiscoveryIdentifier(issuer, for: .authorizationServer(algorithm))
+				.discoveryURL,
+			fetcher: fetcher
 		)
-
-		guard
-			let metadata: ProtectedResourceMetadata = try await performDiscovery(
-				primaryURL: discovery.url,
-				legacyURL: discovery.legacyURL
-			)
-		else {
-			return nil
-		}
-
-		guard
-			let discoveredCanonical = try? URL(string: metadata.resource)?
-				.canonicalDiscoveryIdentifier(),
-			discoveredCanonical == discovery.canonicalIdentifier
-		else {
-			throw OAuth.Errors.discoveredResourceMismatch(
-				actual: metadata.resource,
-				expected: discovery.canonicalIdentifier
-			)
-		}
-		return metadata
 	}
 
-	public func authServerDiscovery(endpoint: URL) async throws -> AuthServerMetadata? {
-		let discovery = try endpoint.insertingWellKnownSegment(
-			OAuth.wellKnownAuthorizationServer
-		)
-
-		guard
-			let metadata: AuthServerMetadata = try await performDiscovery(
-				primaryURL: discovery.url,
-				legacyURL: discovery.legacyURL
-			)
-		else {
-			return nil
-		}
-
-		guard
-			let discoveredCanonical = try? URL(string: metadata.issuer)?
-				.canonicalDiscoveryIdentifier(),
-			discoveredCanonical == discovery.canonicalIdentifier
-		else {
-			throw OAuth.Errors.discoveredIssuerMismatch(
+	/// Validates a `discoveryRequest` response: a successful status, and an
+	/// `issuer` identical to `expectedIssuer` (RFC 8414 §3.3, OIDC Discovery §4.3).
+	public static func processDiscoveryResponse(
+		expectedIssuer: URL,
+		response: HTTPDataResponse
+	) throws -> AuthServerMetadata {
+		let metadata: AuthServerMetadata = try response.expectSuccess().decode()
+		guard metadata.issuer == expectedIssuer.absoluteString else {
+			throw Errors.discoveredIssuerMismatch(
 				actual: metadata.issuer,
-				expected: discovery.canonicalIdentifier
+				expected: expectedIssuer.absoluteString
 			)
 		}
 		return metadata
 	}
 
-	/// The two URLs coincide whenever the identifier has no path, so path-less
-	/// issuers/resources never issue a second request.
-	private func performDiscovery<Metadata: Decodable>(
-		primaryURL: URL,
-		legacyURL: URL
-	) async throws -> Metadata? {
-		let request = try BundledHTTPRequest(method: .get, url: primaryURL)
-		if let result = try await performDiscovery(request: request) {
-			return try result.expectSuccess().decode()
-		}
-		guard legacyURL != primaryURL else {
-			return nil
-		}
-
-		Logger(label: "OAuth4Swift.discovery")
-			.debug(
-				"no metadata at \(primaryURL), retrying legacy location \(legacyURL)"
-			)
-
-		let legacyRequest = try BundledHTTPRequest(method: .get, url: legacyURL)
-		return try await performDiscovery(request: legacyRequest)?
-			.expectSuccess()
-			.decode()
+	/// Fetches a protected resource's metadata (RFC 9728 §3.1). Pass the response
+	/// to `processResourceDiscoveryResponse`.
+	public static func resourceDiscoveryRequest(
+		resource: URL,
+		fetcher: HTTPFetcher
+	) async throws -> HTTPDataResponse {
+		try await metadataRequest(
+			url: DiscoveryIdentifier(resource, for: .protectedResource).discoveryURL,
+			fetcher: fetcher
+		)
 	}
 
-	//when we perform discovery, treat a 404 as a nil result
-	func performDiscovery(
-		request: BundledHTTPRequest
-	) async throws -> HTTPDataResponse? {
-		guard request.request.scheme == "https" else {
-			throw OAuth.Errors.insecureScheme
+	/// Validates a `resourceDiscoveryRequest` response: a successful status, and a
+	/// `resource` identical to `expectedResource` (RFC 9728 §3.3).
+	public static func processResourceDiscoveryResponse(
+		expectedResource: URL,
+		response: HTTPDataResponse
+	) throws -> ProtectedResourceMetadata {
+		let metadata: ProtectedResourceMetadata = try response.expectSuccess().decode()
+		guard metadata.resource == expectedResource.absoluteString else {
+			throw Errors.discoveredResourceMismatch(
+				actual: metadata.resource,
+				expected: expectedResource.absoluteString
+			)
 		}
-		let result = try await data(for: request)
-		if result.response.status == .notFound {
-			Logger(label: "OAuth4Swift.discovery")
-				.debug(
-					"discovery request 404'd: \(request.request.url?.absoluteString ?? "?")"
-				)
-			return nil
-		}
-		return result
+		return metadata
+	}
+
+	/// Discovers and validates an authorization server's metadata in one call:
+	/// `discoveryRequest` followed by `processDiscoveryResponse`.
+	public static func discoverAuthorizationServer(
+		issuer: URL,
+		algorithm: DiscoveryAlgorithm = .oauth2,
+		fetcher: HTTPFetcher
+	) async throws -> AuthServerMetadata {
+		try processDiscoveryResponse(
+			expectedIssuer: issuer,
+			response: await discoveryRequest(
+				issuer: issuer,
+				algorithm: algorithm,
+				fetcher: fetcher
+			)
+		)
+	}
+
+	/// Discovers and validates a protected resource's metadata in one call:
+	/// `resourceDiscoveryRequest` followed by `processResourceDiscoveryResponse`.
+	public static func discoverProtectedResource(
+		resource: URL,
+		fetcher: HTTPFetcher
+	) async throws -> ProtectedResourceMetadata {
+		try processResourceDiscoveryResponse(
+			expectedResource: resource,
+			response: await resourceDiscoveryRequest(
+				resource: resource, fetcher: fetcher)
+		)
+	}
+
+	//should not redirect
+	private static func metadataRequest(
+		url: URL,
+		fetcher: HTTPFetcher
+	) async throws -> HTTPDataResponse {
+		try await fetcher.data(for: BundledHTTPRequest(method: .get, url: url))
 	}
 }
