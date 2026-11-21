@@ -21,7 +21,7 @@ let package = Package(
 			url: "https://github.com/germ-network/GermConvenience.git",
 			// 0.15.0 includes the Swift API naming updates.
 			// from: "0.15.0"
-			branch: "add-url-origin"
+			branch: "add-always-responder-to-mockhttpfetcher"
 		),
 		.package(url: "https://github.com/swift-libp2p/swift-bases.git", from: "0.2.0"),
 		.package(url: "https://github.com/apple/swift-http-types.git", from: "1.5.1"),
