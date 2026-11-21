@@ -73,15 +73,16 @@ extension URL {
 	/// Throws `missingScheme`/`missingHost` if either is absent, and
 	/// `invalidResourceIdentifier` for userinfo, a query, a fragment, or a
 	/// "."/".."/empty/undecodable path segment (RFC 8414 §2 / RFC 9728 §2
-	/// disallow all of these in an issuer or resource identifier).
+	/// disallow all of these in an issuer or resource identifier). Rethrows any
+	/// `URLAuthority.Errors` from canonicalizing the host.
 	public func canonicalDiscoveryIdentifier() throws -> String {
 		guard
 			let components = URLComponents(url: self, resolvingAgainstBaseURL: false),
-			let scheme = components.scheme, !scheme.isEmpty
+			components.scheme?.isEmpty == false
 		else {
 			throw OAuth.Errors.missingScheme
 		}
-		guard let host = components.host, !host.isEmpty else {
+		guard components.host?.isEmpty == false else {
 			throw OAuth.Errors.missingHost
 		}
 		guard
@@ -103,20 +104,7 @@ extension URL {
 		.dropFirst()
 		let normalizedSegments = try rawSegments.map { try normalizedPathSegment($0) }
 
-		var canonicalComponents = URLComponents()
-		canonicalComponents.scheme = scheme.lowercased()
-		canonicalComponents.host = host.lowercased()
-		canonicalComponents.port = components.port
-		canonicalComponents.percentEncodedPath = normalizedSegments.map { "/" + $0 }
-			.joined()
-
-		guard let canonicalURL = canonicalComponents.url else {
-			throw OAuth.Errors.invalidResourceIdentifier
-		}
-		canonicalComponents.port = canonicalURL.nonDefaultHTTPort()
-		return try canonicalComponents.url
-			.unwrap(or: OAuth.Errors.invalidResourceIdentifier)
-			.absoluteString
+		return try origin + normalizedSegments.map { "/" + $0 }.joined()
 	}
 }
 

@@ -45,7 +45,7 @@ extension OAuth.DPoP.Signing {
 		}
 		let jwt = try dpopKey.sign(
 			payload: .init(
-				endpointUrl: (request.request.url?.targetURI).unwrapped,
+				endpointUrl: request.request.url.unwrapped,
 				httpMethod: request.request.method.rawValue,
 				nonce: nonce?.nonce,
 				accessTokenHash: tokenHash

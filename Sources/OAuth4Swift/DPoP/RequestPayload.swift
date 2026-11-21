@@ -38,11 +38,17 @@ extension OAuth.DPoP {
 		) throws {
 			self.uniqueCode = UUID().uuidString
 			self.httpMethod = httpMethod
-			self.httpRequestURL = endpointUrl.absoluteString
+			self.httpRequestURL = try Self.targetURI(of: endpointUrl)
 			self.createdAt = Int(Date.now.timeIntervalSince1970)
 			self.expiresAt = Int(Date.now.timeIntervalSince1970 + 3600)
 			self.nonce = nonce
 			self.accessTokenHash = accessTokenHash
+		}
+
+		/// The DPoP `htu`: the target URI without query or fragment (RFC 9449 §4.2).
+		static func targetURI(of url: URL) throws -> String {
+			let path = url.absoluteURL.path(percentEncoded: true)
+			return try url.origin + (path.isEmpty ? "/" : path)
 		}
 	}
 }
