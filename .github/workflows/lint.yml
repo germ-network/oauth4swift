@@ -36,7 +36,7 @@ jobs:
           min_age: 1
 
   format:
-    name: Formatting
+    name: Non-Swift Formatting
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
